@@ -42,19 +42,16 @@ internal static class StartupHook
                     pluginPath
                 );
 
-            string clientDirectory = Path.GetDirectoryName(
-                Environment.ProcessPath!
-            )!;
+            string clientDirectory =
+                Path.GetDirectoryName(Environment.ProcessPath!)!;
 
-            string pluginDirectory = Path.GetDirectoryName(
-                pluginPath
-            )!;
+            string pluginDirectory =
+                Path.GetDirectoryName(pluginPath)!;
 
             Log($"Client directory = {clientDirectory}");
             Log($"Plugin directory = {pluginDirectory}");
 
-            AssemblyLoadContext.Default.Resolving +=
-                ResolveAssembly;
+            AssemblyLoadContext.Default.Resolving += ResolveAssembly;
 
             Log($"Loading: {pluginPath}");
 
@@ -86,12 +83,8 @@ internal static class StartupHook
                 if (string.IsNullOrEmpty(assemblyName.Name))
                     return null;
 
-                Log(
-                    $"Resolving: {assemblyName.FullName}"
-                );
+                Log($"Resolving: {assemblyName.FullName}");
 
-                // osu! assemblies MUST come from the running
-                // osu! client, not from the EnhancedAuth build folder.
                 if (assemblyName.Name.StartsWith(
                         "osu.",
                         StringComparison.OrdinalIgnoreCase))
@@ -122,9 +115,7 @@ internal static class StartupHook
                         }
 
                         Assembly loaded =
-                            context.LoadFromAssemblyPath(
-                                clientPath
-                            );
+                            context.LoadFromAssemblyPath(clientPath);
 
                         Log(
                             $"Loaded client assembly: {loaded.FullName}"
@@ -134,14 +125,12 @@ internal static class StartupHook
                     }
                 }
 
-                // Non-osu dependencies such as Harmony can come
-                // from the EnhancedAuth build directory.
-                string pluginPathCandidate = Path.Combine(
+                string pluginDependency = Path.Combine(
                     pluginDirectory,
                     assemblyName.Name + ".dll"
                 );
 
-                if (File.Exists(pluginPathCandidate))
+                if (File.Exists(pluginDependency))
                 {
                     Assembly? alreadyLoaded =
                         context.Assemblies.FirstOrDefault(
@@ -163,7 +152,7 @@ internal static class StartupHook
 
                     Assembly loaded =
                         context.LoadFromAssemblyPath(
-                            pluginPathCandidate
+                            pluginDependency
                         );
 
                     Log(
@@ -173,19 +162,14 @@ internal static class StartupHook
                     return loaded;
                 }
 
-                Log(
-                    $"Assembly not found: {assemblyName.FullName}"
-                );
+                Log($"Assembly not found: {assemblyName.FullName}");
 
                 return null;
             }
         }
         catch (Exception ex)
         {
-            Log(
-                $"ERROR:{Environment.NewLine}{ex}"
-            );
-
+            Log($"ERROR:{Environment.NewLine}{ex}");
             throw;
         }
     }
