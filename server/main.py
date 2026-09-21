@@ -407,14 +407,32 @@ def _switcher_compatibility_payload() -> dict[str, dict[str, dict[str, str | int
         return {}
 
     result: dict[str, dict[str, dict[str, str | int]]] = {}
+
     for directory in sorted(root.iterdir(), reverse=True):
         if not directory.is_dir() or not _CLIENT_VERSION_PATTERN.fullmatch(directory.name):
             continue
-        if not all((directory / filename).is_file() for filename in _CLIENT_MODULES.values()):
+
+        if not all(
+            (directory / filename).is_file()
+            for filename in _CLIENT_MODULES.values()
+        ):
             continue
-        result[directory.name] = {
-            key: _client_module_payload(directory.name, filename) for key, filename in _CLIENT_MODULES.items()
+
+        version_payload = {
+            key: _client_module_payload(directory.name, filename)
+            for key, filename in _CLIENT_MODULES.items()
         }
+
+        harmony = directory / "0Harmony.dll"
+
+        if harmony.is_file():
+            version_payload["harmony"] = _client_module_payload(
+                directory.name,
+                "0Harmony.dll",
+            )
+
+        result[directory.name] = version_payload
+
     return result
 
 

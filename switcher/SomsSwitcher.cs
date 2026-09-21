@@ -292,7 +292,7 @@ namespace SomsSwitcher
             Dictionary<string, object> versionEntry = AsDict(compatibility[osuVersion], "compatibility." + osuVersion);
             string enhancedAuthPath = DownloadModule(Dict(versionEntry, "enhanced_auth"));
             string startupHookPath = DownloadModule(Dict(versionEntry, "startup_hook"));
-            DownloadModule(Dict(versionEntry, "harmony"));
+            string harmonyPath = DownloadModule(Dict(versionEntry, "harmony"),true);
 
             string healthUrl = RequiredString(manifest, "health_url");
             RequireTrustedUrl(new Uri(ManifestUrl), new Uri(healthUrl, UriKind.Absolute));
@@ -370,9 +370,9 @@ namespace SomsSwitcher
             return result;
         }
 
-        private string DownloadModule(Dictionary<string, object> module)
+        private string DownloadModule(Dictionary<string, object> module, bool preserveFilename)
         {
-            return DownloadModule(module, Path.Combine(SettingsDirectory(), "modules"));
+            return DownloadModule(module, Path.Combine(SettingsDirectory(), "modules"),preserveFilename);
         }
 
         private void EnsureStartupHooksEnabled(string osuPath)
@@ -433,7 +433,7 @@ namespace SomsSwitcher
             );
         }
 
-        private string DownloadModule(Dictionary<string, object> module, string root)
+        private string DownloadModule(Dictionary<string, object> module, string root, bool preserveFilename = false)
         {
             string relativeUrl = RequiredString(module, "url");
             string expectedHash = RequiredString(module, "sha256").ToLowerInvariant();
@@ -449,7 +449,7 @@ namespace SomsSwitcher
                 throw new InvalidDataException("Модуль превышает лимит свитчера (64 МиБ). Скачай новую версию SOMS-switcher.exe с сайта.");
 
             Directory.CreateDirectory(root);
-            string destination = Path.Combine(root, filename);
+            string destination = Path.Combine(root, preserveFilename ? filename : expectedHash.Substring(0, 16) + "-" + filename);
             if (File.Exists(destination) && new FileInfo(destination).Length == expectedSize && HashFile(destination) == expectedHash)
                 return destination;
 
