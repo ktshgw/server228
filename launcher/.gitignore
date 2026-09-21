@@ -1,0 +1,4 @@
+launcher.json
+launcher.json.*.tmp
+launcher.json.invalid-*.bak
+*.dll

@@ -1,0 +1,21 @@
+----------------------------------------------------------
+database Log (LogLevel: Verbose)
+Running soms-test-B6A7B47EE9CFFC660F2A75B4 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 14:27:04 [verbose]: [?????] Beginning import from tmprpuplb.osz...
+2026-09-06 14:27:06 [verbose]: [80e5d] [APIBeatmapMetadataSource] Online retrieval mapped RADWIMPS - Hyperventilation (seros) [Agatsu's Expert] to 1924212 / 4125180.
+2026-09-06 14:27:06 [verbose]: [80e5d] [APIBeatmapMetadataSource] Online retrieval mapped RADWIMPS - Hyperventilation (seros) [What are you gonna do to my b**bs?] to 1924212 / 3972485.
+2026-09-06 14:27:06 [verbose]: [80e5d] [APIBeatmapMetadataSource] Online retrieval mapped RADWIMPS - Hyperventilation (seros) [kowari's Insane] to 1924212 / 4236904.
+2026-09-06 14:27:06 [verbose]: [80e5d] [APIBeatmapMetadataSource] Online retrieval mapped RADWIMPS - Hyperventilation (seros) [Setu's Hard] to 1924212 / 4029560.
+2026-09-06 14:27:07 [verbose]: [80e5d] Import successfully completed!
+2026-09-06 14:28:07 [verbose]: [?????] Beginning import from tmpavqowk.osz...
+2026-09-06 14:28:07 [verbose]: [d38ba] [APIBeatmapMetadataSource] Online retrieval failed for Nekomata Okayu - Dokuhai Swallow (Judge1st) [Deadly Poison]
+2026-09-06 14:28:08 [verbose]: [d38ba] Import successfully completed!
+2026-09-06 14:32:26 [verbose]: [?????] Beginning import from tmp4uexl1.osz...
+2026-09-06 14:32:27 [verbose]: [4c0cb] [APIBeatmapMetadataSource] Online retrieval mapped Nashimoto Ui - AaAaAaAAaAaAAa (Sotarks) [Kowari's HaRD] to 1017271 / 2129144.
+2026-09-06 14:32:27 [verbose]: [4c0cb] [APIBeatmapMetadataSource] Online retrieval mapped Nashimoto Ui - AaAaAaAAaAaAAa (Sotarks) [Reform's ExPeRT] to 1017271 / 2129145.
+2026-09-06 14:32:27 [verbose]: [4c0cb] [APIBeatmapMetadataSource] Online retrieval mapped Nashimoto Ui - AaAaAaAAaAaAAa (Sotarks) [Ren's NoRmAL] to 1017271 / 2129146.
+2026-09-06 14:32:27 [verbose]: [4c0cb] [APIBeatmapMetadataSource] Online retrieval mapped Nashimoto Ui - AaAaAaAAaAaAAa (Sotarks) [SMOKELIND's InSaNE] to 1017271 / 2129147.
+2026-09-06 14:32:27 [verbose]: [4c0cb] [APIBeatmapMetadataSource] Online retrieval mapped Nashimoto Ui - AaAaAaAAaAaAAa (Sotarks) [aAaAaaAaAaaA] to 1017271 / 2129143.
+2026-09-06 14:32:27 [verbose]: [4c0cb] Import successfully completed!

@@ -1,0 +1,21 @@
+----------------------------------------------------------
+auth Log (LogLevel: Verbose)
+Running soms-test-5EE617829DA6E1DC64155A5E 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:06:24 [verbose]: Failed to validate state: System.UnauthorizedAccessException: Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.
+2026-09-06 15:06:24 [verbose]: at System.IO.FileSystem.DeleteFile(String fullPath)
+2026-09-06 15:06:24 [verbose]: at osu.Framework.Platform.NativeStorage.Delete(String path)
+2026-09-06 15:06:24 [verbose]: at .()
+2026-09-06 15:06:24 [verbose]: at osu.Framework.Utils.General.AttemptWithRetryOnException[TException](Action action, Int32 attempts, Boolean throwOnFailure)
+2026-09-06 15:06:24 [verbose]: at .()
+2026-09-06 15:06:24 [verbose]: Loading module...
+2026-09-06 15:06:25 [verbose]: Module initialized successfully.
+2026-09-06 15:06:25 [verbose]: Checking for any update (B326C2E5FEEDCFB0EB45385B43FC64FA8B584204)...
+2026-09-06 15:06:25 [verbose]: Already up to date.
+2026-09-06 15:06:27 [verbose]: API state changed to Connecting
+2026-09-06 15:06:28 [verbose]: API state changed to Online
+2026-09-06 15:06:28 [verbose]: Checking for any update (B326C2E5FEEDCFB0EB45385B43FC64FA8B584204)...
+2026-09-06 15:06:28 [verbose]: Already up to date.
+2026-09-06 15:06:46 [verbose]: Unloading module...
+2026-09-06 15:06:46 [verbose]: Module unloaded successfully.

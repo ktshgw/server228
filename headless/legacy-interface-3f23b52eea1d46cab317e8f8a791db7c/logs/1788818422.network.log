@@ -1,0 +1,6 @@
+----------------------------------------------------------
+network Log (LogLevel: Verbose)
+Running legacy-interface-3f23b52eea1d46cab317e8f8a791db7c 1.0.0.0 on .NET 8.0.20
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-07 22:00:26 [verbose]: Request to https://assets.ppy.sh/client-resources/online.db.bz2?20260907 successfully completed!

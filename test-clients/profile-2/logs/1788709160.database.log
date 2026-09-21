@@ -1,0 +1,20 @@
+----------------------------------------------------------
+database Log (LogLevel: Verbose)
+Running soms-test-B6A7B47EE9CFFC660F2A75B4 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:41:20 [verbose]: [?????] Beginning import from tmpfe5vfj.osz...
+2026-09-06 15:41:21 [verbose]: [b53b4] [APIBeatmapMetadataSource] Online retrieval mapped Camellia - Ryuuseigun (Atlust) [2048] to 2221097 / 4708640.
+2026-09-06 15:41:21 [verbose]: [b53b4] [APIBeatmapMetadataSource] Online retrieval mapped Camellia - Ryuuseigun (Atlust) [Extra] to 2221097 / 4709951.
+2026-09-06 15:41:21 [verbose]: [b53b4] [APIBeatmapMetadataSource] Online retrieval mapped Camellia - Ryuuseigun (Atlust) [Hatsune Miku's Insane] to 2221097 / 4713547.
+2026-09-06 15:41:22 [verbose]: [b53b4] Import successfully completed!
+2026-09-06 15:42:14 [verbose]: [?????] Beginning import from tmpt3jr23.osz...
+2026-09-06 15:42:15 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Icekalt's Extra] to 1782707 / 3778960.
+2026-09-06 15:42:15 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Luscent's Normal] to 1782707 / 3739151.
+2026-09-06 15:42:16 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Niva's Extra] to 1782707 / 3700824.
+2026-09-06 15:42:16 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [die] to 1782707 / 3650854.
+2026-09-06 15:42:16 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Delis' Extra] to 1782707 / 3671741.
+2026-09-06 15:42:16 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Hard] to 1782707 / 3743202.
+2026-09-06 15:42:16 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Mirash's Extra] to 1782707 / 3662485.
+2026-09-06 15:42:16 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [PandaHero's Insane] to 1782707 / 3686870.
+2026-09-06 15:42:16 [verbose]: [1c862] Import successfully completed!

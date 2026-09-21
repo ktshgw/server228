@@ -1,0 +1,236 @@
+----------------------------------------------------------
+network Log (LogLevel: Verbose)
+Running soms-test-5EE617829DA6E1DC64155A5E 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:07:05 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:07:08 [verbose]: API endpoint root: https://desktop-kif58pp.tailc58d2e.ts.net
+2026-09-06 15:07:08 [verbose]: API request version: 20260804
+2026-09-06 15:07:08 [verbose]: Performing request osu.Game.Online.API.Requests.GetMeRequest
+2026-09-06 15:07:08 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/me/ successfully completed!
+2026-09-06 15:07:08 [verbose]: GetMeRequest finished with response size of 2 421 bytes
+2026-09-06 15:07:09 [verbose]: OnlineMultiplayerClient connecting...
+2026-09-06 15:07:09 [verbose]: SpectatorClient connecting...
+2026-09-06 15:07:09 [verbose]: WebSocketNotificationsClientConnector connecting...
+2026-09-06 15:07:09 [verbose]: OnlineMetadataClient connecting...
+2026-09-06 15:07:09 [verbose]: Performing request osu.Game.Online.API.Requests.GetNotificationsRequest
+2026-09-06 15:07:09 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:07:09 [verbose]: OnlineMetadataClient connected!
+2026-09-06 15:07:09 [verbose]: OnlineMultiplayerClient connected!
+2026-09-06 15:07:09 [verbose]: SpectatorClient connected!
+2026-09-06 15:07:09 [verbose]: Performing request osu.Game.Online.API.Requests.GetFriendsRequest
+2026-09-06 15:07:10 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/notifications successfully completed!
+2026-09-06 15:07:10 [verbose]: GetNotificationsRequest finished with response size of 140 bytes
+2026-09-06 15:07:11 [verbose]: WebSocketNotificationsClientConnector connected!
+2026-09-06 15:07:11 [verbose]: Now listening to websocket chat messages.
+2026-09-06 15:07:11 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/friends successfully completed!
+2026-09-06 15:07:11 [verbose]: GetFriendsRequest finished with response size of 2 bytes
+2026-09-06 15:07:11 [verbose]: Performing request osu.Game.Online.API.Requests.GetBlocksRequest
+2026-09-06 15:07:11 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/blocks successfully completed!
+2026-09-06 15:07:11 [verbose]: GetBlocksRequest finished with response size of 2 bytes
+2026-09-06 15:07:11 [verbose]: Performing request osu.Game.Online.API.Requests.GetMyFavouriteBeatmapSetsRequest
+2026-09-06 15:07:11 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/me/beatmapset-favourites successfully completed!
+2026-09-06 15:07:11 [verbose]: GetMyFavouriteBeatmapSetsRequest finished with response size of 21 bytes
+2026-09-06 15:07:11 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:07:11 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/osu?key=id successfully completed!
+2026-09-06 15:07:11 [verbose]: GetUserRequest finished with response size of 2 361 bytes
+2026-09-06 15:07:11 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:07:11 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/osurx?key=id successfully completed!
+2026-09-06 15:07:11 [verbose]: GetUserRequest finished with response size of 2 365 bytes
+2026-09-06 15:07:11 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:07:11 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/osuap?key=id successfully completed!
+2026-09-06 15:07:11 [verbose]: GetUserRequest finished with response size of 2 365 bytes
+2026-09-06 15:07:11 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.GetSeasonalBackgroundsRequest
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/seasonal-backgrounds successfully completed!
+2026-09-06 15:07:12 [verbose]: GetSeasonalBackgroundsRequest finished with response size of 51 bytes
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/taiko?key=id successfully completed!
+2026-09-06 15:07:12 [verbose]: GetUserRequest finished with response size of 2 365 bytes
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/taikorx?key=id successfully completed!
+2026-09-06 15:07:12 [verbose]: GetUserRequest finished with response size of 2 369 bytes
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/fruits?key=id successfully completed!
+2026-09-06 15:07:12 [verbose]: GetUserRequest finished with response size of 2 367 bytes
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/fruitsrx?key=id successfully completed!
+2026-09-06 15:07:12 [verbose]: GetUserRequest finished with response size of 2 371 bytes
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/mania?key=id successfully completed!
+2026-09-06 15:07:12 [verbose]: GetUserRequest finished with response size of 2 365 bytes
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.GetUpdatesRequest
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/updates successfully completed!
+2026-09-06 15:07:12 [verbose]: GetUpdatesRequest finished with response size of 320 bytes
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.ChatAckRequest
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/ack successfully completed!
+2026-09-06 15:07:12 [verbose]: ChatAckRequest finished with response size of 15 bytes
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.GetUpdatesRequest
+2026-09-06 15:07:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/updates successfully completed!
+2026-09-06 15:07:12 [verbose]: GetUpdatesRequest finished with response size of 320 bytes
+2026-09-06 15:07:12 [verbose]: Performing request osu.Game.Online.API.Requests.GetMessagesRequest
+2026-09-06 15:07:13 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/channels/1/messages successfully completed!
+2026-09-06 15:07:13 [verbose]: GetMessagesRequest finished with response size of 2 bytes
+2026-09-06 15:07:13 [verbose]: Performing request osu.Game.Online.API.Requests.ListChannelsRequest
+2026-09-06 15:07:13 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/channels successfully completed!
+2026-09-06 15:07:13 [verbose]: ListChannelsRequest finished with response size of 298 bytes
+2026-09-06 15:07:13 [verbose]: Performing request osu.Game.Online.API.Requests.ListChannelsRequest
+2026-09-06 15:07:13 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/channels successfully completed!
+2026-09-06 15:07:13 [verbose]: ListChannelsRequest finished with response size of 298 bytes
+2026-09-06 15:07:15 [verbose]: Request to https://assets.ppy.sh/menu-content.json successfully completed!
+2026-09-06 15:07:15 [verbose]: Request to https://assets.ppy.sh/main-menu/project-loved-2@2x.png successfully completed!
+2026-09-06 15:07:15 [verbose]: Request to https://assets.ppy.sh/main-menu/orchard-cup-2026@2x.png successfully completed!
+2026-09-06 15:07:15 [verbose]: Request to https://assets.ppy.sh/main-menu/2026-halloween-fanart-submissions@2x.png successfully completed!
+2026-09-06 15:07:24 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:24 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:24 [verbose]: GetSomsAiStateRequest finished with response size of 1 178 bytes
+2026-09-06 15:07:25 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/users/1500000004/avatar successfully completed!
+2026-09-06 15:07:26 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:26 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:26 [verbose]: GetSomsAiStateRequest finished with response size of 1 178 bytes
+2026-09-06 15:07:28 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:29 [verbose]: GetSomsAiStateRequest finished with response size of 1 178 bytes
+2026-09-06 15:07:30 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:30 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:30 [verbose]: GetSomsAiStateRequest finished with response size of 1 178 bytes
+2026-09-06 15:07:32 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:32 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:32 [verbose]: GetSomsAiStateRequest finished with response size of 1 178 bytes
+2026-09-06 15:07:34 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:34 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:34 [verbose]: GetSomsAiStateRequest finished with response size of 1 178 bytes
+2026-09-06 15:07:36 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:36 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:36 [verbose]: GetSomsAiStateRequest finished with response size of 1 178 bytes
+2026-09-06 15:07:38 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:38 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:38 [verbose]: GetSomsAiStateRequest finished with response size of 1 298 bytes
+2026-09-06 15:07:40 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:40 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:40 [verbose]: GetSomsAiStateRequest finished with response size of 1 298 bytes
+2026-09-06 15:07:41 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.ApplySomsAiActionRequest
+2026-09-06 15:07:41 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/actions successfully completed!
+2026-09-06 15:07:41 [verbose]: ApplySomsAiActionRequest finished with response size of 8 715 bytes
+2026-09-06 15:07:41 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:41 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:41 [verbose]: GetSomsAiStateRequest finished with response size of 8 715 bytes
+2026-09-06 15:07:42 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/users/1500000004/avatar successfully completed!
+2026-09-06 15:07:42 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:42 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:42 [verbose]: GetSomsAiStateRequest finished with response size of 8 715 bytes
+2026-09-06 15:07:44 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:44 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:44 [verbose]: GetSomsAiStateRequest finished with response size of 8 838 bytes
+2026-09-06 15:07:44 [verbose]: Performing request osu.Game.Online.API.Requests.GetUsersRequest
+2026-09-06 15:07:45 [verbose]: Performing request osu.Game.Online.API.Requests.GetUsersRequest
+2026-09-06 15:07:45 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/?ids[]=1500000005 successfully completed!
+2026-09-06 15:07:45 [verbose]: GetUsersRequest finished with response size of 3 434 bytes
+2026-09-06 15:07:45 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/?ids[]=1500000006&ids[]=1500000000&ids[]=1500000004 successfully completed!
+2026-09-06 15:07:45 [verbose]: GetUsersRequest finished with response size of 12 326 bytes
+2026-09-06 15:07:45 [verbose]: Performing request osu.Game.Online.API.Requests.GetBeatmapsRequest
+2026-09-06 15:07:45 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/beatmaps/?ids[]=2250670 successfully completed!
+2026-09-06 15:07:45 [verbose]: GetBeatmapsRequest finished with response size of 2 992 bytes
+2026-09-06 15:07:45 [verbose]: Performing request osu.Game.Online.API.Requests.GetBeatmapsRequest
+2026-09-06 15:07:45 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/beatmaps/?ids[]=2250670 successfully completed!
+2026-09-06 15:07:45 [verbose]: GetBeatmapsRequest finished with response size of 2 992 bytes
+2026-09-06 15:07:45 [verbose]: Performing request osu.Game.Online.API.Requests.DownloadBeatmapSetRequest
+2026-09-06 15:07:46 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:46 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:46 [verbose]: GetSomsAiStateRequest finished with response size of 8 838 bytes
+2026-09-06 15:07:48 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:48 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:48 [verbose]: GetSomsAiStateRequest finished with response size of 8 722 bytes
+2026-09-06 15:07:49 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/beatmapsets/1075607/download?noVideo=1 successfully completed!
+2026-09-06 15:07:50 [verbose]: Performing request osu.Game.Online.API.Requests.GetBeatmapRequest
+2026-09-06 15:07:50 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/beatmaps/lookup successfully completed!
+2026-09-06 15:07:50 [verbose]: GetBeatmapRequest finished with response size of 2 977 bytes
+2026-09-06 15:07:50 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:50 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:50 [verbose]: GetSomsAiStateRequest finished with response size of 8 722 bytes
+2026-09-06 15:07:52 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:52 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:52 [verbose]: GetSomsAiStateRequest finished with response size of 8 722 bytes
+2026-09-06 15:07:54 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:54 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:54 [verbose]: GetSomsAiStateRequest finished with response size of 8 727 bytes
+2026-09-06 15:07:56 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:56 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:56 [verbose]: GetSomsAiStateRequest finished with response size of 8 727 bytes
+2026-09-06 15:07:56 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.ApplySomsAiActionRequest
+2026-09-06 15:07:56 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/actions successfully completed!
+2026-09-06 15:07:56 [verbose]: ApplySomsAiActionRequest finished with response size of 8 740 bytes
+2026-09-06 15:07:57 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:57 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:57 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:07:58 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:07:58 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:07:58 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:00 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:00 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:00 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:02 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:02 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:02 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:04 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:04 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:04 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:06 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:08:06 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:06 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:06 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:08 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:08 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:08 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:10 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:10 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:10 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:12 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:12 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:12 [verbose]: Performing request osu.Game.Online.API.Requests.ChatAckRequest
+2026-09-06 15:08:12 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/ack successfully completed!
+2026-09-06 15:08:12 [verbose]: ChatAckRequest finished with response size of 15 bytes
+2026-09-06 15:08:14 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:14 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:14 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:16 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:16 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:16 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:18 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:19 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:19 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:20 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:20 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:20 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:22 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:22 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:22 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:24 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:28 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:28 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:31 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:31 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:32 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:33 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:33 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:34 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:34 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:34 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:36 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:39 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:39 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:40 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:42 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:42 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:42 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:42 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:42 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:44 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:51 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:51 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:52 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:56 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/private/somsai/state?ruleset_id=0&variant_id=0 successfully completed!
+2026-09-06 15:08:56 [verbose]: GetSomsAiStateRequest finished with response size of 8 740 bytes
+2026-09-06 15:08:56 [verbose]: Performing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest
+2026-09-06 15:08:57 [verbose]: Failing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest (System.OperationCanceledException: Request cancelled)

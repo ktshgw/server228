@@ -1,0 +1,337 @@
+----------------------------------------------------------
+runtime Log (LogLevel: Verbose)
+Running soms-test-B6A7B47EE9CFFC660F2A75B4 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:39:20 [verbose]: Handling arguments, skipping velopack setup.
+2026-09-06 15:39:21 [verbose]: [NVAPI] Threaded optimizations set to "OGL_THREAD_CONTROL_DEFAULT"!
+2026-09-06 15:39:21 [verbose]: Starting legacy IPC provider...
+2026-09-06 15:39:21 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 15:39:21 [verbose]: 🖼️ Configuration renderer choice: Automatic
+2026-09-06 15:39:21 [verbose]: 🖼️ Renderer fallback order: [ Direct3D 11, Direct3D 11 (Experimental), OpenGL, Vulkan (Experimental) ]
+2026-09-06 15:39:21 [verbose]: 🖼️ Initialising "Veldrid" renderer with "Direct3D11" surface
+2026-09-06 15:39:21 [verbose]: SDL3 Initialized
+2026-09-06 15:39:21 [verbose]: SDL3 Version: 3.5.0
+2026-09-06 15:39:21 [verbose]: SDL3 Revision: SDL-3.5.0-f0e99e7
+2026-09-06 15:39:21 [verbose]: SDL3 Video driver: windows
+2026-09-06 15:39:22 [verbose]: Updated display mode to desktop resolution: 1920x1080@143,98, SDL_PIXELFORMAT_XRGB8888
+2026-09-06 15:39:22 [verbose]: Direct3D 11 Initialized
+2026-09-06 15:39:22 [verbose]: Direct3D 11 Feature Level:           11.1
+2026-09-06 15:39:22 [verbose]: Direct3D 11 Adapter:                 NVIDIA GeForce RTX 4060
+2026-09-06 15:39:22 [verbose]: Direct3D 11 Dedicated Video Memory:  7957 MB
+2026-09-06 15:39:22 [verbose]: Direct3D 11 Dedicated System Memory: 0 MB
+2026-09-06 15:39:22 [verbose]: Direct3D 11 Shared System Memory:    16346 MB
+2026-09-06 15:39:22 [verbose]: UseStructuredBuffers: True
+2026-09-06 15:39:22 [verbose]: 🖼️ Renderer initialised!
+2026-09-06 15:39:22 [verbose]: Host execution state changed to Running
+2026-09-06 15:39:22 [verbose]: Execution mode changed to MultiThreaded
+2026-09-06 15:39:22 [verbose]: Attempting local BassWasapi initialisation
+2026-09-06 15:39:22 [verbose]: Initialising BassWasapi for device -1...success!
+2026-09-06 15:39:22 [verbose]: 🔈 BASS initialised
+2026-09-06 15:39:22 [verbose]: BASS version:           2.4.17.48
+2026-09-06 15:39:22 [verbose]: BASS FX version:        2.4.12.16
+2026-09-06 15:39:22 [verbose]: BASS MIX version:       2.4.12.10
+2026-09-06 15:39:22 [verbose]: Device:                 Default
+2026-09-06 15:39:22 [verbose]: Driver:
+2026-09-06 15:39:22 [verbose]: Device period length:   0
+2026-09-06 15:39:22 [verbose]: Device buffer length:   10 ms
+2026-09-06 15:39:22 [verbose]: Update period:          5 ms
+2026-09-06 15:39:22 [verbose]: Playback buffer length: 100 ms
+2026-09-06 15:39:22 [verbose]: Beginning realm file store cleanup
+2026-09-06 15:39:22 [verbose]: Finished realm file store cleanup (0 of 0 deleted)
+2026-09-06 15:39:23 [verbose]: Opened realm "E:\333\pythonEPTA\SERVAK\test-clients\profile-2\client.realm" at version 51
+2026-09-06 15:39:23 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 15:39:23 [verbose]: 🖍️ Shader Texture2D/Texture loaded from cache!
+2026-09-06 15:39:23 [verbose]: 🖍️ Shader Texture2D/CircularProgress loaded from cache!
+2026-09-06 15:39:23 [verbose]: Updated display mode to desktop resolution: 1920x1080@143,98, SDL_PIXELFORMAT_XRGB8888
+2026-09-06 15:39:24 [verbose]: Loading FPSCounter...
+2026-09-06 15:39:24 [verbose]: Loaded FPSCounter!
+2026-09-06 15:39:24 [verbose]: Loading OsuLogo...
+2026-09-06 15:39:24 [verbose]: Texture -'s upload queue is large (100)
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/TriangleBorder loaded from cache!
+2026-09-06 15:39:24 [verbose]: Loaded OsuLogo!
+2026-09-06 15:39:24 [verbose]: Loading LocalUserStatisticsProvider...
+2026-09-06 15:39:24 [verbose]: 📺 OsuScreenStack#644(depth:1) loading Loader#514
+2026-09-06 15:39:24 [verbose]: Loaded LocalUserStatisticsProvider!
+2026-09-06 15:39:24 [verbose]: Loading DifficultyRecommender...
+2026-09-06 15:39:24 [verbose]: 📺 OsuScreenStack#644(depth:1) entered Loader#514
+2026-09-06 15:39:24 [verbose]: Loaded DifficultyRecommender!
+2026-09-06 15:39:24 [verbose]: Loading UserStatisticsWatcher...
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/Blur loaded from cache!
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture3D/Texture loaded from cache!
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/FastCircle loaded from cache!
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/ArgonBarPath loaded from cache!
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/ArgonBarPathBackground loaded from cache!
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/SaturationSelectorBackground loaded from cache!
+2026-09-06 15:39:24 [verbose]: Loaded UserStatisticsWatcher!
+2026-09-06 15:39:24 [verbose]: Loading Toolbar...
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/HueSelectorBackground loaded from cache!
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader LogoAnimation/LogoAnimation loaded from cache!
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/SpinnerGlow loaded from cache!
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader CursorTrail/Texture loaded from cache!
+2026-09-06 15:39:24 [verbose]: Texture -'s upload queue is large (200)
+2026-09-06 15:39:24 [verbose]: Texture -'s upload queue is large (300)
+2026-09-06 15:39:24 [verbose]: Texture -'s upload queue is large (400)
+2026-09-06 15:39:24 [verbose]: Texture -'s upload queue is large (500)
+2026-09-06 15:39:24 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:39:24 [verbose]: Texture -'s upload queue is large (600)
+2026-09-06 15:39:24 [verbose]: Loaded Toolbar!
+2026-09-06 15:39:24 [verbose]: Loading VolumeOverlay...
+2026-09-06 15:39:24 [verbose]: 🖍️ Shader Texture2D/Grayscale loaded from cache!
+2026-09-06 15:39:24 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:39:24 [verbose]: Loaded VolumeOverlay!
+2026-09-06 15:39:24 [verbose]: Loading OnScreenDisplay...
+2026-09-06 15:39:24 [verbose]: Texture 's upload queue is large (200)
+2026-09-06 15:39:24 [verbose]: Loaded OnScreenDisplay!
+2026-09-06 15:39:24 [verbose]: Loading NotificationOverlay...
+2026-09-06 15:39:24 [verbose]: Texture 's upload queue is large (300)
+2026-09-06 15:39:24 [verbose]: Loaded NotificationOverlay!
+2026-09-06 15:39:24 [verbose]: Loading LegacyImportManager...
+2026-09-06 15:39:24 [verbose]: Loaded LegacyImportManager!
+2026-09-06 15:39:24 [verbose]: Loading ScreenshotManager...
+2026-09-06 15:39:24 [verbose]: Loaded ScreenshotManager!
+2026-09-06 15:39:24 [verbose]: Loading VelopackUpdateManager...
+2026-09-06 15:39:24 [verbose]: Loaded VelopackUpdateManager!
+2026-09-06 15:39:24 [verbose]: VelopackUpdateManager: Update check failed with error (No VelopackLocator has been set. Either call VelopackApp.Build() or provide IVelopackLocator as a method parameter.)
+2026-09-06 15:39:24 [verbose]: Loading FirstRunSetupOverlay...
+2026-09-06 15:39:24 [verbose]: Loaded FirstRunSetupOverlay!
+2026-09-06 15:39:24 [verbose]: Loading ManageCollectionsDialog...
+2026-09-06 15:39:25 [verbose]: Texture 's upload queue is large (400)
+2026-09-06 15:39:25 [verbose]: Loaded ManageCollectionsDialog!
+2026-09-06 15:39:25 [verbose]: Loading BeatmapListingOverlay...
+2026-09-06 15:39:25 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:39:25 [verbose]: Texture -'s upload queue is large (100)
+2026-09-06 15:39:25 [verbose]: Loaded BeatmapListingOverlay!
+2026-09-06 15:39:25 [verbose]: Loading DashboardOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded DashboardOverlay!
+2026-09-06 15:39:25 [verbose]: Loading NewsOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded NewsOverlay!
+2026-09-06 15:39:25 [verbose]: Loading RankingsOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded RankingsOverlay!
+2026-09-06 15:39:25 [verbose]: Loading ChannelManager...
+2026-09-06 15:39:25 [verbose]: Loaded ChannelManager!
+2026-09-06 15:39:25 [verbose]: Loading ChatOverlay...
+2026-09-06 15:39:25 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:39:25 [verbose]: Loaded ChatOverlay!
+2026-09-06 15:39:25 [verbose]: Loading MessageNotifier...
+2026-09-06 15:39:25 [verbose]: Loaded MessageNotifier!
+2026-09-06 15:39:25 [verbose]: Loading SettingsOverlay...
+2026-09-06 15:39:25 [verbose]: Texture 's upload queue is large (200)
+2026-09-06 15:39:25 [verbose]: Cannot find SentryLogger. It might have been disposed.
+2026-09-06 15:39:25 [verbose]: Current channel changed to osu!
+2026-09-06 15:39:25 [verbose]: Loaded SettingsOverlay!
+2026-09-06 15:39:25 [verbose]: Loading ChangelogOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded ChangelogOverlay!
+2026-09-06 15:39:25 [verbose]: Loading UserProfileOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded UserProfileOverlay!
+2026-09-06 15:39:25 [verbose]: Loading BeatmapSetOverlay...
+2026-09-06 15:39:25 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:39:25 [verbose]: Loaded BeatmapSetOverlay!
+2026-09-06 15:39:25 [verbose]: Loading WikiOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded WikiOverlay!
+2026-09-06 15:39:25 [verbose]: Loading SkinEditorOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded SkinEditorOverlay!
+2026-09-06 15:39:25 [verbose]: Loading LoginOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded LoginOverlay!
+2026-09-06 15:39:25 [verbose]: Loading NowPlayingOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded NowPlayingOverlay!
+2026-09-06 15:39:25 [verbose]: Loading AccountCreationOverlay...
+2026-09-06 15:39:25 [verbose]: 📺 ScreenStack#627(depth:1) scheduling push ScreenWelcome#314
+2026-09-06 15:39:25 [verbose]: Loaded AccountCreationOverlay!
+2026-09-06 15:39:25 [verbose]: Loading DialogOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded DialogOverlay!
+2026-09-06 15:39:25 [verbose]: Loading MedalOverlay...
+2026-09-06 15:39:25 [verbose]: Loaded MedalOverlay!
+2026-09-06 15:39:25 [verbose]: Loading BackgroundDataStoreProcessor...
+2026-09-06 15:39:25 [verbose]: Beginning background data store processing..
+2026-09-06 15:39:25 [verbose]: Querying for beatmaps with missing star ratings...
+2026-09-06 15:39:25 [verbose]: Querying for beatmap sets to reprocess...
+2026-09-06 15:39:25 [verbose]: Querying for beatmaps with missing hitobject counts to reprocess...
+2026-09-06 15:39:25 [verbose]: Loaded BackgroundDataStoreProcessor!
+2026-09-06 15:39:25 [verbose]: Loading RealmDetachedBeatmapStore...
+2026-09-06 15:39:25 [verbose]: Querying for scores to reprocess...
+2026-09-06 15:39:25 [verbose]: Querying for scores that need mod multiplier upgrade...
+2026-09-06 15:39:25 [verbose]: Found 0 scores which require mod multiplier upgrade.
+2026-09-06 15:39:25 [verbose]: Querying for scores that need total score conversion...
+2026-09-06 15:39:25 [verbose]: Found 0 scores which require total score conversion.
+2026-09-06 15:39:25 [verbose]: Querying for scores that need rank upgrades...
+2026-09-06 15:39:25 [verbose]: Found 0 scores which require rank upgrades.
+2026-09-06 15:39:25 [verbose]: Loaded RealmDetachedBeatmapStore!
+2026-09-06 15:39:25 [verbose]: Loading QueueController...
+2026-09-06 15:39:25 [verbose]: Loaded QueueController!
+2026-09-06 15:39:25 [verbose]: Querying for beatmap sets that contain missing submission/rank date...
+2026-09-06 15:39:25 [verbose]: Skipping user tag population because the local metadata source hasn't been updated since the last time user tags were checked (2026-09-06 00:00:00)
+2026-09-06 15:39:25 [verbose]: Finished background data store processing!
+2026-09-06 15:39:26 [verbose]: 📺 OsuScreenStack#644(depth:1) suspended Loader#514 (waiting on IntroTriangles#437)
+2026-09-06 15:39:26 [verbose]: 📺 OsuScreenStack#644(depth:2) entered IntroTriangles#437
+2026-09-06 15:39:26 [verbose]: 📺 BackgroundScreenStack#651(depth:1) loading BackgroundScreenDefault#431
+2026-09-06 15:39:26 [verbose]: Game-wide working beatmap updated to cYsmix - triangles (peppy) [peppy]
+2026-09-06 15:39:26 [verbose]: Cannot find SentryLogger. It might have been disposed.
+2026-09-06 15:39:26 [verbose]: 📺 BackgroundScreenStack#651(depth:1) entered BackgroundScreenDefault#431
+2026-09-06 15:39:26 [verbose]: 🌅 Global background change queued
+2026-09-06 15:39:26 [verbose]: 🌅 Global background loading
+2026-09-06 15:39:29 [verbose]: 📺 OsuScreenStack#644(depth:2) suspended IntroTriangles#437 (waiting on MainMenu#385)
+2026-09-06 15:39:29 [verbose]: 📺 OsuScreenStack#644(depth:3) entered MainMenu#385
+2026-09-06 15:39:29 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:39:29 [verbose]: ⚠️
+2026-09-06 15:39:29 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 15:39:32 [verbose]: ButtonSystem's state changed from Initial to TopLevel
+2026-09-06 15:39:33 [verbose]: ButtonSystem's state changed from TopLevel to Play
+2026-09-06 15:39:34 [verbose]: ButtonSystem's state changed from Play to Multi
+2026-09-06 15:39:35 [verbose]: 📺 OsuScreenStack#644(depth:3) suspended MainMenu#385 (waiting on ScreenIntro#596)
+2026-09-06 15:39:35 [verbose]: ButtonSystem's state changed from Multi to EnteringMode
+2026-09-06 15:39:35 [verbose]: 📺 OsuScreenStack#644(depth:4) loading ScreenIntro#596
+2026-09-06 15:39:35 [verbose]: 📺 OsuScreenStack#644(depth:4) entered ScreenIntro#596
+2026-09-06 15:39:35 [verbose]: 📺 BackgroundScreenStack#651(depth:2) loading MatchmakingBackgroundScreen#290
+2026-09-06 15:39:35 [verbose]: 📺 BackgroundScreenStack#651(depth:2) suspended BackgroundScreenDefault#431 (waiting on MatchmakingBackgroundScreen#290)
+2026-09-06 15:39:35 [verbose]: 📺 BackgroundScreenStack#651(depth:2) entered MatchmakingBackgroundScreen#290
+2026-09-06 15:39:37 [verbose]: 📺 OsuScreenStack#644(depth:4) suspended ScreenIntro#596 (waiting on ScreenQueue#435)
+2026-09-06 15:39:37 [verbose]: 📺 OsuScreenStack#644(depth:5) loading ScreenQueue#435
+2026-09-06 15:39:37 [verbose]: 🖍️ Shader Texture2D/Path loaded from cache!
+2026-09-06 15:39:37 [verbose]: 🖍️ Shader PathPrepass/PathPrepass loaded from cache!
+2026-09-06 15:39:37 [verbose]: 📺 OsuScreenStack#644(depth:5) entered ScreenQueue#435
+2026-09-06 15:39:38 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:39:38 [verbose]: Texture 's upload queue is large (200)
+2026-09-06 15:41:17 [verbose]: 📺 OsuScreenStack#644(depth:5) suspended ScreenQueue#435 (waiting on SomsTeamRankedPlayScreen#402)
+2026-09-06 15:41:17 [verbose]: 📺 OsuScreenStack#644(depth:6) loading SomsTeamRankedPlayScreen#402
+2026-09-06 15:41:17 [verbose]: 📺 OsuScreenStack#644(depth:6) entered SomsTeamRankedPlayScreen#402
+2026-09-06 15:41:17 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:41:17 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:41:17 [verbose]: A PreviewTrack was created without a containing IPreviewTrackOwner. An owner should be added for correct behaviour.
+2026-09-06 15:41:17 [verbose]: A PreviewTrack was created without a containing IPreviewTrackOwner. An owner should be added for correct behaviour.
+2026-09-06 15:41:18 [verbose]: A PreviewTrack was created without a containing IPreviewTrackOwner. An owner should be added for correct behaviour.
+2026-09-06 15:41:18 [verbose]: A PreviewTrack was created without a containing IPreviewTrackOwner. An owner should be added for correct behaviour.
+2026-09-06 15:41:18 [verbose]: A PreviewTrack was created without a containing IPreviewTrackOwner. An owner should be added for correct behaviour.
+2026-09-06 15:41:21 [verbose]: Invalidating working beatmap cache for Camellia - Ryuuseigun (Atlust) [2048]
+2026-09-06 15:41:21 [verbose]: Invalidating working beatmap cache for Camellia - Ryuuseigun (Atlust) [Extra]
+2026-09-06 15:41:21 [verbose]: Invalidating working beatmap cache for Camellia - Ryuuseigun (Atlust) [Hatsune Miku's Insane]
+2026-09-06 15:41:32 [verbose]: Game-wide working beatmap updated to RADWIMPS - Hyperventilation (seros) [Agatsu's Expert]
+2026-09-06 15:42:16 [verbose]: Invalidating working beatmap cache for -45 - Total Eclipse of The Sun (Matrix) [die]
+2026-09-06 15:42:16 [verbose]: Invalidating working beatmap cache for -45 - Total Eclipse of The Sun (Matrix) [Delis' Extra]
+2026-09-06 15:42:16 [verbose]: Invalidating working beatmap cache for -45 - Total Eclipse of The Sun (Matrix) [Hard]
+2026-09-06 15:42:16 [verbose]: Invalidating working beatmap cache for -45 - Total Eclipse of The Sun (Matrix) [Mirash's Extra]
+2026-09-06 15:42:16 [verbose]: Invalidating working beatmap cache for -45 - Total Eclipse of The Sun (Matrix) [PandaHero's Insane]
+2026-09-06 15:42:29 [verbose]: Game-wide working beatmap updated to -45 - Total Eclipse of The Sun (Matrix) [Delis' Extra]
+2026-09-06 15:42:29 [verbose]: 📺 OsuScreenStack#644(depth:6) suspended SomsTeamRankedPlayScreen#402 (waiting on MultiplayerPlayerLoader#346)
+2026-09-06 15:42:29 [verbose]: 📺 OsuScreenStack#644(depth:7) loading MultiplayerPlayerLoader#346
+2026-09-06 15:42:29 [verbose]: 📺 OsuScreenStack#644(depth:7) entered MultiplayerPlayerLoader#346
+2026-09-06 15:42:29 [verbose]: 📺 BackgroundScreenStack#651(depth:3) loading BackgroundScreenBeatmap#268
+2026-09-06 15:42:29 [verbose]: Texture -'s upload queue is large (100)
+2026-09-06 15:42:29 [verbose]: ⚠️ Your game volume is too low to hear anything! Click here to restore it.
+2026-09-06 15:42:29 [verbose]: 📺 BackgroundScreenStack#651(depth:3) suspended MatchmakingBackgroundScreen#290 (waiting on BackgroundScreenBeatmap#268)
+2026-09-06 15:42:29 [verbose]: 📺 BackgroundScreenStack#651(depth:3) entered BackgroundScreenBeatmap#268
+2026-09-06 15:42:30 [verbose]: Score submission token retrieved (454)
+2026-09-06 15:42:33 [verbose]: Starting high performance session
+2026-09-06 15:42:34 [verbose]: 📺 OsuScreenStack#644(depth:7) suspended MultiplayerPlayerLoader#346 (waiting on ScreenGameplay#367)
+2026-09-06 15:42:34 [verbose]: 📺 OsuScreenStack#644(depth:8) entered ScreenGameplay#367
+2026-09-06 15:42:34 [verbose]: GameplayClockContainer seeking to -990
+2026-09-06 15:42:38 [verbose]: GameplayClockContainer seeking to -990
+2026-09-06 15:42:39 [verbose]: GameplayClockContainer started via call to StartGameplayClock
+2026-09-06 15:43:09 [verbose]: No hits registered, skipping score submission
+2026-09-06 15:43:09 [verbose]: 📺 OsuScreenStack#644(depth:7) exit from ScreenGameplay#367
+2026-09-06 15:43:09 [verbose]: 📺 OsuScreenStack#644(depth:7) resume to MultiplayerPlayerLoader#346
+2026-09-06 15:43:09 [verbose]: Ending high performance session
+2026-09-06 15:43:09 [verbose]: 📺 BackgroundScreenStack#651(depth:2) exit from BackgroundScreenBeatmap#268
+2026-09-06 15:43:09 [verbose]: 📺 BackgroundScreenStack#651(depth:2) resume to MatchmakingBackgroundScreen#290
+2026-09-06 15:43:09 [verbose]: 📺 OsuScreenStack#644(depth:6) exit from MultiplayerPlayerLoader#346
+2026-09-06 15:43:09 [verbose]: 📺 OsuScreenStack#644(depth:6) resume to SomsTeamRankedPlayScreen#402
+2026-09-06 15:43:12 [verbose]: DialogOverlay: Showing dialog ConfirmExitMultiplayerMatchDialog
+2026-09-06 15:43:12 [verbose]: Focus contention triggered by DialogOverlay.
+2026-09-06 15:43:13 [verbose]: DialogOverlay: Dismissing dialog ConfirmExitMultiplayerMatchDialog
+2026-09-06 15:43:13 [verbose]: 📺 OsuScreenStack#644(depth:5) exit from SomsTeamRankedPlayScreen#402
+2026-09-06 15:43:13 [verbose]: 📺 OsuScreenStack#644(depth:5) resume to ScreenQueue#435
+2026-09-06 15:43:38 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:45:03 [verbose]: Game-wide working beatmap updated to Nashimoto Ui - AaAaAaAAaAaAAa (Sotarks) [Kowari's HaRD]
+2026-09-06 15:45:42 [verbose]: 📺 OsuScreenStack#644(depth:4) exit from ScreenQueue#435
+2026-09-06 15:45:42 [verbose]: 📺 OsuScreenStack#644(depth:4) resume to ScreenIntro#596
+2026-09-06 15:45:42 [verbose]: 📺 BackgroundScreenStack#651(depth:1) exit from MatchmakingBackgroundScreen#290
+2026-09-06 15:45:42 [verbose]: 📺 BackgroundScreenStack#651(depth:1) resume to BackgroundScreenDefault#431
+2026-09-06 15:45:42 [verbose]: 📺 OsuScreenStack#644(depth:3) exit from ScreenIntro#596
+2026-09-06 15:45:42 [verbose]: 📺 OsuScreenStack#644(depth:3) resume to MainMenu#385
+2026-09-06 15:45:42 [verbose]: 🌅 Global background change queued
+2026-09-06 15:45:42 [verbose]: 🌅 Global background change queued
+2026-09-06 15:45:42 [verbose]: ButtonSystem's state changed from EnteringMode to TopLevel
+2026-09-06 15:45:43 [verbose]: 🌅 Global background loading
+2026-09-06 15:45:43 [verbose]: ButtonSystem's state changed from TopLevel to Play
+2026-09-06 15:45:43 [verbose]: ButtonSystem's state changed from Play to Multi
+2026-09-06 15:45:44 [verbose]: 📺 OsuScreenStack#644(depth:3) suspended MainMenu#385 (waiting on Multiplayer#317)
+2026-09-06 15:45:44 [verbose]: ButtonSystem's state changed from Multi to EnteringMode
+2026-09-06 15:45:44 [verbose]: 📺 OsuScreenStack#644(depth:4) loading Multiplayer#317
+2026-09-06 15:45:44 [verbose]: 📺 OsuScreenStack#644(depth:4) entered Multiplayer#317
+2026-09-06 15:45:44 [verbose]: 📺 OnlinePlaySubScreenStack#456(depth:1) loading Lounge#594
+2026-09-06 15:45:44 [verbose]: 📺 BackgroundScreenStack#651(depth:2) loading BackgroundScreenBlack#145
+2026-09-06 15:45:44 [verbose]: 📺 BackgroundScreenStack#651(depth:2) suspended BackgroundScreenDefault#431 (waiting on BackgroundScreenBlack#145)
+2026-09-06 15:45:44 [verbose]: 📺 BackgroundScreenStack#651(depth:2) entered BackgroundScreenBlack#145
+2026-09-06 15:45:44 [verbose]: 📺 OnlinePlaySubScreenStack#456(depth:1) entered Lounge#594
+2026-09-06 15:45:44 [verbose]: Polling adjusted (listing: 15000)
+2026-09-06 15:45:44 [verbose]: 📺 BackgroundScreenStack#487(depth:1) loading LoungeBackgroundScreen#264
+2026-09-06 15:45:44 [verbose]: Polling adjusted (listing: 15000)
+2026-09-06 15:45:44 [verbose]: 📺 BackgroundScreenStack#487(depth:1) entered LoungeBackgroundScreen#264
+2026-09-06 15:45:44 [verbose]: 📺 BackgroundScreenStack#651(depth:1) exit from BackgroundScreenBlack#145
+2026-09-06 15:45:44 [verbose]: 📺 BackgroundScreenStack#651(depth:1) resume to BackgroundScreenDefault#431
+2026-09-06 15:45:44 [verbose]: 📺 OsuScreenStack#644(depth:3) exit from Multiplayer#317
+2026-09-06 15:45:44 [verbose]: 📺 OsuScreenStack#644(depth:3) resume to MainMenu#385
+2026-09-06 15:45:44 [verbose]: 🌅 Global background change queued
+2026-09-06 15:45:44 [verbose]: ButtonSystem's state changed from EnteringMode to TopLevel
+2026-09-06 15:45:45 [verbose]: 🌅 Global background loading
+2026-09-06 15:45:45 [verbose]: ButtonSystem's state changed from TopLevel to Play
+2026-09-06 15:45:45 [verbose]: ButtonSystem's state changed from Play to Multi
+2026-09-06 15:45:46 [verbose]: 📺 OsuScreenStack#644(depth:3) suspended MainMenu#385 (waiting on Multiplayer#393)
+2026-09-06 15:45:46 [verbose]: ButtonSystem's state changed from Multi to EnteringMode
+2026-09-06 15:45:46 [verbose]: 📺 OsuScreenStack#644(depth:4) loading Multiplayer#393
+2026-09-06 15:45:46 [verbose]: 📺 OsuScreenStack#644(depth:4) entered Multiplayer#393
+2026-09-06 15:45:46 [verbose]: 📺 OnlinePlaySubScreenStack#414(depth:1) loading Lounge#244
+2026-09-06 15:45:46 [verbose]: 📺 BackgroundScreenStack#651(depth:2) loading BackgroundScreenBlack#383
+2026-09-06 15:45:46 [verbose]: 📺 BackgroundScreenStack#651(depth:2) suspended BackgroundScreenDefault#431 (waiting on BackgroundScreenBlack#383)
+2026-09-06 15:45:46 [verbose]: 📺 BackgroundScreenStack#651(depth:2) entered BackgroundScreenBlack#383
+2026-09-06 15:45:46 [verbose]: 📺 OnlinePlaySubScreenStack#414(depth:1) entered Lounge#244
+2026-09-06 15:45:46 [verbose]: Polling adjusted (listing: 15000)
+2026-09-06 15:45:46 [verbose]: 📺 BackgroundScreenStack#417(depth:1) loading LoungeBackgroundScreen#428
+2026-09-06 15:45:46 [verbose]: Polling adjusted (listing: 15000)
+2026-09-06 15:45:46 [verbose]: 📺 BackgroundScreenStack#417(depth:1) entered LoungeBackgroundScreen#428
+2026-09-06 15:45:47 [verbose]: 📺 BackgroundScreenStack#651(depth:1) exit from BackgroundScreenBlack#383
+2026-09-06 15:45:47 [verbose]: 📺 BackgroundScreenStack#651(depth:1) resume to BackgroundScreenDefault#431
+2026-09-06 15:45:47 [verbose]: 📺 OsuScreenStack#644(depth:3) exit from Multiplayer#393
+2026-09-06 15:45:47 [verbose]: 📺 OsuScreenStack#644(depth:3) resume to MainMenu#385
+2026-09-06 15:45:47 [verbose]: 🌅 Global background change queued
+2026-09-06 15:45:47 [verbose]: ButtonSystem's state changed from EnteringMode to TopLevel
+2026-09-06 15:45:47 [verbose]: 🌅 Global background loading
+2026-09-06 15:45:47 [verbose]: ButtonSystem's state changed from TopLevel to Edit
+2026-09-06 15:45:48 [verbose]: ButtonSystem's state changed from Edit to TopLevel
+2026-09-06 15:45:48 [verbose]: ButtonSystem's state changed from TopLevel to Play
+2026-09-06 15:45:49 [verbose]: ButtonSystem's state changed from Play to Multi
+2026-09-06 15:45:50 [verbose]: 📺 OsuScreenStack#644(depth:3) suspended MainMenu#385 (waiting on ScreenIntro#135)
+2026-09-06 15:45:50 [verbose]: ButtonSystem's state changed from Multi to EnteringMode
+2026-09-06 15:45:50 [verbose]: 📺 OsuScreenStack#644(depth:4) loading ScreenIntro#135
+2026-09-06 15:45:50 [verbose]: 📺 OsuScreenStack#644(depth:4) entered ScreenIntro#135
+2026-09-06 15:45:50 [verbose]: 📺 BackgroundScreenStack#651(depth:2) loading MatchmakingBackgroundScreen#176
+2026-09-06 15:45:50 [verbose]: 📺 BackgroundScreenStack#651(depth:2) suspended BackgroundScreenDefault#431 (waiting on MatchmakingBackgroundScreen#176)
+2026-09-06 15:45:50 [verbose]: 📺 BackgroundScreenStack#651(depth:2) entered MatchmakingBackgroundScreen#176
+2026-09-06 15:45:51 [verbose]: 📺 OsuScreenStack#644(depth:4) suspended ScreenIntro#135 (waiting on ScreenQueue#126)
+2026-09-06 15:45:51 [verbose]: 📺 OsuScreenStack#644(depth:5) loading ScreenQueue#126
+2026-09-06 15:45:51 [verbose]: 📺 OsuScreenStack#644(depth:5) entered ScreenQueue#126
+2026-09-06 15:46:53 [verbose]: Game-wide working beatmap updated to Nekomata Okayu - Dokuhai Swallow (Judge1st) [Deadly Poison]
+2026-09-06 15:48:32 [verbose]: 📺 OsuScreenStack#644(depth:4) exit from ScreenQueue#126
+2026-09-06 15:48:32 [verbose]: 📺 OsuScreenStack#644(depth:4) resume to ScreenIntro#135
+2026-09-06 15:48:32 [verbose]: 📺 BackgroundScreenStack#651(depth:1) exit from MatchmakingBackgroundScreen#176
+2026-09-06 15:48:32 [verbose]: 📺 BackgroundScreenStack#651(depth:1) resume to BackgroundScreenDefault#431
+2026-09-06 15:48:32 [verbose]: 📺 OsuScreenStack#644(depth:3) exit from ScreenIntro#135
+2026-09-06 15:48:32 [verbose]: 📺 OsuScreenStack#644(depth:3) resume to MainMenu#385
+2026-09-06 15:48:32 [verbose]: 🌅 Global background change queued
+2026-09-06 15:48:32 [verbose]: 🌅 Global background change queued
+2026-09-06 15:48:32 [verbose]: ButtonSystem's state changed from EnteringMode to TopLevel
+2026-09-06 15:48:32 [verbose]: DialogOverlay: Showing dialog ConfirmExitDialog
+2026-09-06 15:48:32 [verbose]: Focus contention triggered by DialogOverlay.
+2026-09-06 15:48:33 [verbose]: 🌅 Global background loading
+2026-09-06 15:48:33 [verbose]: DialogOverlay: Dismissing dialog ConfirmExitDialog
+2026-09-06 15:48:33 [verbose]: ButtonSystem's state changed from TopLevel to Exit
+2026-09-06 15:48:33 [verbose]: 📺 OsuScreenStack#644(depth:2) exit from MainMenu#385
+2026-09-06 15:48:33 [verbose]: 📺 OsuScreenStack#644(depth:2) resume to IntroTriangles#437
+2026-09-06 15:48:36 [verbose]: 📺 BackgroundScreenStack#651(depth:0) exit from BackgroundScreenDefault#431
+2026-09-06 15:48:36 [verbose]: 📺 BackgroundScreenStack#651(depth:0) resume to [empty]
+2026-09-06 15:48:36 [verbose]: 📺 OsuScreenStack#644(depth:1) exit from IntroTriangles#437
+2026-09-06 15:48:36 [verbose]: 📺 OsuScreenStack#644(depth:1) resume to Loader#514
+2026-09-06 15:48:36 [verbose]: 📺 OsuScreenStack#644(depth:0) exit from Loader#514
+2026-09-06 15:48:36 [verbose]: 📺 OsuScreenStack#644(depth:0) resume to [empty]
+2026-09-06 15:48:36 [verbose]: Host execution state changed to Stopping
+2026-09-06 15:48:36 [verbose]: Host execution state changed to Stopped

@@ -1,0 +1,198 @@
+----------------------------------------------------------
+runtime Log (LogLevel: Verbose)
+Running soms-test-5EE617829DA6E1DC64155A5E 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:06:20 [verbose]: Handling arguments, skipping velopack setup.
+2026-09-06 15:06:22 [verbose]: [NVAPI] Threaded optimizations set to "OGL_THREAD_CONTROL_DEFAULT"!
+2026-09-06 15:06:22 [verbose]: Starting legacy IPC provider...
+2026-09-06 15:06:22 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 9 more times...
+2026-09-06 15:06:22 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 8 more times...
+2026-09-06 15:06:22 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 7 more times...
+2026-09-06 15:06:23 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 6 more times...
+2026-09-06 15:06:23 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 5 more times...
+2026-09-06 15:06:23 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 4 more times...
+2026-09-06 15:06:23 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 3 more times...
+2026-09-06 15:06:24 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 2 more times...
+2026-09-06 15:06:24 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 1 more times...
+2026-09-06 15:06:24 [verbose]: Operation failed (Access to the path 'C:\Users\Kts\AppData\Roaming\osu\AuthNative.dll' is denied.). Retrying 0 more times...
+2026-09-06 15:06:25 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 15:06:25 [verbose]: 🖼️ Configuration renderer choice: Automatic
+2026-09-06 15:06:25 [verbose]: 🖼️ Renderer fallback order: [ Direct3D 11, Direct3D 11 (Experimental), OpenGL, Vulkan (Experimental) ]
+2026-09-06 15:06:25 [verbose]: 🖼️ Initialising "Veldrid" renderer with "Direct3D11" surface
+2026-09-06 15:06:25 [verbose]: SDL3 Initialized
+2026-09-06 15:06:25 [verbose]: SDL3 Version: 3.5.0
+2026-09-06 15:06:25 [verbose]: SDL3 Revision: SDL-3.5.0-f0e99e7
+2026-09-06 15:06:25 [verbose]: SDL3 Video driver: windows
+2026-09-06 15:06:25 [verbose]: Updated display mode to desktop resolution: 1920x1080@143,98, SDL_PIXELFORMAT_XRGB8888
+2026-09-06 15:06:26 [verbose]: Direct3D 11 Initialized
+2026-09-06 15:06:26 [verbose]: Direct3D 11 Feature Level:           11.1
+2026-09-06 15:06:26 [verbose]: Direct3D 11 Adapter:                 NVIDIA GeForce RTX 4060
+2026-09-06 15:06:26 [verbose]: Direct3D 11 Dedicated Video Memory:  7957 MB
+2026-09-06 15:06:26 [verbose]: Direct3D 11 Dedicated System Memory: 0 MB
+2026-09-06 15:06:26 [verbose]: Direct3D 11 Shared System Memory:    16346 MB
+2026-09-06 15:06:26 [verbose]: UseStructuredBuffers: True
+2026-09-06 15:06:26 [verbose]: 🖼️ Renderer initialised!
+2026-09-06 15:06:26 [verbose]: Host execution state changed to Running
+2026-09-06 15:06:26 [verbose]: Execution mode changed to MultiThreaded
+2026-09-06 15:06:26 [verbose]: Attempting local BassWasapi initialisation
+2026-09-06 15:06:26 [verbose]: Initialising BassWasapi for device -1...success!
+2026-09-06 15:06:26 [verbose]: 🔈 BASS initialised
+2026-09-06 15:06:26 [verbose]: BASS version:           2.4.17.48
+2026-09-06 15:06:26 [verbose]: BASS FX version:        2.4.12.16
+2026-09-06 15:06:26 [verbose]: BASS MIX version:       2.4.12.10
+2026-09-06 15:06:26 [verbose]: Device:                 Default
+2026-09-06 15:06:26 [verbose]: Driver:
+2026-09-06 15:06:26 [verbose]: Device period length:   0
+2026-09-06 15:06:26 [verbose]: Device buffer length:   10 ms
+2026-09-06 15:06:26 [verbose]: Update period:          5 ms
+2026-09-06 15:06:26 [verbose]: Playback buffer length: 100 ms
+2026-09-06 15:06:26 [verbose]: Beginning realm file store cleanup
+2026-09-06 15:06:26 [verbose]: Finished realm file store cleanup (0 of 0 deleted)
+2026-09-06 15:06:26 [verbose]: Opened realm "E:\333\pythonEPTA\SERVAK\test-clients\profile-3\client.realm" at version 51
+2026-09-06 15:06:26 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/Texture loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/CircularProgress loaded from cache!
+2026-09-06 15:06:27 [verbose]: Updated display mode to desktop resolution: 1920x1080@143,98, SDL_PIXELFORMAT_XRGB8888
+2026-09-06 15:06:27 [verbose]: Loading FPSCounter...
+2026-09-06 15:06:27 [verbose]: Loaded FPSCounter!
+2026-09-06 15:06:27 [verbose]: Loading OsuLogo...
+2026-09-06 15:06:27 [verbose]: Texture -'s upload queue is large (100)
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/TriangleBorder loaded from cache!
+2026-09-06 15:06:27 [verbose]: Loaded OsuLogo!
+2026-09-06 15:06:27 [verbose]: Loading LocalUserStatisticsProvider...
+2026-09-06 15:06:27 [verbose]: 📺 OsuScreenStack#193(depth:1) loading Loader#100
+2026-09-06 15:06:27 [verbose]: Loaded LocalUserStatisticsProvider!
+2026-09-06 15:06:27 [verbose]: Loading DifficultyRecommender...
+2026-09-06 15:06:27 [verbose]: 📺 OsuScreenStack#193(depth:1) entered Loader#100
+2026-09-06 15:06:27 [verbose]: Loaded DifficultyRecommender!
+2026-09-06 15:06:27 [verbose]: Loading UserStatisticsWatcher...
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/Blur loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture3D/Texture loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/FastCircle loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/ArgonBarPath loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/ArgonBarPathBackground loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/SaturationSelectorBackground loaded from cache!
+2026-09-06 15:06:27 [verbose]: Loaded UserStatisticsWatcher!
+2026-09-06 15:06:27 [verbose]: Loading Toolbar...
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/HueSelectorBackground loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader LogoAnimation/LogoAnimation loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/SpinnerGlow loaded from cache!
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader CursorTrail/Texture loaded from cache!
+2026-09-06 15:06:27 [verbose]: Texture -'s upload queue is large (200)
+2026-09-06 15:06:27 [verbose]: Texture -'s upload queue is large (300)
+2026-09-06 15:06:27 [verbose]: Texture -'s upload queue is large (400)
+2026-09-06 15:06:27 [verbose]: Texture -'s upload queue is large (500)
+2026-09-06 15:06:27 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:06:27 [verbose]: Loaded Toolbar!
+2026-09-06 15:06:27 [verbose]: Loading VolumeOverlay...
+2026-09-06 15:06:27 [verbose]: 🖍️ Shader Texture2D/Grayscale loaded from cache!
+2026-09-06 15:06:27 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:06:27 [verbose]: Loaded VolumeOverlay!
+2026-09-06 15:06:27 [verbose]: Loading OnScreenDisplay...
+2026-09-06 15:06:28 [verbose]: Texture 's upload queue is large (200)
+2026-09-06 15:06:28 [verbose]: Loaded OnScreenDisplay!
+2026-09-06 15:06:28 [verbose]: Loading NotificationOverlay...
+2026-09-06 15:06:28 [verbose]: Texture 's upload queue is large (300)
+2026-09-06 15:06:28 [verbose]: Loaded NotificationOverlay!
+2026-09-06 15:06:28 [verbose]: Loading LegacyImportManager...
+2026-09-06 15:06:28 [verbose]: Loaded LegacyImportManager!
+2026-09-06 15:06:28 [verbose]: Loading ScreenshotManager...
+2026-09-06 15:06:28 [verbose]: Loaded ScreenshotManager!
+2026-09-06 15:06:28 [verbose]: Loading VelopackUpdateManager...
+2026-09-06 15:06:28 [verbose]: Loaded VelopackUpdateManager!
+2026-09-06 15:06:28 [verbose]: Loading FirstRunSetupOverlay...
+2026-09-06 15:06:28 [verbose]: VelopackUpdateManager: Update check failed with error (No VelopackLocator has been set. Either call VelopackApp.Build() or provide IVelopackLocator as a method parameter.)
+2026-09-06 15:06:28 [verbose]: Loaded FirstRunSetupOverlay!
+2026-09-06 15:06:28 [verbose]: Loading ManageCollectionsDialog...
+2026-09-06 15:06:28 [verbose]: Loaded ManageCollectionsDialog!
+2026-09-06 15:06:28 [verbose]: Loading BeatmapListingOverlay...
+2026-09-06 15:06:28 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:06:28 [verbose]: Texture -'s upload queue is large (100)
+2026-09-06 15:06:28 [verbose]: Loaded BeatmapListingOverlay!
+2026-09-06 15:06:28 [verbose]: Loading DashboardOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded DashboardOverlay!
+2026-09-06 15:06:28 [verbose]: Loading NewsOverlay...
+2026-09-06 15:06:28 [verbose]: Texture -'s upload queue is large (200)
+2026-09-06 15:06:28 [verbose]: Loaded NewsOverlay!
+2026-09-06 15:06:28 [verbose]: Loading RankingsOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded RankingsOverlay!
+2026-09-06 15:06:28 [verbose]: Loading ChannelManager...
+2026-09-06 15:06:28 [verbose]: Loaded ChannelManager!
+2026-09-06 15:06:28 [verbose]: Loading ChatOverlay...
+2026-09-06 15:06:28 [verbose]: Texture -'s upload queue is large (300)
+2026-09-06 15:06:28 [verbose]: Loaded ChatOverlay!
+2026-09-06 15:06:28 [verbose]: Loading MessageNotifier...
+2026-09-06 15:06:28 [verbose]: Loaded MessageNotifier!
+2026-09-06 15:06:28 [verbose]: Loading SettingsOverlay...
+2026-09-06 15:06:28 [verbose]: Current channel changed to osu!
+2026-09-06 15:06:28 [verbose]: Cannot find SentryLogger. It might have been disposed.
+2026-09-06 15:06:28 [verbose]: Texture -'s upload queue is large (400)
+2026-09-06 15:06:28 [verbose]: Loaded SettingsOverlay!
+2026-09-06 15:06:28 [verbose]: Loading ChangelogOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded ChangelogOverlay!
+2026-09-06 15:06:28 [verbose]: Loading UserProfileOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded UserProfileOverlay!
+2026-09-06 15:06:28 [verbose]: Loading BeatmapSetOverlay...
+2026-09-06 15:06:28 [verbose]: Texture -'s upload queue is large (500)
+2026-09-06 15:06:28 [verbose]: Loaded BeatmapSetOverlay!
+2026-09-06 15:06:28 [verbose]: Loading WikiOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded WikiOverlay!
+2026-09-06 15:06:28 [verbose]: Loading SkinEditorOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded SkinEditorOverlay!
+2026-09-06 15:06:28 [verbose]: Loading LoginOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded LoginOverlay!
+2026-09-06 15:06:28 [verbose]: Loading NowPlayingOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded NowPlayingOverlay!
+2026-09-06 15:06:28 [verbose]: Loading AccountCreationOverlay...
+2026-09-06 15:06:28 [verbose]: 📺 ScreenStack#524(depth:1) scheduling push ScreenWelcome#487
+2026-09-06 15:06:28 [verbose]: Loaded AccountCreationOverlay!
+2026-09-06 15:06:28 [verbose]: Loading DialogOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded DialogOverlay!
+2026-09-06 15:06:28 [verbose]: Loading MedalOverlay...
+2026-09-06 15:06:28 [verbose]: Loaded MedalOverlay!
+2026-09-06 15:06:28 [verbose]: Loading BackgroundDataStoreProcessor...
+2026-09-06 15:06:28 [verbose]: Loaded BackgroundDataStoreProcessor!
+2026-09-06 15:06:28 [verbose]: Loading RealmDetachedBeatmapStore...
+2026-09-06 15:06:28 [verbose]: Beginning background data store processing..
+2026-09-06 15:06:28 [verbose]: Querying for beatmaps with missing star ratings...
+2026-09-06 15:06:28 [verbose]: Querying for beatmap sets to reprocess...
+2026-09-06 15:06:28 [verbose]: Loaded RealmDetachedBeatmapStore!
+2026-09-06 15:06:28 [verbose]: Loading QueueController...
+2026-09-06 15:06:28 [verbose]: Querying for beatmaps with missing hitobject counts to reprocess...
+2026-09-06 15:06:28 [verbose]: Querying for scores to reprocess...
+2026-09-06 15:06:28 [verbose]: Querying for scores that need mod multiplier upgrade...
+2026-09-06 15:06:28 [verbose]: Found 0 scores which require mod multiplier upgrade.
+2026-09-06 15:06:28 [verbose]: Querying for scores that need total score conversion...
+2026-09-06 15:06:28 [verbose]: Loaded QueueController!
+2026-09-06 15:06:28 [verbose]: Found 0 scores which require total score conversion.
+2026-09-06 15:06:28 [verbose]: Querying for scores that need rank upgrades...
+2026-09-06 15:06:28 [verbose]: Found 0 scores which require rank upgrades.
+2026-09-06 15:06:28 [verbose]: Querying for beatmap sets that contain missing submission/rank date...
+2026-09-06 15:06:28 [verbose]: Updating user tags
+2026-09-06 15:06:28 [verbose]: Checking for tag updates for 9 beatmaps.
+2026-09-06 15:06:29 [verbose]: 📺 OsuScreenStack#193(depth:1) suspended Loader#100 (waiting on IntroTriangles#242)
+2026-09-06 15:06:29 [verbose]: 📺 OsuScreenStack#193(depth:2) entered IntroTriangles#242
+2026-09-06 15:06:29 [verbose]: 📺 BackgroundScreenStack#306(depth:1) loading BackgroundScreenDefault#627
+2026-09-06 15:06:29 [verbose]: Game-wide working beatmap updated to cYsmix - triangles (peppy) [peppy]
+2026-09-06 15:06:29 [verbose]: Cannot find SentryLogger. It might have been disposed.
+2026-09-06 15:06:29 [verbose]: 📺 BackgroundScreenStack#306(depth:1) entered BackgroundScreenDefault#627
+2026-09-06 15:06:29 [verbose]: 🌅 Global background change queued
+2026-09-06 15:06:29 [verbose]: Finished background data store processing!
+2026-09-06 15:06:30 [verbose]: 🌅 Global background loading
+2026-09-06 15:06:32 [verbose]: 📺 OsuScreenStack#193(depth:2) suspended IntroTriangles#242 (waiting on MainMenu#535)
+2026-09-06 15:06:32 [verbose]: 📺 OsuScreenStack#193(depth:3) entered MainMenu#535
+2026-09-06 15:06:32 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 15:06:33 [verbose]: ⚠️
+2026-09-06 15:06:33 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 15:06:43 [verbose]: ButtonSystem's state changed from Initial to Exit
+2026-09-06 15:06:43 [verbose]: 📺 OsuScreenStack#193(depth:2) exit from MainMenu#535
+2026-09-06 15:06:43 [verbose]: 📺 OsuScreenStack#193(depth:2) resume to IntroTriangles#242
+2026-09-06 15:06:46 [verbose]: 📺 BackgroundScreenStack#306(depth:0) exit from BackgroundScreenDefault#627
+2026-09-06 15:06:46 [verbose]: 📺 BackgroundScreenStack#306(depth:0) resume to [empty]
+2026-09-06 15:06:46 [verbose]: 📺 OsuScreenStack#193(depth:1) exit from IntroTriangles#242
+2026-09-06 15:06:46 [verbose]: 📺 OsuScreenStack#193(depth:1) resume to Loader#100
+2026-09-06 15:06:46 [verbose]: 📺 OsuScreenStack#193(depth:0) exit from Loader#100
+2026-09-06 15:06:46 [verbose]: 📺 OsuScreenStack#193(depth:0) resume to [empty]
+2026-09-06 15:06:46 [verbose]: Host execution state changed to Stopping
+2026-09-06 15:06:46 [verbose]: Host execution state changed to Stopped

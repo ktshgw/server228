@@ -1,0 +1,28 @@
+----------------------------------------------------------
+database Log (LogLevel: Verbose)
+Running soms-test-CE94E93592C860E3211DDA0D 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:41:26 [verbose]: [?????] Beginning import from tmpotcwpt.osz...
+2026-09-06 15:41:27 [verbose]: [b53b4] [APIBeatmapMetadataSource] Online retrieval mapped Camellia - Ryuuseigun (Atlust) [2048] to 2221097 / 4708640.
+2026-09-06 15:41:27 [verbose]: [b53b4] [APIBeatmapMetadataSource] Online retrieval mapped Camellia - Ryuuseigun (Atlust) [Extra] to 2221097 / 4709951.
+2026-09-06 15:41:27 [verbose]: [b53b4] [APIBeatmapMetadataSource] Online retrieval mapped Camellia - Ryuuseigun (Atlust) [Hatsune Miku's Insane] to 2221097 / 4713547.
+2026-09-06 15:41:27 [verbose]: [b53b4] Import successfully completed!
+2026-09-06 15:42:17 [verbose]: [?????] Beginning import from tmph24ky2.osz...
+2026-09-06 15:42:18 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Icekalt's Extra] to 1782707 / 3778960.
+2026-09-06 15:42:18 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Luscent's Normal] to 1782707 / 3739151.
+2026-09-06 15:42:18 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Niva's Extra] to 1782707 / 3700824.
+2026-09-06 15:42:18 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [die] to 1782707 / 3650854.
+2026-09-06 15:42:18 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Delis' Extra] to 1782707 / 3671741.
+2026-09-06 15:42:19 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Hard] to 1782707 / 3743202.
+2026-09-06 15:42:19 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [Mirash's Extra] to 1782707 / 3662485.
+2026-09-06 15:42:19 [verbose]: [1c862] [APIBeatmapMetadataSource] Online retrieval mapped -45 - Total Eclipse of The Sun (Matrix) [PandaHero's Insane] to 1782707 / 3686870.
+2026-09-06 15:42:19 [verbose]: [1c862] Import successfully completed!
+2026-09-06 15:47:49 [verbose]: [?????] Beginning import from tmpadusz0.osz...
+2026-09-06 15:47:50 [verbose]: [77316] [APIBeatmapMetadataSource] Online retrieval mapped ELFENSJoN - LUNATIC MIRAGE (Sutherland) [COLLAB HARD] to 2405562 / 5403722.
+2026-09-06 15:47:50 [verbose]: [77316] [APIBeatmapMetadataSource] Online retrieval mapped ELFENSJoN - LUNATIC MIRAGE (Sutherland) [DAHKJDAS' EXTRA] to 2405562 / 5403723.
+2026-09-06 15:47:50 [verbose]: [77316] [APIBeatmapMetadataSource] Online retrieval mapped ELFENSJoN - LUNATIC MIRAGE (Sutherland) [EXTREME] to 2405562 / 5218985.
+2026-09-06 15:47:50 [verbose]: [77316] [APIBeatmapMetadataSource] Online retrieval mapped ELFENSJoN - LUNATIC MIRAGE (Sutherland) [HETO'S ILLUSION] to 2405562 / 5403724.
+2026-09-06 15:47:50 [verbose]: [77316] [APIBeatmapMetadataSource] Online retrieval mapped ELFENSJoN - LUNATIC MIRAGE (Sutherland) [KUMOCHA'S INSANE] to 2405562 / 5218990.
+2026-09-06 15:47:50 [verbose]: [77316] [APIBeatmapMetadataSource] Online retrieval mapped ELFENSJoN - LUNATIC MIRAGE (Sutherland) [MOA'S NORMAL FEAT. BADGAMES] to 2405562 / 5348632.
+2026-09-06 15:47:50 [verbose]: [77316] Import successfully completed!

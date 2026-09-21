@@ -1,0 +1,17 @@
+----------------------------------------------------------
+performance Log (LogLevel: Verbose)
+Running soms-test-CE94E93592C860E3211DDA0D 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:39:23 [verbose]: TextureAtlas initialised (1024x1024)
+2026-09-06 15:39:23 [verbose]: TextureAtlas initialised (1024x1024)
+2026-09-06 15:39:23 [verbose]: Texture requested (1024x1024) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-06 15:39:24 [verbose]: TextureAtlas size exceeded 1 time(s); generating new texture (1024x1024)
+2026-09-06 15:39:28 [verbose]: TextureAtlas size exceeded 2 time(s); generating new texture (1024x1024)
+2026-09-06 15:39:37 [verbose]: Texture requested (1366x768) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-06 15:42:29 [verbose]: TextureAtlas size exceeded 3 time(s); generating new texture (1024x1024)
+2026-09-06 15:42:30 [verbose]: TextureAtlas size exceeded 1 time(s); generating new texture (1024x1024)
+2026-09-06 15:42:30 [verbose]: TextureAtlas size exceeded 2 time(s); generating new texture (1024x1024)
+2026-09-06 15:47:46 [verbose]: Texture requested (1024x768) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-06 15:47:46 [verbose]: Texture requested (1024x768) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-06 15:48:04 [verbose]: TextureAtlas size exceeded 4 time(s); generating new texture (1024x1024)

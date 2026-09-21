@@ -1,0 +1,31 @@
+{
+  "SchemaVersion": 1,
+  "Profile": {
+    "Id": "friends-private-osu",
+    "DataDirectory": "..\\private-client",
+    "StorageMode": "portable"
+  },
+  "Osu": {
+    "ExecutablePath": "..\\private-client\\osu!.exe",
+    "CompatibleVersions": [
+      "2026.709.0"
+    ],
+    "ExpectedPublisherSubjectContains": "ppy Pty Ltd"
+  },
+  "EnhancedAuth": {
+    "Version": "2026.709.0",
+    "FileName": "osu.Game.Rulesets.EnhancedAuth.dll",
+    "Sha256": "99c2a22b555cba53a28ad1401861a30155cca26fe68cf5255559c2cb4a72cfd1",
+    "AssemblyName": "osu.Game.Rulesets.EnhancedAuth"
+  },
+  "Server": {
+    "ApiUrl": "https://private-osu.example",
+    "WebsiteUrl": "https://private-osu.example",
+    "SpectatorUrl": "https://private-osu.example/signalr/spectator",
+    "MultiplayerUrl": "https://private-osu.example/signalr/multiplayer",
+    "MetadataUrl": "https://private-osu.example/signalr/metadata",
+    "BeatmapSubmissionServiceUrl": "https://private-osu.example/beatmap-submission",
+    "ClientId": "5",
+    "ClientSecretEnvironmentVariable": "PRIVATE_OSU_CLIENT_SECRET"
+  }
+}

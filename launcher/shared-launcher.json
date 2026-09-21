@@ -1,0 +1,28 @@
+{
+    "SchemaVersion":  1,
+    "DataDirectory":  "D:\\lazer",
+    "Osu":  {
+                "ExecutablePath":  "%LOCALAPPDATA%\\osulazer\\current\\osu!.exe",
+                "CompatibleVersions":  [
+                                           "2026.804.2"
+                                       ],
+                "ExpectedPublisherSubjectContains":  "ppy Pty Ltd"
+            },
+    "Injection":  {
+                      "EnhancedAuthPath":  "E:\\333\\pythonEPTA\\SERVAK\\.sources\\LazerAuthlibInjection\\osu.Game.Rulesets.EnhancedAuth\\bin\\latest-history-v2\\merged\\osu.Game.Rulesets.EnhancedAuth.dll",
+                      "EnhancedAuthSha256":  "7c7154c8a6a65d1046b687aba6a225437fc7705a35ee5890fbd2994c421cf36c",
+                      "StartupHookPath":  "..\\.sources\\PrivateOsu.StartupHook\\bin\\Release\\PrivateOsu.StartupHook.dll",
+                      "StartupHookSha256":  "c1dc3deb9a406bac34e931c5612f7c84a989c7dd93952c1f199761d4abe30890",
+                      "CredentialTarget":  "FriendsPrivateOsu/soms.angelfish-leaffish.ts.net"
+                  },
+    "Server":  {
+                   "ApiUrl":  "https://soms.angelfish-leaffish.ts.net",
+                   "WebsiteUrl":  "https://soms.angelfish-leaffish.ts.net",
+                   "SpectatorUrl":  "https://soms.angelfish-leaffish.ts.net/signalr/spectator",
+                   "MultiplayerUrl":  "https://soms.angelfish-leaffish.ts.net/signalr/multiplayer",
+                   "MetadataUrl":  "https://soms.angelfish-leaffish.ts.net/signalr/metadata",
+                   "BeatmapSubmissionServiceUrl":  "https://soms.angelfish-leaffish.ts.net/beatmap-submission",
+                   "ClientId":  "5",
+                   "ClientSecretEnvironmentVariable":  "PRIVATE_OSU_CLIENT_SECRET"
+               }
+}

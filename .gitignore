@@ -1,0 +1,8 @@
+.test-tmp/
+.uv-cache/
+.sources/
+.tooling/
+.ruff_cache/
+.tools/
+.uv-chache/
+tmp/

@@ -1,0 +1,30 @@
+----------------------------------------------------------
+network Log (LogLevel: Verbose)
+Running soms-test-117EA1AAC104085014FE0AE0 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:53:08 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:53:09 [verbose]: API endpoint root: https://desktop-kif58pp.tailc58d2e.ts.net
+2026-09-06 15:53:09 [verbose]: API request version: 20260804
+2026-09-06 15:53:10 [verbose]: Failing request osu.Game.Online.API.Requests.GetUpdatesRequest (System.Net.WebException: User not logged in)
+2026-09-06 15:53:11 [verbose]: Performing request osu.Game.Online.API.Requests.GetSeasonalBackgroundsRequest
+2026-09-06 15:53:11 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/seasonal-backgrounds successfully completed!
+2026-09-06 15:53:11 [verbose]: GetSeasonalBackgroundsRequest finished with response size of 51 bytes
+2026-09-06 15:53:15 [verbose]: Request to https://assets.ppy.sh/menu-content.json successfully completed!
+2026-09-06 15:53:15 [verbose]: Request to https://assets.ppy.sh/main-menu/project-loved-2@2x.png successfully completed!
+2026-09-06 15:53:15 [verbose]: Request to https://assets.ppy.sh/main-menu/orchard-cup-2026@2x.png successfully completed!
+2026-09-06 15:53:15 [verbose]: Request to https://assets.ppy.sh/main-menu/2026-halloween-fanart-submissions@2x.png successfully completed!
+2026-09-06 15:54:08 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:55:08 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:56:09 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:57:09 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:58:09 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:58:15 [verbose]: Request to https://assets.ppy.sh/menu-content.json successfully completed!
+2026-09-06 15:59:09 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 16:00:09 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 16:01:10 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 16:02:10 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 16:03:10 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 16:03:15 [verbose]: Request to https://assets.ppy.sh/menu-content.json successfully completed!
+2026-09-06 16:04:10 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 16:05:11 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!

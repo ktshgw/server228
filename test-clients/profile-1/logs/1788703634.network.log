@@ -1,0 +1,21 @@
+----------------------------------------------------------
+network Log (LogLevel: Verbose)
+Running soms-test-CE94E93592C860E3211DDA0D 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 14:07:18 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 14:07:19 [verbose]: API endpoint root: https://desktop-kif58pp.tailc58d2e.ts.net
+2026-09-06 14:07:19 [verbose]: API request version: 20260804
+2026-09-06 14:07:25 [verbose]: Request to https://assets.ppy.sh/client-resources/online.db.bz2?20260906 successfully completed!
+2026-09-06 14:07:28 [verbose]: Failing request osu.Game.Online.API.Requests.GetUpdatesRequest (System.Net.WebException: User not logged in)
+2026-09-06 14:07:33 [verbose]: Performing request osu.Game.Online.API.Requests.GetSeasonalBackgroundsRequest
+2026-09-06 14:07:33 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/seasonal-backgrounds successfully completed!
+2026-09-06 14:07:33 [verbose]: GetSeasonalBackgroundsRequest finished with response size of 51 bytes
+2026-09-06 14:07:36 [verbose]: Request to https://assets.ppy.sh/menu-content.json successfully completed!
+2026-09-06 14:07:36 [verbose]: Request to https://assets.ppy.sh/main-menu/project-loved-2@2x.png successfully completed!
+2026-09-06 14:07:36 [verbose]: Request to https://assets.ppy.sh/main-menu/orchard-cup-2026@2x.png successfully completed!
+2026-09-06 14:07:36 [verbose]: Request to https://assets.ppy.sh/main-menu/2026-halloween-fanart-submissions@2x.png successfully completed!
+2026-09-06 14:08:18 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 14:09:18 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 14:10:19 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 14:11:19 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!

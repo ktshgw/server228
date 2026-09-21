@@ -1,0 +1,7 @@
+----------------------------------------------------------
+database Log (LogLevel: Verbose)
+Running legacy-interface-35a177f47b494fd8b4af1fa8af267652 1.0.0.0 on .NET 8.0.20
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-07 21:48:24 [verbose]: [LocalCachedBeatmapMetadataSource] Fetching local cache because it does not exist.
+2026-09-07 21:48:31 [verbose]: [LocalCachedBeatmapMetadataSource] Local cache fetch completed successfully.

@@ -1,0 +1,82 @@
+----------------------------------------------------------
+network Log (LogLevel: Verbose)
+Running soms-test-5EE617829DA6E1DC64155A5E 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:06:25 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:06:26 [verbose]: API endpoint root: https://desktop-kif58pp.tailc58d2e.ts.net
+2026-09-06 15:06:26 [verbose]: API request version: 20260804
+2026-09-06 15:06:26 [verbose]: Performing request osu.Game.Online.API.Requests.GetMeRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/me/ successfully completed!
+2026-09-06 15:06:28 [verbose]: GetMeRequest finished with response size of 2 421 bytes
+2026-09-06 15:06:28 [verbose]: WebSocketNotificationsClientConnector connecting...
+2026-09-06 15:06:28 [verbose]: SpectatorClient connecting...
+2026-09-06 15:06:28 [verbose]: OnlineMultiplayerClient connecting...
+2026-09-06 15:06:28 [verbose]: OnlineMetadataClient connecting...
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetNotificationsRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/notifications successfully completed!
+2026-09-06 15:06:28 [verbose]: GetNotificationsRequest finished with response size of 140 bytes
+2026-09-06 15:06:28 [verbose]: WebSocketNotificationsClientConnector connected!
+2026-09-06 15:06:28 [verbose]: Now listening to websocket chat messages.
+2026-09-06 15:06:28 [verbose]: OnlineMultiplayerClient connected!
+2026-09-06 15:06:28 [verbose]: SpectatorClient connected!
+2026-09-06 15:06:28 [verbose]: Request to https://auth.ppy.sh/updates/get successfully completed!
+2026-09-06 15:06:28 [verbose]: OnlineMetadataClient connected!
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetFriendsRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/friends successfully completed!
+2026-09-06 15:06:28 [verbose]: GetFriendsRequest finished with response size of 2 bytes
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetBlocksRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/blocks successfully completed!
+2026-09-06 15:06:28 [verbose]: GetBlocksRequest finished with response size of 2 bytes
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetMyFavouriteBeatmapSetsRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/me/beatmapset-favourites successfully completed!
+2026-09-06 15:06:28 [verbose]: GetMyFavouriteBeatmapSetsRequest finished with response size of 21 bytes
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/osu?key=id successfully completed!
+2026-09-06 15:06:28 [verbose]: GetUserRequest finished with response size of 2 361 bytes
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/osurx?key=id successfully completed!
+2026-09-06 15:06:28 [verbose]: GetUserRequest finished with response size of 2 365 bytes
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/osuap?key=id successfully completed!
+2026-09-06 15:06:28 [verbose]: GetUserRequest finished with response size of 2 365 bytes
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:06:28 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/taiko?key=id successfully completed!
+2026-09-06 15:06:28 [verbose]: GetUserRequest finished with response size of 2 365 bytes
+2026-09-06 15:06:28 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/taikorx?key=id successfully completed!
+2026-09-06 15:06:29 [verbose]: GetUserRequest finished with response size of 2 369 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/fruits?key=id successfully completed!
+2026-09-06 15:06:29 [verbose]: GetUserRequest finished with response size of 2 367 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/fruitsrx?key=id successfully completed!
+2026-09-06 15:06:29 [verbose]: GetUserRequest finished with response size of 2 371 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.GetUserRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/users/1500000004/mania?key=id successfully completed!
+2026-09-06 15:06:29 [verbose]: GetUserRequest finished with response size of 2 365 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.GetUpdatesRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/updates successfully completed!
+2026-09-06 15:06:29 [verbose]: GetUpdatesRequest finished with response size of 320 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.GetUpdatesRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/updates successfully completed!
+2026-09-06 15:06:29 [verbose]: GetUpdatesRequest finished with response size of 320 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.ChatAckRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/ack successfully completed!
+2026-09-06 15:06:29 [verbose]: ChatAckRequest finished with response size of 15 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.GetMessagesRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/channels/1/messages successfully completed!
+2026-09-06 15:06:29 [verbose]: GetMessagesRequest finished with response size of 2 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.ListChannelsRequest
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.GetSeasonalBackgroundsRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/channels successfully completed!
+2026-09-06 15:06:29 [verbose]: ListChannelsRequest finished with response size of 298 bytes
+2026-09-06 15:06:29 [verbose]: Performing request osu.Game.Online.API.Requests.ListChannelsRequest
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/seasonal-backgrounds successfully completed!
+2026-09-06 15:06:29 [verbose]: GetSeasonalBackgroundsRequest finished with response size of 51 bytes
+2026-09-06 15:06:29 [verbose]: Request to https://desktop-kif58pp.tailc58d2e.ts.net/api/v2/chat/channels successfully completed!
+2026-09-06 15:06:29 [verbose]: ListChannelsRequest finished with response size of 298 bytes
+2026-09-06 15:06:32 [verbose]: Request to https://assets.ppy.sh/menu-content.json successfully completed!
+2026-09-06 15:06:33 [verbose]: Request to https://assets.ppy.sh/main-menu/project-loved-2@2x.png successfully completed!
+2026-09-06 15:06:33 [verbose]: Request to https://assets.ppy.sh/main-menu/orchard-cup-2026@2x.png successfully completed!
+2026-09-06 15:06:33 [verbose]: Request to https://assets.ppy.sh/main-menu/2026-halloween-fanart-submissions@2x.png successfully completed!

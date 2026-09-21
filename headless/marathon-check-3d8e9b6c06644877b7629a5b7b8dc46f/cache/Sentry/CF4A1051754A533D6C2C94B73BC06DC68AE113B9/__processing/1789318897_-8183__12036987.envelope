@@ -1,0 +1,3 @@
+{"sdk":{"name":"sentry.dotnet","version":"6.6.0"}}
+{"type":"session","length":284}
+{"sid":"9b1bdcf79c3a4385bb91993a6431e20b","did":"3a2c383a-59b6-433a-b481-6889af167a74","init":true,"started":"2026-09-13T20:01:37.6869397+03:00","timestamp":"2026-09-13T17:01:37.6871482+00:00","seq":0,"duration":0,"errors":0,"attrs":{"release":"osu@1.0.0","environment":"production"}}

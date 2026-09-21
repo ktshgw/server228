@@ -1,0 +1,56 @@
+----------------------------------------------------------
+runtime Log (LogLevel: Verbose)
+Running legacy-interface-022391165cd645e4863b5ac96c81b04f 1.0.0.0 on .NET 8.0.20
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-07 21:53:57 [verbose]: 🖼️ Initialising "Dummy" renderer with "OpenGL" surface
+2026-09-07 21:53:57 [verbose]: Host execution state changed to Running
+2026-09-07 21:53:57 [verbose]: Execution mode changed to MultiThreaded
+2026-09-07 21:53:57 [verbose]: 🔈 BASS initialised
+2026-09-07 21:53:57 [verbose]: BASS version:           2.4.17.48
+2026-09-07 21:53:57 [verbose]: BASS FX version:        2.4.12.16
+2026-09-07 21:53:57 [verbose]: BASS MIX version:       2.4.12.10
+2026-09-07 21:53:57 [verbose]: Device:                 Default
+2026-09-07 21:53:57 [verbose]: Driver:
+2026-09-07 21:53:57 [verbose]: Device period length:   0
+2026-09-07 21:53:57 [verbose]: Device buffer length:   10 ms
+2026-09-07 21:53:57 [verbose]: Update period:          5 ms
+2026-09-07 21:53:57 [verbose]: Playback buffer length: 100 ms
+2026-09-07 21:53:57 [verbose]: Beginning realm file store cleanup
+2026-09-07 21:53:57 [verbose]: Finished realm file store cleanup (0 of 0 deleted)
+2026-09-07 21:53:58 [verbose]: Opened realm "E:\333\pythonEPTA\SERVAK\headless\legacy-interface-022391165cd645e4863b5ac96c81b04f\client.realm" at version 51
+2026-09-07 21:53:58 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-07 21:53:58 [error]: An unhandled error has occurred.
+2026-09-07 21:53:58 [error]: osu.Framework.Allocation.DependencyNotRegisteredException: The type BeatmapTitleWedge has a dependency on IBindable<SongSelect+BeatmapSetLookupResult>, but the dependency is not registered.
+2026-09-07 21:53:58 [error]: at osu.Framework.Utils.SourceGeneratorUtils.GetDependency(IReadOnlyDependencyContainer container, Type type, Type callerType, String cachedName, Type cachedParent, Boolean allowNulls, Boolean rebindBindables)
+2026-09-07 21:53:58 [error]: at osu.Framework.Utils.SourceGeneratorUtils.GetDependency[T](IReadOnlyDependencyContainer container, Type callerType, String cachedName, Type cachedParent, Boolean allowNulls, Boolean rebindBindables)
+2026-09-07 21:53:58 [error]: at osu.Game.Screens.Select.BeatmapTitleWedge.<>c.<RegisterForDependencyActivation>b__72_0(Object t, IReadOnlyDependencyContainer d)
+2026-09-07 21:53:58 [error]: at osu.Framework.Allocation.DependencyActivator.<Activate>g__activateRecursively|8_0[T](Object obj, IReadOnlyDependencyContainer dependencies, Type currentType)
+2026-09-07 21:53:58 [error]: at osu.Framework.Allocation.DependencyActivator.Activate[T](T obj, IReadOnlyDependencyContainer dependencies)
+2026-09-07 21:53:58 [error]: at osu.Framework.Allocation.DependencyContainer.Inject[T](T instance)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Drawable.InjectDependencies(IReadOnlyDependencyContainer dependencies)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.InjectDependencies(IReadOnlyDependencyContainer dependencies)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Drawable.load(IFrameBasedClock clock, IReadOnlyDependencyContainer dependencies)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Drawable.Load(IFrameBasedClock clock, IReadOnlyDependencyContainer dependencies, Boolean isDirectAsyncContext)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.loadChild(Drawable child)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.AddInternal(Drawable drawable)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.Container`1.AddInternal(Drawable drawable)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.Container`1.Add(T drawable)
+2026-09-07 21:53:58 [error]: at CheckGame.LoadComplete() in /work/LegacyInterface.Check/Program.cs:line 107
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Drawable.loadComplete()
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Drawable.UpdateSubTree()
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-07 21:53:58 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-07 21:53:58 [error]: at osu.Framework.Platform.GameHost.UpdateFrame()
+2026-09-07 21:53:58 [error]: at osu.Framework.Platform.HeadlessGameHost.UpdateFrame()
+2026-09-07 21:53:58 [error]: at osu.Framework.Threading.GameThread.processFrame()
+2026-09-07 21:53:58 [verbose]: Host execution state changed to Stopping
+2026-09-07 21:53:58 [verbose]: Too many unhandled exceptions, crashing out.
+2026-09-07 21:54:08 [verbose]: Host execution state changed to Stopped

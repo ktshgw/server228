@@ -1,0 +1,184 @@
+----------------------------------------------------------
+runtime Log (LogLevel: Verbose)
+Running soms-test-B6A7B47EE9CFFC660F2A75B4 2026.804.2.0 on .NET 8.0.16
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 14:07:14 [verbose]: Handling arguments, skipping velopack setup.
+2026-09-06 14:07:14 [verbose]: [NVAPI] Threaded optimizations set to "OGL_THREAD_CONTROL_DEFAULT"!
+2026-09-06 14:07:14 [verbose]: Starting legacy IPC provider...
+2026-09-06 14:07:15 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 14:07:15 [verbose]: 🖼️ Configuration renderer choice: Automatic
+2026-09-06 14:07:15 [verbose]: 🖼️ Renderer fallback order: [ Direct3D 11, Direct3D 11 (Experimental), OpenGL, Vulkan (Experimental) ]
+2026-09-06 14:07:15 [verbose]: 🖼️ Initialising "Veldrid" renderer with "Direct3D11" surface
+2026-09-06 14:07:16 [verbose]: SDL3 Initialized
+2026-09-06 14:07:16 [verbose]: SDL3 Version: 3.5.0
+2026-09-06 14:07:16 [verbose]: SDL3 Revision: SDL-3.5.0-f0e99e7
+2026-09-06 14:07:16 [verbose]: SDL3 Video driver: windows
+2026-09-06 14:07:16 [verbose]: Updated display mode to desktop resolution: 1920x1080@143.98, SDL_PIXELFORMAT_XRGB8888
+2026-09-06 14:07:16 [verbose]: Direct3D 11 Initialized
+2026-09-06 14:07:16 [verbose]: Direct3D 11 Feature Level:           11.1
+2026-09-06 14:07:16 [verbose]: Direct3D 11 Adapter:                 NVIDIA GeForce RTX 4060
+2026-09-06 14:07:16 [verbose]: Direct3D 11 Dedicated Video Memory:  7957 MB
+2026-09-06 14:07:16 [verbose]: Direct3D 11 Dedicated System Memory: 0 MB
+2026-09-06 14:07:16 [verbose]: Direct3D 11 Shared System Memory:    16346 MB
+2026-09-06 14:07:16 [verbose]: UseStructuredBuffers: True
+2026-09-06 14:07:16 [verbose]: 🖼️ Renderer initialised!
+2026-09-06 14:07:16 [verbose]: Host execution state changed to Running
+2026-09-06 14:07:16 [verbose]: Execution mode changed to MultiThreaded
+2026-09-06 14:07:17 [verbose]: Attempting local BassWasapi initialisation
+2026-09-06 14:07:17 [verbose]: Initialising BassWasapi for device -1...success!
+2026-09-06 14:07:17 [verbose]: 🔈 BASS initialised
+2026-09-06 14:07:17 [verbose]: BASS version:           2.4.17.48
+2026-09-06 14:07:17 [verbose]: BASS FX version:        2.4.12.16
+2026-09-06 14:07:17 [verbose]: BASS MIX version:       2.4.12.10
+2026-09-06 14:07:17 [verbose]: Device:                 Default
+2026-09-06 14:07:17 [verbose]: Driver:
+2026-09-06 14:07:17 [verbose]: Device period length:   0
+2026-09-06 14:07:17 [verbose]: Device buffer length:   10 ms
+2026-09-06 14:07:17 [verbose]: Update period:          5 ms
+2026-09-06 14:07:17 [verbose]: Playback buffer length: 100 ms
+2026-09-06 14:07:17 [verbose]: Beginning realm file store cleanup
+2026-09-06 14:07:17 [verbose]: Finished realm file store cleanup (0 of 0 deleted)
+2026-09-06 14:07:18 [verbose]: Opened realm "E:\333\pythonEPTA\SERVAK\test-clients\profile-2\client.realm" at version 51
+2026-09-06 14:07:18 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 14:07:19 [verbose]: 🖍️ Shader Texture2D/Texture compiled!
+2026-09-06 14:07:19 [verbose]: 🖍️ Shader Texture2D/CircularProgress compiled!
+2026-09-06 14:07:20 [verbose]: Updated display mode to desktop resolution: 1920x1080@143.98, SDL_PIXELFORMAT_XRGB8888
+2026-09-06 14:07:20 [verbose]: Loading FPSCounter...
+2026-09-06 14:07:24 [verbose]: Loaded FPSCounter!
+2026-09-06 14:07:24 [verbose]: Loading OsuLogo...
+2026-09-06 14:07:24 [verbose]: Texture -'s upload queue is large (100)
+2026-09-06 14:07:25 [verbose]: 🖍️ Shader Texture2D/TriangleBorder compiled!
+2026-09-06 14:07:25 [verbose]: Loaded OsuLogo!
+2026-09-06 14:07:25 [verbose]: Loading LocalUserStatisticsProvider...
+2026-09-06 14:07:25 [verbose]: 📺 OsuScreenStack#343(depth:1) loading Loader#469
+2026-09-06 14:07:25 [verbose]: Loaded LocalUserStatisticsProvider!
+2026-09-06 14:07:25 [verbose]: Loading DifficultyRecommender...
+2026-09-06 14:07:25 [verbose]: 📺 OsuScreenStack#343(depth:1) entered Loader#469
+2026-09-06 14:07:25 [verbose]: Loaded DifficultyRecommender!
+2026-09-06 14:07:25 [verbose]: Loading UserStatisticsWatcher...
+2026-09-06 14:07:25 [verbose]: Loaded UserStatisticsWatcher!
+2026-09-06 14:07:25 [verbose]: Loading Toolbar...
+2026-09-06 14:07:25 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 14:07:25 [verbose]: 🖍️ Shader Texture2D/Blur compiled!
+2026-09-06 14:07:26 [verbose]: Loaded Toolbar!
+2026-09-06 14:07:26 [verbose]: Loading VolumeOverlay...
+2026-09-06 14:07:26 [verbose]: Invalidating working beatmap cache for cYsmix - triangles (peppy) [peppy]
+2026-09-06 14:07:26 [verbose]: 🖍️ Shader Texture2D/Grayscale compiled!
+2026-09-06 14:07:26 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 14:07:26 [verbose]: Texture 's upload queue is large (200)
+2026-09-06 14:07:26 [verbose]: 🖍️ Shader Texture3D/Texture compiled!
+2026-09-06 14:07:26 [verbose]: Loaded VolumeOverlay!
+2026-09-06 14:07:26 [verbose]: Loading OnScreenDisplay...
+2026-09-06 14:07:27 [verbose]: Loaded OnScreenDisplay!
+2026-09-06 14:07:27 [verbose]: Loading NotificationOverlay...
+2026-09-06 14:07:27 [verbose]: Loaded NotificationOverlay!
+2026-09-06 14:07:27 [verbose]: Loading LegacyImportManager...
+2026-09-06 14:07:27 [verbose]: Loaded LegacyImportManager!
+2026-09-06 14:07:27 [verbose]: Loading ScreenshotManager...
+2026-09-06 14:07:27 [verbose]: Loaded ScreenshotManager!
+2026-09-06 14:07:27 [verbose]: Loading VelopackUpdateManager...
+2026-09-06 14:07:27 [verbose]: Loaded VelopackUpdateManager!
+2026-09-06 14:07:27 [verbose]: Loading FirstRunSetupOverlay...
+2026-09-06 14:07:27 [verbose]: VelopackUpdateManager: Update check failed with error (No VelopackLocator has been set. Either call VelopackApp.Build() or provide IVelopackLocator as a method parameter.)
+2026-09-06 14:07:27 [verbose]: Loaded FirstRunSetupOverlay!
+2026-09-06 14:07:27 [verbose]: Loading ManageCollectionsDialog...
+2026-09-06 14:07:27 [verbose]: 🖍️ Shader Texture2D/FastCircle compiled!
+2026-09-06 14:07:27 [verbose]: Loaded ManageCollectionsDialog!
+2026-09-06 14:07:27 [verbose]: Loading BeatmapListingOverlay...
+2026-09-06 14:07:27 [verbose]: Loaded BeatmapListingOverlay!
+2026-09-06 14:07:27 [verbose]: Loading DashboardOverlay...
+2026-09-06 14:07:27 [verbose]: Loaded DashboardOverlay!
+2026-09-06 14:07:27 [verbose]: Loading NewsOverlay...
+2026-09-06 14:07:27 [verbose]: Loaded NewsOverlay!
+2026-09-06 14:07:27 [verbose]: Loading RankingsOverlay...
+2026-09-06 14:07:27 [verbose]: Loaded RankingsOverlay!
+2026-09-06 14:07:27 [verbose]: Loading ChannelManager...
+2026-09-06 14:07:27 [verbose]: Loaded ChannelManager!
+2026-09-06 14:07:27 [verbose]: Loading ChatOverlay...
+2026-09-06 14:07:27 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 14:07:27 [verbose]: Loaded ChatOverlay!
+2026-09-06 14:07:27 [verbose]: Loading MessageNotifier...
+2026-09-06 14:07:27 [verbose]: Loaded MessageNotifier!
+2026-09-06 14:07:27 [verbose]: Loading SettingsOverlay...
+2026-09-06 14:07:28 [verbose]: Cannot find SentryLogger. It might have been disposed.
+2026-09-06 14:07:28 [verbose]: 🖍️ Shader Texture2D/ArgonBarPath compiled!
+2026-09-06 14:07:28 [verbose]: Loaded SettingsOverlay!
+2026-09-06 14:07:28 [verbose]: Loading ChangelogOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded ChangelogOverlay!
+2026-09-06 14:07:28 [verbose]: Loading UserProfileOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded UserProfileOverlay!
+2026-09-06 14:07:28 [verbose]: Loading BeatmapSetOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded BeatmapSetOverlay!
+2026-09-06 14:07:28 [verbose]: Loading WikiOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded WikiOverlay!
+2026-09-06 14:07:28 [verbose]: Loading SkinEditorOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded SkinEditorOverlay!
+2026-09-06 14:07:28 [verbose]: Loading LoginOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded LoginOverlay!
+2026-09-06 14:07:28 [verbose]: Loading NowPlayingOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded NowPlayingOverlay!
+2026-09-06 14:07:28 [verbose]: Loading AccountCreationOverlay...
+2026-09-06 14:07:28 [verbose]: 📺 ScreenStack#333(depth:1) scheduling push ScreenWelcome#184
+2026-09-06 14:07:28 [verbose]: Loaded AccountCreationOverlay!
+2026-09-06 14:07:28 [verbose]: Loading DialogOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded DialogOverlay!
+2026-09-06 14:07:28 [verbose]: Loading MedalOverlay...
+2026-09-06 14:07:28 [verbose]: Loaded MedalOverlay!
+2026-09-06 14:07:28 [verbose]: Loading BackgroundDataStoreProcessor...
+2026-09-06 14:07:28 [verbose]: Loaded BackgroundDataStoreProcessor!
+2026-09-06 14:07:28 [verbose]: Loading RealmDetachedBeatmapStore...
+2026-09-06 14:07:28 [verbose]: Beginning background data store processing..
+2026-09-06 14:07:28 [verbose]: Loaded RealmDetachedBeatmapStore!
+2026-09-06 14:07:28 [verbose]: Loading QueueController...
+2026-09-06 14:07:28 [verbose]: Resetting star ratings for osu! (difficulty calculation version updated from 0 to 20260706)
+2026-09-06 14:07:29 [verbose]: 🖍️ Shader Texture2D/ArgonBarPathBackground compiled!
+2026-09-06 14:07:29 [verbose]: Finished resetting 1 beatmap sets for osu!
+2026-09-06 14:07:29 [verbose]: Resetting star ratings for osu!taiko (difficulty calculation version updated from 0 to 20260706)
+2026-09-06 14:07:29 [verbose]: Loaded QueueController!
+2026-09-06 14:07:29 [verbose]: Finished resetting 0 beatmap sets for osu!taiko
+2026-09-06 14:07:29 [verbose]: Resetting star ratings for osu!catch (difficulty calculation version updated from 0 to 20260706)
+2026-09-06 14:07:29 [verbose]: Finished resetting 0 beatmap sets for osu!catch
+2026-09-06 14:07:29 [verbose]: Resetting star ratings for osu!mania (difficulty calculation version updated from 0 to 20241007)
+2026-09-06 14:07:30 [verbose]: 🖍️ Shader Texture2D/SaturationSelectorBackground compiled!
+2026-09-06 14:07:30 [verbose]: Finished resetting 0 beatmap sets for osu!mania
+2026-09-06 14:07:30 [verbose]: Querying for beatmaps with missing star ratings...
+2026-09-06 14:07:30 [verbose]: Found 1 beatmaps which require star rating reprocessing.
+2026-09-06 14:07:30 [verbose]: Invalidating working beatmap cache for cYsmix - triangles (peppy) [peppy]
+2026-09-06 14:07:30 [verbose]: Querying for beatmap sets to reprocess...
+2026-09-06 14:07:30 [verbose]: Querying for beatmaps with missing hitobject counts to reprocess...
+2026-09-06 14:07:30 [verbose]: Querying for scores to reprocess...
+2026-09-06 14:07:30 [verbose]: Querying for scores that need mod multiplier upgrade...
+2026-09-06 14:07:30 [verbose]: Found 0 scores which require mod multiplier upgrade.
+2026-09-06 14:07:30 [verbose]: Querying for scores that need total score conversion...
+2026-09-06 14:07:30 [verbose]: Found 0 scores which require total score conversion.
+2026-09-06 14:07:30 [verbose]: Querying for scores that need rank upgrades...
+2026-09-06 14:07:30 [verbose]: Found 0 scores which require rank upgrades.
+2026-09-06 14:07:30 [verbose]: 🖍️ Shader Texture2D/HueSelectorBackground compiled!
+2026-09-06 14:07:31 [verbose]: 🖍️ Shader LogoAnimation/LogoAnimation compiled!
+2026-09-06 14:07:31 [verbose]: 🖍️ Shader Texture2D/SpinnerGlow compiled!
+2026-09-06 14:07:31 [verbose]: Querying for beatmap sets that contain missing submission/rank date...
+2026-09-06 14:07:31 [verbose]: Updating user tags
+2026-09-06 14:07:31 [verbose]: Finished background data store processing!
+2026-09-06 14:07:31 [verbose]: 🖍️ Shader CursorTrail/Texture compiled!
+2026-09-06 14:07:32 [verbose]: 📺 OsuScreenStack#343(depth:1) suspended Loader#469 (waiting on IntroTriangles#479)
+2026-09-06 14:07:32 [verbose]: 📺 OsuScreenStack#343(depth:2) entered IntroTriangles#479
+2026-09-06 14:07:32 [verbose]: 📺 BackgroundScreenStack#506(depth:1) loading BackgroundScreenDefault#255
+2026-09-06 14:07:32 [verbose]: Game-wide working beatmap updated to cYsmix - triangles (peppy) [peppy]
+2026-09-06 14:07:32 [verbose]: Cannot find SentryLogger. It might have been disposed.
+2026-09-06 14:07:32 [verbose]: 📺 BackgroundScreenStack#506(depth:1) entered BackgroundScreenDefault#255
+2026-09-06 14:07:32 [verbose]: 🌅 Global background change queued
+2026-09-06 14:07:33 [verbose]: 🌅 Global background loading
+2026-09-06 14:07:35 [verbose]: 📺 OsuScreenStack#343(depth:2) suspended IntroTriangles#479 (waiting on MainMenu#225)
+2026-09-06 14:07:35 [verbose]: 📺 OsuScreenStack#343(depth:3) entered MainMenu#225
+2026-09-06 14:07:35 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 14:07:35 [verbose]: ⚠️
+2026-09-06 14:07:35 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 14:07:38 [verbose]: Texture 's upload queue is large (100)
+2026-09-06 14:07:40 [verbose]: ButtonSystem's state changed from Initial to TopLevel
+2026-09-06 14:09:38 [verbose]: Game-wide working beatmap updated to cYsmix - triangles (peppy) [peppy]
+2026-09-06 14:09:38 [verbose]: 🌅 Global background change queued
+2026-09-06 14:09:39 [verbose]: 🌅 Global background loading
+2026-09-06 14:11:06 [verbose]: DialogOverlay: Showing dialog ConfirmExitDialog
+2026-09-06 14:11:06 [verbose]: Focus contention triggered by DialogOverlay.
+2026-09-06 14:11:06 [verbose]: ButtonSystem's state changed from TopLevel to Initial
