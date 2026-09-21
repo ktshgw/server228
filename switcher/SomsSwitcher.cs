@@ -19,8 +19,8 @@ using SomsLauncher;
 [assembly: AssemblyDescription("Safe private-server launcher for the official osu!lazer client")]
 [assembly: AssemblyCompany("SOMS!")]
 [assembly: AssemblyProduct("SOMS! switcher")]
-[assembly: AssemblyVersion("1.1.3.0")]
-[assembly: AssemblyFileVersion("1.1.3.0")]
+[assembly: AssemblyVersion("1.1.4.0")]
+[assembly: AssemblyFileVersion("1.1.4.0")]
 
 namespace SomsSwitcher
 {
@@ -275,6 +275,14 @@ namespace SomsSwitcher
             }
         }
 
+        private string DownloadModule(Dictionary<string, object> module)
+        {
+            return DownloadModule(
+                module,
+                Path.Combine(SettingsDirectory(), "modules"),
+                false
+            );
+        }
         private void StartPrivate()
         {
             AssertNoLazerRunning();
@@ -293,6 +301,11 @@ namespace SomsSwitcher
             string enhancedAuthPath = DownloadModule(Dict(versionEntry, "enhanced_auth"));
             string startupHookPath = DownloadModule(Dict(versionEntry, "startup_hook"));
             string harmonyPath = DownloadModule(Dict(versionEntry, "harmony"),true);
+
+            if (versionEntry.ContainsKey("harmony"))
+            {
+                DownloadModule(Dict(versionEntry, "harmony"));
+            }
 
             string healthUrl = RequiredString(manifest, "health_url");
             RequireTrustedUrl(new Uri(ManifestUrl), new Uri(healthUrl, UriKind.Absolute));
@@ -496,7 +509,7 @@ namespace SomsSwitcher
         {
             WebClient client = new WebClient();
             client.Encoding = Encoding.UTF8;
-            client.Headers[HttpRequestHeader.UserAgent] = "SOMS-switcher/1.1.3 Windows";
+            client.Headers[HttpRequestHeader.UserAgent] = "SOMS-switcher/1.1.4 Windows";
             return client;
         }
 

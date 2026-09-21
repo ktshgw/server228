@@ -412,6 +412,7 @@ def _switcher_compatibility_payload() -> dict[str, dict[str, dict[str, str | int
         if not directory.is_dir() or not _CLIENT_VERSION_PATTERN.fullmatch(directory.name):
             continue
 
+        # The two core modules are required for every published version.
         if not all(
             (directory / filename).is_file()
             for filename in _CLIENT_MODULES.values()
@@ -423,6 +424,8 @@ def _switcher_compatibility_payload() -> dict[str, dict[str, dict[str, str | int
             for key, filename in _CLIENT_MODULES.items()
         }
 
+        # Harmony is required by the new .NET 10 client, but keep it
+        # optional for older published client versions.
         harmony = directory / "0Harmony.dll"
 
         if harmony.is_file():
@@ -475,7 +478,7 @@ async def private_client_manifest():
     if switcher_path.is_file():
         switcher_content = switcher_path.read_bytes()
         content["launcher"] = {
-            "version": "1.1.3",
+            "version": "1.1.4",
             "url": "/client/SOMS-switcher.exe",
             "sha256": hashlib.sha256(switcher_content).hexdigest(),
             "size": len(switcher_content),
