@@ -1,0 +1,144 @@
+"""Local filesystem storage service implementation.
+
+This module provides a storage service implementation using the local
+filesystem for file storage.
+
+Classes:
+    LocalStorageService: Storage service using local filesystem.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+from pathlib import Path
+import secrets
+
+from app.config import settings
+from app.log import service_logger
+
+from .base import StorageService
+
+import aiofiles
+
+logger = service_logger("LocalStorage")
+
+
+class LocalStorageService(StorageService):
+    """Storage service implementation using local filesystem.
+
+    Stores files directly on the local filesystem with path-based
+    organization.
+
+    Attributes:
+        storage_path: The root directory for file storage.
+    """
+
+    def __init__(
+        self,
+        storage_path: str,
+    ):
+        """Initialize the local storage service.
+
+        Args:
+            storage_path: The root directory for file storage.
+        """
+        self.storage_path = Path(storage_path).resolve()
+        self.storage_path.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Local storage root ready: {self.storage_path}")
+
+    def _get_file_path(self, file_path: str) -> Path:
+        """Get the full filesystem path for a file.
+
+        Args:
+            file_path: The relative file path.
+
+        Returns:
+            The full filesystem path.
+
+        Raises:
+            ValueError: If the path would escape the storage directory.
+        """
+        clean_path = file_path.lstrip("/")
+        full_path = self.storage_path / clean_path
+
+        try:
+            full_path.resolve().relative_to(self.storage_path)
+        except ValueError:
+            raise ValueError(f"Invalid file path: {file_path}")
+
+        return full_path
+
+    async def write_file(
+        self,
+        file_path: str,
+        content: bytes,
+        content_type: str = "application/octet-stream",  # noqa: ARG002
+        cache_control: str = "public, max-age=31536000",  # noqa: ARG002
+    ) -> None:
+        full_path = self._get_file_path(file_path)
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path = full_path.with_name(f".{full_path.name}.{secrets.token_hex(16)}.tmp")
+
+        try:
+            async with aiofiles.open(temporary_path, "xb") as f:
+                await f.write(content)
+                await f.flush()
+                await asyncio.to_thread(os.fsync, f.fileno())
+            await asyncio.to_thread(os.replace, temporary_path, full_path)
+            logger.debug(f"Wrote local file {file_path} ({len(content)} bytes)")
+        except OSError as e:
+            logger.error(f"Failed to write local file {file_path}: {e}")
+            raise RuntimeError(f"Failed to write file: {e}") from e
+        finally:
+            # A cancellation or failed write can only expose this unique temp
+            # file. The destination changes in one atomic replace operation.
+            try:
+                temporary_path.unlink(missing_ok=True)
+            except OSError as exc:
+                logger.warning(f"Failed to clean temporary local file {temporary_path}: {exc}")
+
+    async def read_file(self, file_path: str) -> bytes:
+        full_path = self._get_file_path(file_path)
+
+        if not full_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        try:
+            async with aiofiles.open(full_path, "rb") as f:
+                content = await f.read()
+            logger.debug(f"Read local file {file_path} ({len(content)} bytes)")
+            return content
+        except OSError as e:
+            logger.error(f"Failed to read local file {file_path}: {e}")
+            raise RuntimeError(f"Failed to read file: {e}")
+
+    async def delete_file(self, file_path: str) -> None:
+        full_path = self._get_file_path(file_path)
+
+        if not full_path.exists():
+            return
+
+        try:
+            full_path.unlink()
+
+            parent = full_path.parent
+            while parent != self.storage_path and not any(parent.iterdir()):
+                parent.rmdir()
+                parent = parent.parent
+            logger.debug(f"Deleted local file {file_path}")
+        except OSError as e:
+            logger.error(f"Failed to delete local file {file_path}: {e}")
+            raise RuntimeError(f"Failed to delete file: {e}")
+
+    async def is_exists(self, file_path: str) -> bool:
+        full_path = self._get_file_path(file_path)
+        return full_path.exists() and full_path.is_file()
+
+    async def get_file_url(self, file_path: str) -> str:
+        return f"{settings.server_url}file/{file_path.lstrip('/')}"
+
+    def get_file_name_by_url(self, url: str) -> str | None:
+        if not url.startswith(str(settings.server_url)):
+            return None
+        return url[len(settings.server_url) + len("file/") :]

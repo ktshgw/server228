@@ -1,0 +1,13 @@
+{$SERVER_DOMAIN} {
+	# This endpoint is only for the spectator container's internal callbacks.
+	@internal_lio path /_lio /_lio/*
+	respond @internal_lio 404
+
+	encode zstd gzip
+	reverse_proxy nginx:80 {
+		# The application recognizes these provider-specific client-IP headers.
+		# This gateway is not one of those providers, so never trust client input.
+		header_up -CF-Connecting-IP
+		header_up -True-Client-IP
+	}
+}

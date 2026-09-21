@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#8b3bb7">
+    <meta name="description" content="SOMS! — неофициальный приватный сервер osu!lazer для друзей.">
+    <title>SOMS! — private osu!lazer</title>
+    <link rel="icon" href="./soms-logo-v3.png?v=1" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700;6..12,800;6..12,900&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css?v=19">
+</head>
+<body data-route="home">
+    <div class="page-backdrop" aria-hidden="true"></div>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="site-brand" href="#home" aria-label="SOMS! — на главную">
+                <span class="brand-disc" aria-hidden="true">
+                    <img class="brand-logo-outline" src="./soms-logo-outline-v3.png?v=1" alt="">
+                    <img class="brand-logo-filled" src="./soms-logo-v3.png?v=1" alt="">
+                </span>
+            </a>
+            <button id="mobile-menu-button" class="mobile-menu-button" type="button" aria-expanded="false">
+                <span id="mobile-page-title">главная</span><i aria-hidden="true">⌄</i>
+            </button>
+            <nav class="main-nav" aria-label="Основная навигация">
+                <a class="nav-link is-active" href="#home" data-route="home">главная</a>
+                <a class="nav-link" href="#beatmaps" data-route="beatmaps">карты</a>
+                <a class="nav-link" href="#rankings" data-route="rankings">рейтинг</a>
+            </nav>
+            <button id="global-search-button" class="global-search-button" type="button" aria-label="Поиск игроков" title="Поиск игроков">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"></circle><path d="m16 16 5 5"></path></svg>
+            </button>
+            <div class="header-spacer"></div>
+            <label class="mode-select" title="Режим игры">
+                <span class="mode-symbol" aria-hidden="true">●</span>
+                <span class="sr-only">Режим игры</span>
+                <select id="global-mode">
+                    <option value="osu">osu!</option>
+                    <option value="taiko">taiko</option>
+                    <option value="fruits">catch</option>
+                    <option value="mania">mania</option>
+                </select>
+            </label>
+            <span class="header-status-pill" title="Приватный сервер"><i></i> SOMS!</span>
+            <button id="auth-button" class="header-login" type="button">войти</button>
+            <div class="user-menu-shell" hidden>
+                <button id="user-menu-button" class="user-chip" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="user-menu-popover" aria-label="Открыть меню пользователя" hidden>
+                    <span class="user-chip-copy"><strong id="header-name">—</strong><small>профиль</small></span>
+                    <span id="header-avatar" class="avatar avatar-header">?</span>
+                </button>
+                <div id="user-menu-popover" class="user-menu-popover" role="dialog" aria-labelledby="user-menu-name" tabindex="-1" hidden>
+                    <div class="user-menu-card">
+                        <span id="user-menu-avatar" class="avatar user-menu-avatar">?</span>
+                        <span class="user-menu-identity"><strong id="user-menu-name">—</strong><small id="user-menu-detail">—</small></span>
+                    </div>
+                    <nav class="user-menu-nav" aria-label="Меню пользователя">
+                        <button id="user-menu-profile" type="button"><span aria-hidden="true">●</span>Мой профиль</button>
+                        <button id="user-menu-settings" type="button"><span aria-hidden="true">⚙</span>Настройки</button>
+                        <button id="user-menu-admin" type="button" hidden><span aria-hidden="true">◆</span>Админ-панель</button>
+                        <button id="user-menu-logout" class="is-danger" type="button"><span aria-hidden="true">↪</span>Выйти</button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="top-progress" class="top-progress" aria-hidden="true" hidden><span></span></div>
+
+    <main class="site-main">
+        <section id="page-home" class="route-page dashboard-page is-active" data-page="home">
+            <header class="page-titlebar">
+                <span class="title-icon home-icon" aria-hidden="true">⌂</span>
+                <h1>дашборд</h1>
+            </header>
+            <div class="dashboard-layout">
+                <div class="dashboard-feed">
+                    <section class="dashboard-panel news-panel">
+                        <h2>Новости сервера</h2>
+                        <article class="news-card news-card-featured">
+                            <div class="news-art"><div class="news-art-logo"><img src="./soms-logo-v3.png?v=1" alt=""><b>SOMS!</b></div><span>играй по своим правилам</span></div>
+                            <div class="news-copy"><time>сегодня</time><div><h3>Добро пожаловать на SOMS!</h3><p>Локальный рейтинг, обычный osu!lazer и карты, которым мы решили дать второй шанс.</p></div></div>
+                        </article>
+                        <article class="news-card">
+                            <div class="news-art news-art-ranking"><span>LOCAL RANKED</span></div>
+                            <div class="news-copy"><time>обновление</time><div><h3>Рейтинг и профили игроков</h3><p>Лучшие результаты, PP, история игр и достижения теперь собраны в одном месте.</p></div></div>
+                        </article>
+                    </section>
+
+                    <section class="dashboard-panel recent-panel">
+                        <div class="dashboard-heading"><h2>Последние результаты</h2><button type="button" data-go="rankings">таблица игроков ›</button></div>
+                        <div id="home-scores" class="home-score-list"></div>
+                        <div id="home-scores-empty" class="empty-state" hidden><strong>Здесь пока тихо</strong><p>Первая сыгранная карта появится здесь.</p></div>
+                    </section>
+                </div>
+
+                <aside class="dashboard-sidebar">
+                    <section class="server-overview">
+                        <div class="server-counts">
+                            <button id="home-online-toggle" class="server-online-toggle" type="button" aria-expanded="false" aria-controls="home-online-panel"><span>людей в сети</span><strong id="hero-online">—</strong><i aria-hidden="true">⌄</i></button>
+                            <div><span>всего игроков</span><strong id="hero-users">—</strong></div>
+                            <div><span>результатов</span><strong id="hero-scores">—</strong></div>
+                        </div>
+                        <div id="home-online-panel" class="home-online-panel" hidden><div class="home-online-heading"><strong>Сейчас играют</strong><span id="home-online-caption"></span></div><div id="home-online-users" class="home-online-users"></div></div>
+                        <div class="server-chart" aria-hidden="true"><svg viewBox="0 0 340 72" preserveAspectRatio="none"><path d="M0 60 C28 47 44 23 78 25 S127 40 151 43 191 49 218 51 266 67 340 35"></path><circle cx="338" cy="36" r="4"></circle></svg></div>
+                    </section>
+                    <a id="switcher-download" class="side-action side-action-blue" href="/client/SOMS-switcher.exe" download="SOMS-switcher.exe"><span>Скачать SOMS!</span><b>↓</b></a>
+                    <button id="support-soms" class="side-action side-action-pink" type="button"><span>Поддержать SOMS!</span><b>♥</b></button>
+                    <button class="side-action side-action-orange" type="button" data-go="rankings"><span>Посмотреть рейтинг</span><b>≋</b></button>
+
+                    <section class="sidebar-block ranked-map-block">
+                        <h2>Новые рейтинговые карты</h2>
+                        <div id="home-beatmaps" class="home-map-grid"></div>
+                        <div id="home-beatmaps-empty" class="empty-state compact" hidden><p>Карты ещё загружаются.</p></div>
+                        <button class="sidebar-more" type="button" data-go="beatmaps">показать ещё</button>
+                    </section>
+
+                    <section class="sidebar-block">
+                        <h2>Популярные карты</h2>
+                        <div id="home-popular-maps" class="home-map-grid"></div>
+                        <button class="sidebar-more" type="button" data-go="beatmaps">показать ещё</button>
+                    </section>
+
+                    <section class="sidebar-block leaderboard-preview">
+                        <h2>Лучшие игроки</h2>
+                        <div id="home-leaderboard" class="mini-leaderboard"></div>
+                        <div id="home-leaderboard-empty" class="empty-state compact" hidden><p>Рейтинг пока пуст.</p></div>
+                        <button class="sidebar-more" type="button" data-go="rankings">весь рейтинг</button>
+                    </section>
+                </aside>
+            </div>
+            <span id="hero-player-name" class="sr-only">кто-то из друзей</span>
+        </section>
+
+        <section id="page-beatmaps" class="route-page osu-page theme-blue" data-page="beatmaps" hidden>
+            <header class="page-titlebar page-titlebar-dark">
+                <span class="title-icon map-icon" aria-hidden="true">◇</span>
+                <h1>библиотека карт</h1>
+            </header>
+            <section class="beatmap-search-panel">
+                <label class="large-search">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"></circle><path d="m15 15 6 6"></path></svg>
+                    <input id="map-search" type="search" maxlength="120" placeholder="введите ключевые слова..." autocomplete="off">
+                    <span class="search-hint" title="Можно вставить ссылку или ID">ID</span>
+                </label>
+                <div class="map-filter-grid">
+                    <strong>Общее</strong><div><button class="text-filter is-active" type="button">Рекомендованная сложность</button><button class="text-filter" type="button">Избранные исполнители</button></div>
+                    <strong>Режим игры</strong><div class="mode-tabs mode-tabs-filter" data-mode-tabs role="group" aria-label="Режим поиска"></div>
+                    <strong>Категории</strong><div id="map-status-tabs" class="filter-tabs" role="group" aria-label="Статус карты">
+                        <button class="filter-chip" type="button" data-status="any">Все</button>
+                        <button class="filter-chip is-active" type="button" data-status="leaderboard">С таблицей рекордов</button>
+                        <button class="filter-chip" type="button" data-status="ranked">Рейтинговые</button>
+                        <button class="filter-chip" type="button" data-status="qualified">Квалифицированные</button>
+                        <button class="filter-chip" type="button" data-status="loved">Любимые</button>
+                        <button class="filter-chip" type="button" data-status="pending">На рассмотрении</button>
+                        <button class="filter-chip" type="button" data-status="wip">В разработке</button>
+                        <button class="filter-chip" type="button" data-status="graveyard">Заброшенные</button>
+                    </div>
+                </div>
+            </section>
+            <div class="beatmap-sortbar">
+                <strong>Сортировать по</strong>
+                <label><span class="sr-only">Сортировка</span><select id="map-sort">
+                    <option value="relevance_desc">релевантности</option>
+                    <option value="ranked_desc" selected>дате появления в категории</option>
+                    <option value="updated_desc">дате обновления</option>
+                    <option value="favourites_desc">оценкам</option>
+                    <option value="plays_desc">количеству игр</option>
+                    <option value="difficulty_desc">сложности</option>
+                </select></label>
+                <span class="view-toggle" aria-hidden="true">▦</span>
+            </div>
+            <div class="beatmap-results">
+                <div id="beatmaps-grid" class="beatmaps-grid"></div>
+                <div id="beatmaps-empty" class="empty-state tall" hidden><strong>Карты не найдены</strong><p>Попробуйте другой запрос или фильтр.</p></div>
+                <nav id="beatmaps-pagination" class="pagination" aria-label="Страницы каталога" hidden>
+                    <button id="beatmaps-prev" class="button button-quiet" type="button">‹ назад</button>
+                    <span id="beatmaps-page">Страница 1</span>
+                    <button id="beatmaps-next" class="button button-quiet" type="button">вперёд ›</button>
+                </nav>
+            </div>
+        </section>
+
+        <section id="page-beatmap" class="route-page osu-page theme-blue" data-page="beatmap" hidden>
+            <header class="page-titlebar page-titlebar-dark beatmap-detail-titlebar">
+                <button id="beatmap-detail-back" class="detail-back" type="button" aria-label="Вернуться к библиотеке карт">‹</button>
+                <span class="title-icon map-icon" aria-hidden="true">◇</span>
+                <h1>информация о карте</h1>
+            </header>
+            <div id="beatmap-detail-loading" class="detail-loading" hidden>Загружаем карту…</div>
+            <article id="beatmap-detail-content" class="beatmap-detail" hidden>
+                <div id="beatmap-detail-cover" class="beatmap-detail-cover">
+                    <div class="beatmap-detail-shade"></div>
+                    <div class="beatmap-detail-heading">
+                        <span id="beatmap-detail-status" class="map-status">—</span>
+                        <h1 id="beatmap-detail-title">—</h1>
+                        <p id="beatmap-detail-artist">—</p>
+                        <span id="beatmap-detail-creator">—</span>
+                    </div>
+                </div>
+                <div id="beatmap-detail-notice" class="detail-notice" hidden></div>
+                <div class="beatmap-detail-grid">
+                    <section class="detail-panel">
+                        <div class="detail-panel-title"><h2>Сложности</h2><span id="beatmap-detail-count">0</span></div>
+                        <div id="beatmap-detail-difficulties" class="difficulty-list"></div>
+                    </section>
+                    <aside class="detail-panel detail-facts">
+                        <h2>О карте</h2>
+                        <dl id="beatmap-detail-facts"></dl>
+                        <div class="detail-actions">
+                            <a id="beatmap-detail-download" class="button button-primary" href="#">скачать карту</a>
+                            <a id="beatmap-detail-official" class="button button-quiet" href="#" target="_blank" rel="noopener noreferrer">открыть на osu!</a>
+                            <div id="beatmap-moderation-actions" class="map-moderation-actions" hidden>
+                                <button id="beatmap-rank" class="button map-rank-action" type="button">Ранкнуть</button>
+                                <button id="beatmap-unrank" class="button map-unrank-action" type="button">Деранкнуть</button>
+                                <button id="beatmap-love" class="button map-love-action" type="button">Ловнуть</button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+                <section class="detail-panel beatmap-description-panel">
+                    <h2>Описание</h2>
+                    <p id="beatmap-detail-description">У этой карты пока нет описания.</p>
+                    <div id="beatmap-detail-tags" class="beatmap-tags"></div>
+                </section>
+                <section id="beatmap-leaderboard" class="detail-panel beatmap-leaderboard" hidden>
+                    <div class="detail-panel-title"><div><small>ЛОКАЛЬНЫЕ РЕКОРДЫ</small><h2 id="beatmap-leaderboard-title">Таблица лидеров</h2></div><span id="beatmap-leaderboard-mode">osu!</span></div>
+                    <div class="table-scroll"><table class="beatmap-score-table"><thead><tr><th>#</th><th>Игрок</th><th>Результат</th><th>Точность</th><th>Комбо</th><th>PP</th><th aria-label="Действия"></th></tr></thead><tbody id="beatmap-leaderboard-body"></tbody></table></div>
+                    <div id="beatmap-leaderboard-empty" class="empty-state" hidden><strong>Рекордов пока нет</strong><p>Станьте первым игроком на этой сложности.</p></div>
+                    <nav id="beatmap-leaderboard-pagination" class="pagination compact-pagination" hidden><button id="beatmap-scores-prev" class="button button-quiet" type="button">‹</button><span id="beatmap-scores-page">1 / 1</span><button id="beatmap-scores-next" class="button button-quiet" type="button">›</button></nav>
+                </section>
+            </article>
+            <div id="beatmap-detail-empty" class="empty-state tall" hidden><strong>Не удалось открыть карту</strong><p>Вернитесь в библиотеку и попробуйте ещё раз.</p><button class="button button-quiet" type="button" data-go="beatmaps">к библиотеке</button></div>
+        </section>
+
+        <section id="page-rankings" class="route-page osu-page theme-green" data-page="rankings" hidden>
+            <header class="page-titlebar page-titlebar-dark">
+                <span class="title-icon ranking-icon" aria-hidden="true">≋</span>
+                <h1>рейтинг</h1>
+                <div id="ranking-mode-tabs" class="mode-tabs mode-tabs-icons" data-mode-tabs role="group" aria-label="Режим рейтинга"></div>
+            </header>
+            <nav class="ranking-tabs" aria-label="Раздел рейтинга">
+                <button class="is-active" type="button" data-ranking-section="world" aria-pressed="true">мировой</button>
+                <button type="button" data-ranking-section="countries" aria-pressed="false">по странам</button>
+                <button type="button" data-ranking-section="scores" aria-pressed="false">по лучшим рекордам</button>
+                <button type="button" data-ranking-section="teams" aria-pressed="false">по командам</button>
+                <button type="button" data-ranking-section="playlists" aria-pressed="false">по плейлистам</button>
+                <button type="button" data-ranking-section="ranked" aria-pressed="false">по рейтинговой игре</button>
+                <button type="button" data-ranking-section="daily" aria-pressed="false">по картам дня</button>
+            </nav>
+            <div id="ranking-subtitle" class="ranking-kudos">по производительности</div>
+            <section class="ranking-filter-bar">
+                <label id="ranking-country-filter"><strong>СТРАНА</strong><select id="ranking-country"><option value="">Все</option></select></label>
+                <div id="ranking-scope-filter"><strong>ПОКАЗАТЬ</strong><span class="ranking-scope-buttons"><button class="is-active" type="button" data-ranking-scope="all" aria-pressed="true">Всех</button><button type="button" data-ranking-scope="friends" aria-pressed="false">Друзей</button></span></div>
+            </section>
+            <section class="rankings-surface">
+                <div class="ranking-sort"><span>Сортировать по</span><button class="is-active" type="button" data-ranking-sort="performance" aria-pressed="true">Производительность</button><button type="button" data-ranking-sort="score" aria-pressed="false">Рейтинговые очки</button></div>
+                <nav class="pagination ranking-pagination" aria-label="Страницы рейтинга">
+                    <button id="rankings-prev" class="button button-quiet" type="button">‹ НАЗАД</button>
+                    <span id="rankings-page">Страница 1 из 1</span>
+                    <button id="rankings-next" class="button button-quiet" type="button">ВПЕРЁД ›</button>
+                </nav>
+                <div id="ranking-podium" hidden></div>
+                <div class="table-scroll"><table id="ranking-table" class="ranking-table">
+                    <thead id="rankings-head"><tr><th>#</th><th>Игрок</th><th>Точность</th><th>Количество игр</th><th>Рейтинговые очки</th><th>Производительность</th><th>SS</th><th>S</th><th>A</th></tr></thead>
+                    <tbody id="rankings-body"></tbody>
+                </table></div>
+                <div id="rankings-empty" class="empty-state tall" hidden><strong>Рейтинг ещё не начался</strong><p>Сыграйте рейтинговую карту и станьте первым.</p></div>
+            </section>
+        </section>
+
+        <section id="page-profile" class="route-page osu-page theme-purple" data-page="profile" hidden>
+            <div id="profile-guest" class="guest-gate" hidden><span class="guest-disc">p!</span><h1>Войдите, чтобы открыть профиль</h1><p>Здесь находятся статистика, лучшие результаты и история игр.</p><button class="button button-primary" type="button" data-open-auth="login">войти</button></div>
+            <div id="profile-content" hidden>
+                <header class="page-titlebar page-titlebar-dark">
+                    <span class="title-icon profile-icon" aria-hidden="true">◉</span><h1>информация об игроке</h1>
+                </header>
+                <nav class="profile-top-tabs"><span class="is-active">главная</span><div class="mode-tabs mode-tabs-icons" data-mode-tabs role="group" aria-label="Режим профиля"></div></nav>
+
+                <section class="profile-hero">
+                    <div id="profile-cover-art" class="profile-cover-art" aria-hidden="true"><i></i><i></i><i></i></div>
+                    <div class="profile-identity-bar">
+                        <span id="profile-avatar" class="avatar avatar-profile">?</span>
+                        <div class="profile-identity"><div class="profile-name-line"><h1 id="profile-name">—</h1><span id="profile-supporter-heart" class="profile-supporter-heart" role="img" aria-label="osu!supporter" hidden>♥</span></div><div><span id="profile-country">🌐 XX</span><span id="profile-title" hidden></span></div></div>
+                        <button id="profile-settings-button" class="round-edit" type="button" title="Настроить профиль" hidden>✎</button>
+                    </div>
+                </section>
+
+                <section class="profile-summary">
+                    <div class="rank-summary">
+                        <div><span>Рейтинг в мире</span><strong id="profile-global-rank">—</strong></div>
+                        <div><span>Рейтинг в стране</span><strong id="profile-country-rank">—</strong></div>
+                        <div class="ranked-placement"><span>Ranked в мире <select id="profile-ranked-variant" aria-label="Вариант mania для рейтинга Ranked" hidden><option value="4">4K</option><option value="7">7K</option></select></span><strong id="profile-ranked-rank">—</strong></div>
+                    </div>
+                    <div id="profile-rank-chart" class="profile-chart" tabindex="0" role="img" aria-label="История позиции в рейтинге">
+                        <svg viewBox="0 0 540 95" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="rank-chart-grid" d="M0 18H540M0 47H540M0 76H540"></path>
+                            <path id="profile-chart-area" class="rank-chart-area"></path>
+                            <path id="profile-chart-line" class="rank-chart-line"></path>
+                            <line id="profile-chart-guide" class="rank-chart-guide" y1="4" y2="91" hidden></line>
+                            <circle id="profile-chart-point" class="rank-chart-point" r="4" hidden></circle>
+                        </svg>
+                        <div id="profile-chart-tooltip" class="rank-chart-tooltip" hidden></div>
+                        <span id="profile-chart-empty" class="rank-chart-empty">История рейтинга появится после первых результатов</span>
+                    </div>
+                    <dl class="profile-key-stats" aria-label="Основные показатели игрока">
+                        <div><dt>Медали</dt><dd id="profile-medals">—</dd></div>
+                        <div><dt>PP</dt><dd id="profile-pp">—</dd></div>
+                        <div><dt>Время в игре</dt><dd id="profile-play-time">—</dd></div>
+                        <div><dt>MMR</dt><dd id="profile-mmr">—</dd></div>
+                    </dl>
+                    <dl id="profile-stats" class="profile-stat-details"></dl>
+                    <div id="profile-grade-counts" class="profile-grade-counts"></div>
+                </section>
+                <section class="profile-level-row"><div id="profile-friend-slot" class="profile-follow" hidden><button id="profile-friend-button" class="profile-friend-button" type="button" data-state="none"><span id="profile-friend-icon" class="profile-friend-icon" aria-hidden="true"></span><span id="profile-follower-count">0</span></button></div><span class="level-caption">прогресс уровня</span><div class="level-progress"><div><span id="profile-level-bar"></span></div><strong id="profile-level">1</strong></div></section>
+                <div id="profile-meta" class="profile-meta"></div>
+                <nav class="profile-anchor-nav" aria-label="Разделы профиля">
+                    <button type="button" data-scroll-to="profile-records">Рекорды</button><button type="button" data-scroll-to="profile-about-section">Обо мне!</button><button type="button" data-scroll-to="profile-achievements">Медали</button><button type="button" data-scroll-to="profile-activity-section">История игр</button>
+                </nav>
+
+                <div id="profile-blocks" class="profile-blocks" aria-label="Перемещаемые разделы профиля">
+                    <section id="profile-records" class="profile-section records-section movable-profile-block" data-profile-block="scores" draggable="true">
+                        <div class="profile-section-title"><button class="block-drag-handle" type="button" title="Перетащите раздел" aria-label="Перетащить раздел Рекорды">⠿</button><h2>Рекорды</h2><div id="score-type-tabs" class="score-type-tabs"><button class="filter-chip is-active" type="button" data-score-type="best">Лучшие</button><button class="filter-chip" type="button" data-score-type="recent">Недавние</button></div><div class="block-move-actions"><button type="button" data-block-move="up" aria-label="Поднять раздел">↑</button><button type="button" data-block-move="down" aria-label="Опустить раздел">↓</button></div></div>
+                        <section id="profile-pinned-group" class="score-group pinned-score-group" hidden>
+                            <div class="score-group-heading"><h3>Закреплённые</h3><span id="profile-pinned-count">0</span></div>
+                            <div id="profile-pinned-scores" class="score-list pinned-score-list"></div>
+                        </section>
+                        <div class="score-group-heading best-score-heading"><h3 id="profile-score-list-title">Лучшие</h3><span id="profile-score-count">0</span></div>
+                        <div id="profile-scores" class="score-list"></div>
+                        <div id="profile-scores-empty" class="empty-state" hidden><strong>Результатов пока нет</strong><p>Самое время поставить первый рекорд.</p></div>
+                        <button id="scores-more" class="scores-more" type="button" hidden>⌄&nbsp;&nbsp; ПОКАЗАТЬ ЕЩЁ &nbsp;&nbsp;⌄</button>
+                        <nav id="scores-pagination" class="pagination compact-pagination" aria-label="Страницы результатов"><button id="scores-prev" class="button button-quiet" type="button">‹</button><span id="scores-page">1 / 1</span><button id="scores-next" class="button button-quiet" type="button">›</button></nav>
+                    </section>
+
+                    <section id="profile-about-section" class="profile-section about-section movable-profile-block" data-profile-block="about" draggable="true">
+                        <div class="profile-section-title"><button class="block-drag-handle" type="button" title="Перетащите раздел" aria-label="Перетащить раздел Обо мне">⠿</button><h2>Обо мне!</h2><button id="userpage-edit" class="userpage-edit button button-quiet" type="button" hidden>редактировать</button><div class="block-move-actions"><button type="button" data-block-move="up" aria-label="Поднять раздел">↑</button><button type="button" data-block-move="down" aria-label="Опустить раздел">↓</button></div></div>
+                        <div id="profile-userpage" class="safe-userpage"></div>
+                        <form id="userpage-editor" class="userpage-editor" hidden>
+                            <div class="editor-toolbar" aria-label="Форматирование"><button type="button" data-editor-tag="b">B</button><button type="button" data-editor-tag="i"><i>I</i></button><button type="button" data-editor-tag="u"><u>U</u></button><button type="button" data-editor-tag="quote">цитата</button><button type="button" data-editor-link>ссылка</button><button type="button" data-editor-image>изображение</button></div>
+                            <label class="field"><span>Страница игрока</span><textarea id="userpage-text" maxlength="60000" rows="9" placeholder="Расскажите о себе. Поддерживаются безопасный BBCode, ссылки и изображения."></textarea></label>
+                            <div><strong class="editor-preview-title">Предпросмотр</strong><div id="userpage-preview" class="safe-userpage editor-preview"></div></div>
+                            <div class="settings-actions"><span>Небезопасный HTML никогда не выполняется.</span><div><button id="userpage-cancel" class="button button-quiet" type="button">отмена</button><button class="button button-primary" type="submit">сохранить</button></div></div>
+                        </form>
+                    </section>
+
+                    <section id="profile-achievements" class="profile-section achievements-section movable-profile-block" data-profile-block="medals" draggable="true">
+                        <div class="profile-section-title"><button class="block-drag-handle" type="button" title="Перетащите раздел" aria-label="Перетащить раздел Медали">⠿</button><h2>Медали</h2><span id="achievement-count" class="section-count">0</span><div class="block-move-actions"><button type="button" data-block-move="up" aria-label="Поднять раздел">↑</button><button type="button" data-block-move="down" aria-label="Опустить раздел">↓</button></div></div>
+                        <h3 class="subsection-title">Последние полученные</h3>
+                        <div id="profile-achievements-recent" class="achievement-row"></div>
+                        <h3 class="subsection-title all-achievements-title">Все достижения</h3>
+                        <div id="profile-achievements-grid" class="achievement-groups"></div>
+                        <div id="profile-achievements-empty" class="empty-state" hidden><strong>Полученных медалей пока нет</strong><p>Они появятся здесь сразу после разблокировки в osu!lazer.</p></div>
+                    </section>
+
+                    <section id="profile-activity-section" class="profile-section profile-activity-section movable-profile-block" data-profile-block="historical" draggable="true">
+                        <div class="profile-section-title"><button class="block-drag-handle" type="button" title="Перетащите раздел" aria-label="Перетащить раздел История игр">⠿</button><h2>История игр</h2><span>игры по месяцам</span><div class="block-move-actions"><button type="button" data-block-move="up" aria-label="Поднять раздел">↑</button><button type="button" data-block-move="down" aria-label="Опустить раздел">↓</button></div></div>
+                        <div class="profile-activity-grid">
+                            <div class="play-history-wrap">
+                                <div id="profile-play-history" class="play-history-chart" tabindex="0" role="img" aria-label="Количество игр по месяцам">
+                                    <svg viewBox="0 0 900 200" preserveAspectRatio="none" aria-hidden="true">
+                                        <path class="play-history-grid" d="M0 24H900M0 74H900M0 124H900M0 174H900"></path>
+                                        <path id="profile-play-history-area" class="play-history-area"></path>
+                                        <path id="profile-play-history-line" class="play-history-line"></path>
+                                        <line id="profile-play-history-guide" class="play-history-guide" y1="12" y2="174" hidden></line>
+                                        <circle id="profile-play-history-point" class="play-history-point" r="5" hidden></circle>
+                                    </svg>
+                                    <div id="profile-play-history-labels" class="play-history-labels" aria-hidden="true"></div>
+                                    <div id="profile-play-history-tooltip" class="play-history-tooltip" hidden></div>
+                                    <span id="profile-play-history-empty" class="play-history-empty">История игр пока пуста.</span>
+                                </div>
+                            </div>
+                            <div class="most-played-wrap"><h3>Чаще всего сыграны</h3><div id="profile-most-played" class="most-played-list"></div><p id="profile-most-played-empty" class="muted-copy" hidden>История пока пуста.</p></div>
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="page-settings" class="route-page osu-page theme-purple" data-page="settings" hidden>
+            <div id="settings-guest" class="guest-gate" hidden><span class="guest-disc">⚙</span><h1>Сначала нужно войти</h1><p>Настройки доступны только владельцу аккаунта.</p><button class="button button-primary" type="button" data-open-auth="login">войти</button></div>
+            <div id="settings-content" hidden>
+                <header class="page-titlebar page-titlebar-dark"><span class="title-icon">⚙</span><h1>настройки аккаунта</h1></header>
+                <nav class="settings-tabs" role="tablist" aria-label="Разделы настроек"><button class="is-active" type="button" data-settings-tab="profile" role="tab" aria-selected="true">профиль</button><button type="button" data-settings-tab="security" role="tab" aria-selected="false">безопасность</button></nav>
+                <div class="settings-shell">
+                    <section class="settings-panel profile-settings" data-settings-panel="profile"><div class="settings-panel-heading"><div><small>ПУБЛИЧНЫЙ ПРОФИЛЬ</small><h2 id="settings-username">—</h2></div><span>то, что увидят другие игроки</span></div><form id="profile-settings-form" class="form-stack"><div class="form-grid"><label class="field"><span>Страна</span><select id="settings-country" name="country_code"></select></label></div><label class="field"><span>Коротко о себе</span><textarea id="settings-interests" name="interests" maxlength="255" rows="3" placeholder="Музыка, любимые карты, что угодно"></textarea></label><div class="form-grid"><label class="field"><span>Сайт</span><input id="settings-website" name="website" type="url" maxlength="200" placeholder="https://..."></label><label class="field"><span>Discord</span><input id="settings-discord" name="discord" type="text" maxlength="100" placeholder="username"></label></div><label class="field"><span>Чем занимаетесь</span><input id="settings-occupation" name="occupation" type="text" maxlength="255" placeholder="Учёба, работа или увлечение"></label><label class="field"><span>Страница игрока</span><textarea id="settings-userpage" maxlength="60000" rows="8" placeholder="BBCode: [b]жирный[/b], [url=https://...]ссылка[/url], [img]https://...[/img]"></textarea></label><div id="settings-userpage-preview" class="safe-userpage editor-preview"></div><div class="settings-actions"><span>BBCode очищается сервером; предпросмотр дополнительно блокирует опасные ссылки и HTML.</span><button id="profile-save" class="button button-primary" type="submit">сохранить профиль</button></div></form></section>
+
+                    <section class="settings-panel security-settings" data-settings-panel="security" hidden>
+                        <div class="settings-panel-heading"><div><small>БЕЗОПАСНОСТЬ</small><h2>Доступ к аккаунту</h2></div><span id="account-name">—</span></div>
+                        <form id="email-form" class="security-form"><div><h3>Электронная почта</h3><p>Используется для восстановления доступа.</p></div><div class="security-fields"><label class="field"><span>Новый адрес</span><input id="settings-email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required></label><label class="field"><span>Текущий пароль</span><input id="settings-email-password" type="password" autocomplete="current-password" maxlength="512" required></label></div><button class="button button-primary" type="submit">обновить</button><p class="security-form-status" aria-live="polite"></p></form>
+                        <form id="password-form" class="security-form"><div><h3>Пароль</h3><p>Выберите уникальный пароль длиной не менее 8 символов.</p></div><div class="security-fields"><label class="field"><span>Текущий пароль</span><input id="settings-current-password" type="password" autocomplete="current-password" maxlength="512" required></label><label class="field"><span>Новый пароль</span><input id="settings-new-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><label class="field"><span>Повторите пароль</span><input id="settings-confirm-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label></div><button class="button button-primary" type="submit">сменить пароль</button><p class="security-form-status" aria-live="polite"></p></form>
+                        <form id="codeword-form" class="security-form"><div><h3>Кодовое слово</h3><p>Дополнительная фраза для подтверждения владения аккаунтом.</p></div><div class="security-fields"><label class="field"><span>Новое кодовое слово</span><input id="settings-codeword" type="password" autocomplete="off" minlength="6" maxlength="64" required></label><label class="field"><span>Текущий пароль</span><input id="settings-codeword-password" type="password" autocomplete="current-password" maxlength="512" required></label></div><button class="button button-primary" type="submit">сохранить</button><p class="security-form-status" aria-live="polite"></p></form>
+                        <div class="security-logout"><div><strong>Завершить работу</strong><span>Выйти из аккаунта на этом устройстве.</span></div><button id="logout-button" class="button button-danger-quiet" type="button">выйти</button></div>
+                    </section>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p><span id="footer-status"><i></i> status! онлайн</span><span class="footer-divider">·</span><span>SOMS! — неофициальный сервер и не связан с ppy Pty Ltd.</span></p>
+    </footer>
+
+    <dialog id="global-search-dialog" class="global-search-dialog">
+        <div class="global-search-shell">
+            <header class="global-search-head">
+                <label><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"></circle><path d="m15 15 6 6"></path></svg><input id="global-search-input" type="search" maxlength="64" placeholder="поиск игроков по нику..." autocomplete="off"></label>
+                <button id="global-search-close" type="button">Закрыть</button>
+            </header>
+            <div class="global-search-body">
+                <section><h2>Результаты поиска по картам</h2><button id="global-map-search-link" class="search-result-row" type="button"><span>Искать этот запрос в библиотеке карт</span><b>›</b></button></section>
+                <section><h2>Результаты поиска по игрокам</h2><div id="global-player-results" class="global-player-results"></div><div id="global-player-empty" class="search-result-row muted"><span>Начните вводить имя игрока</span></div></section>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="auth-dialog" class="dialog auth-dialog">
+        <form method="dialog"><button class="dialog-close" value="cancel" aria-label="Закрыть">×</button></form>
+        <div class="auth-brand"><span class="brand-disc"><img src="./soms-logo-v3.png?v=1" alt=""></span><div><strong>SOMS!</strong><small>private osu!lazer server</small></div></div>
+        <div class="auth-tabs" role="tablist"><button class="auth-tab is-active" type="button" data-auth-tab="login" role="tab" aria-selected="true">вход</button><button class="auth-tab" type="button" data-auth-tab="register" role="tab" aria-selected="false">регистрация</button></div>
+        <section id="auth-login-panel" class="auth-panel"><div class="auth-copy"><h2>С возвращением</h2><p>Продолжай с того места, где остановился.</p></div><form id="login-form" class="form-stack" autocomplete="on"><label class="field"><span>Имя пользователя</span><input id="login-username" type="text" autocomplete="username" minlength="2" maxlength="254" required></label><label class="field"><span>Пароль</span><input id="login-password" type="password" autocomplete="current-password" maxlength="512" required></label><label id="login-totp-field" class="field" hidden><span>Код двухфакторной защиты</span><input id="login-totp" type="text" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="32"></label><p id="login-error" class="form-error" role="alert" hidden></p><button id="login-submit" class="button button-primary" type="submit">войти</button></form></section>
+        <section id="auth-register-panel" class="auth-panel" hidden><div class="auth-copy"><h2>Новый игрок</h2><p>Создай локальный аккаунт для этого сервера.</p></div><form id="register-form" class="form-stack" autocomplete="on"><label class="field"><span>Имя пользователя</span><input id="register-username" type="text" autocomplete="username" minlength="2" maxlength="15" required></label><label class="field"><span>Электронная почта</span><input id="register-email" type="email" autocomplete="email" maxlength="254" required></label><label class="field"><span>Страна</span><select id="register-country" autocomplete="country"></select></label><label class="field"><span>Пароль</span><input id="register-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><label class="field"><span>Повторите пароль</span><input id="register-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><p id="register-error" class="form-error" role="alert" hidden></p><button id="register-submit" class="button button-primary" type="submit">создать аккаунт</button></form></section>
+        <p class="auth-security"><span>●</span> Пароль отправляется только этому серверу</p>
+    </dialog>
+
+    <div id="score-action-menu" class="score-action-menu" role="menu" hidden></div>
+
+    <dialog id="score-detail-dialog" class="dialog score-detail-dialog">
+        <form method="dialog"><button class="dialog-close" value="cancel" aria-label="Закрыть">×</button></form>
+        <div class="score-detail-heading"><span id="score-detail-grade" class="score-grade">—</span><div><h2 id="score-detail-title">Результат</h2><p id="score-detail-difficulty">—</p></div></div>
+        <dl id="score-detail-facts" class="score-detail-facts"></dl>
+        <div class="score-detail-actions"><button id="score-detail-map" class="button button-primary" type="button">открыть карту</button><a id="score-detail-replay" class="button button-quiet" href="#">скачать реплей</a></div>
+    </dialog>
+
+    <dialog id="score-delete-dialog" class="dialog score-delete-dialog">
+        <form method="dialog"><button class="dialog-close" value="cancel" aria-label="Закрыть">×</button></form>
+        <h2>Удалить результат?</h2>
+        <p id="score-delete-description">Этот результат будет удалён с сервера, а статистика игрока пересчитается.</p>
+        <div class="score-delete-actions">
+            <form method="dialog"><button class="button button-quiet" value="cancel">Отмена</button></form>
+            <button id="score-delete-confirm" class="button button-danger-quiet" type="button">Удалить</button>
+        </div>
+    </dialog>
+
+    <div id="toast-region" class="toast-region" role="status" aria-live="polite" aria-atomic="true"></div>
+    <script src="./app.js?v=18" defer></script>
+</body>
+</html>

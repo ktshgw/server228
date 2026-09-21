@@ -1,0 +1,178 @@
+"""Room playlist database models.
+
+This module handles playlist items (beatmap selections) in multiplayer rooms.
+"""
+
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
+
+from app.models.mods import APIMod
+from app.models.playlist import PlaylistItem, WinCondition
+
+from ._base import DatabaseModel, Exclude, OnDemand, ondemand
+from .beatmap import Beatmap, BeatmapDict, BeatmapModel
+
+from sqlalchemy import UniqueConstraint
+from sqlalchemy.orm import Mapped
+from sqlmodel import JSON, BigInteger, Column, DateTime, Field, ForeignKey, Integer, Relationship, col, func, select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+if TYPE_CHECKING:
+    from .room import Room
+    from .score import ScoreDict
+
+
+class PlaylistDict(TypedDict):
+    """TypedDict representation of a playlist item."""
+
+    id: int
+    room_id: int
+    beatmap_id: int
+    created_at: datetime | None
+    ruleset_id: int
+    allowed_mods: list[APIMod]
+    required_mods: list[APIMod]
+    freestyle: bool
+    expired: bool
+    owner_id: int
+    playlist_order: int
+    played_at: datetime | None
+    win_condition: NotRequired[WinCondition]
+    beatmap: NotRequired["BeatmapDict"]
+    scores: NotRequired[list[dict[str, Any]]]
+
+
+class PlaylistModel(DatabaseModel[PlaylistDict]):
+    """Base model for playlist items with transformation support."""
+
+    # Playlist IDs are scoped to a room by the spectator protocol.  ``db_id``
+    # on the concrete table is the internal globally unique primary key.
+    id: int = Field(default=None, sa_column=Column(BigInteger, index=True))
+    room_id: int = Field(foreign_key="rooms.id")
+    beatmap_id: int = Field(
+        foreign_key="beatmaps.id",
+    )
+    created_at: datetime | None = Field(default=None, sa_column_kwargs={"server_default": func.now()})
+    ruleset_id: int
+    allowed_mods: list[APIMod] = Field(
+        default_factory=list,
+        sa_column=Column(JSON),
+    )
+    required_mods: list[APIMod] = Field(
+        default_factory=list,
+        sa_column=Column(JSON),
+    )
+    freestyle: bool = Field(default=False)
+    expired: bool = Field(default=False)
+    owner_id: int = Field(sa_column=Column(Integer, ForeignKey("lazer_users.id")))
+    playlist_order: int = Field(default=0)
+    played_at: datetime | None = Field(
+        sa_column=Column(DateTime(timezone=True)),
+        default=None,
+    )
+
+    win_condition: OnDemand[WinCondition | None] = Field(default=None)
+
+    @ondemand
+    @staticmethod
+    async def beatmap(_session: AsyncSession, playlist: "Playlist", includes: list[str] | None = None) -> BeatmapDict:
+        return await BeatmapModel.transform(playlist.beatmap, includes=includes)
+
+    @ondemand
+    @staticmethod
+    async def scores(session: AsyncSession, playlist: "Playlist") -> list["ScoreDict"]:
+        from .score import Score, ScoreModel
+
+        scores = (
+            await session.exec(
+                select(Score).where(
+                    Score.playlist_item_id == playlist.id,
+                    Score.room_id == playlist.room_id,
+                )
+            )
+        ).all()
+        result: list[ScoreDict] = []
+        for score in scores:
+            result.append(
+                await ScoreModel.transform(
+                    score,
+                    includes=ScoreModel.MULTIPLAYER_BASE_INCLUDES,
+                )
+            )
+        return result
+
+
+class Playlist(PlaylistModel, table=True):
+    """Database table for room playlist items."""
+
+    __tablename__: str = "room_playlists"
+    __table_args__ = (UniqueConstraint("room_id", "id", name="uq_room_playlists_room_id_id"),)
+
+    db_id: Exclude[int] = Field(default=None, sa_column=Column(BigInteger, autoincrement=True, primary_key=True))
+
+    beatmap: Mapped[Beatmap] = Relationship(
+        sa_relationship_kwargs={
+            "lazy": "joined",
+        }
+    )
+    room: Mapped["Room"] = Relationship()
+    updated_at: datetime | None = Field(
+        default=None, sa_column_kwargs={"server_default": func.now(), "onupdate": func.now()}
+    )
+
+    @classmethod
+    async def from_model(cls, playlist: PlaylistItem, room_id: int) -> "Playlist":
+        return cls(
+            id=playlist.id,
+            owner_id=playlist.owner_id,
+            ruleset_id=playlist.ruleset_id,
+            beatmap_id=playlist.beatmap_id,
+            required_mods=playlist.required_mods,
+            allowed_mods=playlist.allowed_mods,
+            expired=playlist.expired,
+            playlist_order=playlist.playlist_order,
+            played_at=playlist.played_at,
+            freestyle=playlist.freestyle,
+            room_id=room_id,
+            win_condition=playlist.win_condition,
+        )
+
+    @classmethod
+    async def update(cls, playlist: PlaylistItem, room_id: int, session: AsyncSession):
+        db_playlist = await session.exec(select(cls).where(cls.id == playlist.id, cls.room_id == room_id))
+        db_playlist = db_playlist.first()
+        if db_playlist is None:
+            raise ValueError("Playlist item not found")
+        db_playlist.owner_id = playlist.owner_id
+        db_playlist.ruleset_id = playlist.ruleset_id
+        db_playlist.beatmap_id = playlist.beatmap_id
+        db_playlist.required_mods = playlist.required_mods
+        db_playlist.allowed_mods = playlist.allowed_mods
+        db_playlist.expired = playlist.expired
+        db_playlist.playlist_order = playlist.playlist_order
+        db_playlist.played_at = playlist.played_at
+        db_playlist.freestyle = playlist.freestyle
+        db_playlist.win_condition = playlist.win_condition
+        await session.commit()
+
+    @classmethod
+    async def add_to_db(cls, playlist: PlaylistItem, room_id: int, session: AsyncSession):
+        if playlist.id < 0:
+            largest_id = (
+                await session.exec(select(func.max(col(cls.id))).where(cls.room_id == room_id))
+            ).one_or_none()
+            playlist.id = (largest_id if largest_id is not None else -1) + 1
+        db_playlist = await cls.from_model(playlist, room_id)
+        session.add(db_playlist)
+        await session.commit()
+        await session.refresh(db_playlist)
+        playlist.id = db_playlist.id
+
+    @classmethod
+    async def delete_item(cls, item_id: int, room_id: int, session: AsyncSession):
+        db_playlist = await session.exec(select(cls).where(cls.id == item_id, cls.room_id == room_id))
+        db_playlist = db_playlist.first()
+        if db_playlist is None:
+            raise ValueError("Playlist item not found")
+        await session.delete(db_playlist)
+        await session.commit()

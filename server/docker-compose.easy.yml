@@ -1,0 +1,35 @@
+services:
+  # Public TLS entrypoint for the Windows one-click deployment. The backend
+  # services remain on osu-network; Caddy can only reach nginx via edge-network.
+  caddy:
+    # Pinned 2026-09-04; update deliberately so TLS behavior cannot drift.
+    image: caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    restart: unless-stopped
+    depends_on:
+      nginx:
+        condition: service_started
+    environment:
+      SERVER_DOMAIN: ${SERVER_DOMAIN:?Set SERVER_DOMAIN to a public DNS hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile.easy:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge-network
+
+  nginx:
+    networks:
+      - osu-network
+      - edge-network
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge-network:
+    driver: bridge

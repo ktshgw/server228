@@ -1,0 +1,81 @@
+"""Authentication and authorization database models.
+
+This module contains models for OAuth tokens, OAuth clients, API keys,
+and TOTP (two-factor authentication) configuration.
+"""
+
+from datetime import datetime
+import secrets
+from typing import TYPE_CHECKING
+
+from app.helpers import utcnow
+from app.models.model import UTCBaseModel
+
+from .verification import LoginSession
+
+from sqlalchemy import Column, DateTime
+from sqlalchemy.orm import Mapped
+from sqlmodel import JSON, Field, ForeignKey, Integer, Relationship, SQLModel, Text, text
+
+if TYPE_CHECKING:
+    from .user import User
+
+
+class OAuthToken(UTCBaseModel, SQLModel, table=True):
+    """Database table for OAuth access tokens."""
+
+    __tablename__: str = "oauth_tokens"
+
+    id: int = Field(default=None, primary_key=True, index=True)
+    user_id: int | None = Field(sa_column=Column(Integer, ForeignKey("lazer_users.id"), index=True, nullable=True))
+    client_id: int = Field(index=True)
+    access_token: str = Field(max_length=500, unique=True)
+    refresh_token: str = Field(max_length=500, unique=True)
+    token_type: str = Field(default="Bearer", max_length=20)
+    scope: str = Field(default="*", max_length=100)
+    expires_at: datetime = Field(sa_column=Column(DateTime, index=True))
+    refresh_token_expires_at: datetime = Field(sa_column=Column(DateTime, index=True))
+    created_at: datetime = Field(default_factory=utcnow, sa_column=Column(DateTime))
+
+    user: Mapped["User"] = Relationship()
+    login_session: Mapped[LoginSession | None] = Relationship(back_populates="token", passive_deletes=True)
+
+
+class OAuthClient(UTCBaseModel, SQLModel, table=True):
+    """Database table for OAuth client applications."""
+
+    __tablename__: str = "oauth_clients"
+    name: str = Field(max_length=100, index=True)
+    description: str = Field(sa_column=Column(Text), default="")
+    client_id: int | None = Field(default=None, primary_key=True, index=True)
+    client_secret: str = Field(default_factory=secrets.token_hex, index=True, exclude=True)
+    redirect_uris: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    owner_id: int = Field(sa_column=Column(Integer, ForeignKey("lazer_users.id"), index=True))
+
+    created_at: datetime = Field(default_factory=utcnow, sa_column=Column(DateTime))
+    updated_at: datetime = Field(
+        default_factory=utcnow,
+        sa_column=Column(DateTime, onupdate=text("CURRENT_TIMESTAMP")),
+    )
+
+
+class V1APIKeys(SQLModel, table=True):
+    """Database table for v1 API keys."""
+
+    __tablename__: str = "v1_api_keys"
+    id: int = Field(default=None, primary_key=True)
+    name: str = Field(max_length=100, index=True)
+    key: str = Field(default_factory=secrets.token_hex, index=True)
+    owner_id: int = Field(sa_column=Column(Integer, ForeignKey("lazer_users.id"), index=True))
+
+
+class TotpKeys(SQLModel, table=True):
+    """Database table for TOTP (two-factor authentication) keys."""
+
+    __tablename__: str = "totp_keys"
+    user_id: int = Field(sa_column=Column(Integer, ForeignKey("lazer_users.id"), primary_key=True))
+    secret: str = Field(max_length=100)
+    backup_keys: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=utcnow, sa_column=Column(DateTime))
+
+    user: Mapped["User"] = Relationship(back_populates="totp_key")
