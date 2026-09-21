@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PrivateOsu.StartupHook")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d3a7f70b2a8a390a81413daf9ebbd6fbb3fcee9b")]
 [assembly: System.Reflection.AssemblyProductAttribute("PrivateOsu.StartupHook")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PrivateOsu.StartupHook")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

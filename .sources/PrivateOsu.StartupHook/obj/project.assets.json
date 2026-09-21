@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "targets": {
     "net8.0": {}
   },
@@ -8,19 +8,19 @@
     "net8.0": []
   },
   "packageFolders": {
-    "/root/.nuget/packages/": {}
+    "C:\\Users\\Kts\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/src/PrivateOsu.StartupHook.csproj",
+      "projectUniqueName": "E:\\333\\pythonEPTA\\server228\\server228\\.sources\\PrivateOsu.StartupHook\\PrivateOsu.StartupHook.csproj",
       "projectName": "PrivateOsu.StartupHook",
-      "projectPath": "/src/PrivateOsu.StartupHook.csproj",
-      "packagesPath": "/root/.nuget/packages/",
-      "outputPath": "/src/obj/",
+      "projectPath": "E:\\333\\pythonEPTA\\server228\\server228\\.sources\\PrivateOsu.StartupHook\\PrivateOsu.StartupHook.csproj",
+      "packagesPath": "C:\\Users\\Kts\\.nuget\\packages\\",
+      "outputPath": "E:\\333\\pythonEPTA\\server228\\server228\\.sources\\PrivateOsu.StartupHook\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/root/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\Kts\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -30,6 +30,7 @@
       },
       "frameworks": {
         "net8.0": {
+          "framework": "net8.0",
           "targetAlias": "net8.0",
           "projectReferences": {}
         }
@@ -43,10 +44,12 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "10.0.400"
     },
     "frameworks": {
       "net8.0": {
+        "framework": "net8.0",
         "targetAlias": "net8.0",
         "imports": [
           "net461",
@@ -59,12 +62,26 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.31, 8.0.31]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.31, 8.0.31]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[8.0.31, 8.0.31]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.424/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

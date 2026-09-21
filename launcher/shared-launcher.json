@@ -4,15 +4,15 @@
     "Osu":  {
                 "ExecutablePath":  "%LOCALAPPDATA%\\osulazer\\current\\osu!.exe",
                 "CompatibleVersions":  [
-                                           "2026.804.2"
+                                           "2026.921.0"
                                        ],
                 "ExpectedPublisherSubjectContains":  "ppy Pty Ltd"
             },
     "Injection":  {
-                      "EnhancedAuthPath":  "E:\\333\\pythonEPTA\\SERVAK\\.sources\\LazerAuthlibInjection\\osu.Game.Rulesets.EnhancedAuth\\bin\\latest-history-v2\\merged\\osu.Game.Rulesets.EnhancedAuth.dll",
-                      "EnhancedAuthSha256":  "7c7154c8a6a65d1046b687aba6a225437fc7705a35ee5890fbd2994c421cf36c",
-                      "StartupHookPath":  "..\\.sources\\PrivateOsu.StartupHook\\bin\\Release\\PrivateOsu.StartupHook.dll",
-                      "StartupHookSha256":  "c1dc3deb9a406bac34e931c5612f7c84a989c7dd93952c1f199761d4abe30890",
+                      "EnhancedAuthPath":  "E:\\333\\pythonEPTA\\server228\\server228\\.sources\\LazerAuthlibInjection\\osu.Game.Rulesets.EnhancedAuth\\bin\\Release\\net10.0\\osu.Game.Rulesets.EnhancedAuth.dll",
+                      "EnhancedAuthSha256":  "74f0618ca13d84063e064e41e9c1a875b6e52babe2495b8f53799829a3bdbfda",
+                      "StartupHookPath":  "..\\.sources\\PrivateOsu.StartupHook\\bin\\Release\\net8.0\\PrivateOsu.StartupHook.dll",
+                      "StartupHookSha256":  "a12865cf4d06d6e69525daf164ff151101ab06de927746ac5f2f81f3a55699f5",
                       "CredentialTarget":  "FriendsPrivateOsu/soms.angelfish-leaffish.ts.net"
                   },
     "Server":  {

@@ -46,8 +46,6 @@ public partial class EnhancedSettingsSubsection(Ruleset ruleset) : RulesetSettin
 
     private EnhancedRulesetConfigManager config => (EnhancedRulesetConfigManager)Config;
 
-    protected override LocalisableString Header => ruleset.Description;
-
     // [CanBeNull] [Resolved] private OsuGame game { get; set; }
 
     [Resolved]

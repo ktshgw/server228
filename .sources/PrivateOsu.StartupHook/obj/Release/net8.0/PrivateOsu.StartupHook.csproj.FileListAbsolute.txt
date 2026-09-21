@@ -9,3 +9,15 @@
 /src/obj/Release/net8.0/refint/PrivateOsu.StartupHook.dll
 /src/obj/Release/net8.0/PrivateOsu.StartupHook.pdb
 /src/obj/Release/net8.0/ref/PrivateOsu.StartupHook.dll
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\bin\Release\net8.0\PrivateOsu.StartupHook.deps.json
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\bin\Release\net8.0\PrivateOsu.StartupHook.dll
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\bin\Release\net8.0\PrivateOsu.StartupHook.pdb
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\PrivateOsu.StartupHook.GeneratedMSBuildEditorConfig.editorconfig
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\PrivateOsu.StartupHook.AssemblyInfoInputs.cache
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\PrivateOsu.StartupHook.AssemblyInfo.cs
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\PrivateOsu.StartupHook.csproj.CoreCompileInputs.cache
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\PrivateOsu.StartupHook.sourcelink.json
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\PrivateOsu.StartupHook.dll
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\refint\PrivateOsu.StartupHook.dll
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\PrivateOsu.StartupHook.pdb
+E:\333\pythonEPTA\server228\server228\.sources\PrivateOsu.StartupHook\obj\Release\net8.0\ref\PrivateOsu.StartupHook.dll
