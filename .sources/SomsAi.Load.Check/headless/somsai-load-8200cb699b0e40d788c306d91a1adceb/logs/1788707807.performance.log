@@ -1,0 +1,7 @@
+----------------------------------------------------------
+performance Log (LogLevel: Verbose)
+Running somsai-load-8200cb699b0e40d788c306d91a1adceb 1.0.0.0 on .NET 8.0.20
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:16:49 [verbose]: TextureAtlas initialised (1024x1024)
+2026-09-06 15:16:49 [verbose]: TextureAtlas initialised (1024x1024)

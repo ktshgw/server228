@@ -1,0 +1,11 @@
+/src/bin/Release/PrivateOsu.StartupHook.deps.json
+/src/bin/Release/PrivateOsu.StartupHook.dll
+/src/bin/Release/PrivateOsu.StartupHook.pdb
+/src/obj/Release/net8.0/PrivateOsu.StartupHook.GeneratedMSBuildEditorConfig.editorconfig
+/src/obj/Release/net8.0/PrivateOsu.StartupHook.AssemblyInfoInputs.cache
+/src/obj/Release/net8.0/PrivateOsu.StartupHook.AssemblyInfo.cs
+/src/obj/Release/net8.0/PrivateOsu.StartupHook.csproj.CoreCompileInputs.cache
+/src/obj/Release/net8.0/PrivateOsu.StartupHook.dll
+/src/obj/Release/net8.0/refint/PrivateOsu.StartupHook.dll
+/src/obj/Release/net8.0/PrivateOsu.StartupHook.pdb
+/src/obj/Release/net8.0/ref/PrivateOsu.StartupHook.dll

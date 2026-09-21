@@ -1,0 +1,16 @@
+/work/AssistHotkeys.Check/bin/Release/net8.0/AssistHotkeys.Check
+/work/AssistHotkeys.Check/bin/Release/net8.0/AssistHotkeys.Check.deps.json
+/work/AssistHotkeys.Check/bin/Release/net8.0/AssistHotkeys.Check.runtimeconfig.json
+/work/AssistHotkeys.Check/bin/Release/net8.0/AssistHotkeys.Check.dll
+/work/AssistHotkeys.Check/bin/Release/net8.0/AssistHotkeys.Check.pdb
+/work/AssistHotkeys.Check/obj/Release/net8.0/AssistHotkeys.Check.csproj.AssemblyReference.cache
+/work/AssistHotkeys.Check/obj/Release/net8.0/AssistHotkeys.Check.GeneratedMSBuildEditorConfig.editorconfig
+/work/AssistHotkeys.Check/obj/Release/net8.0/Sentry.Attributes.cs
+/work/AssistHotkeys.Check/obj/Release/net8.0/AssistHotkeys.Check.AssemblyInfoInputs.cache
+/work/AssistHotkeys.Check/obj/Release/net8.0/AssistHotkeys.Check.AssemblyInfo.cs
+/work/AssistHotkeys.Check/obj/Release/net8.0/AssistHotkeys.Check.csproj.CoreCompileInputs.cache
+/work/AssistHotkeys.Check/obj/Release/net8.0/AssistHotkeys.Check.dll
+/work/AssistHotkeys.Check/obj/Release/net8.0/refint/AssistHotkeys.Check.dll
+/work/AssistHotkeys.Check/obj/Release/net8.0/AssistHotkeys.Check.pdb
+/work/AssistHotkeys.Check/obj/Release/net8.0/AssistHotkeys.Check.genruntimeconfig.cache
+/work/AssistHotkeys.Check/obj/Release/net8.0/ref/AssistHotkeys.Check.dll

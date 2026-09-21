@@ -1,0 +1,16 @@
+/work/LobbyMarathon.Check/bin/Debug/net8.0/LobbyMarathon.Check
+/work/LobbyMarathon.Check/bin/Debug/net8.0/LobbyMarathon.Check.deps.json
+/work/LobbyMarathon.Check/bin/Debug/net8.0/LobbyMarathon.Check.runtimeconfig.json
+/work/LobbyMarathon.Check/bin/Debug/net8.0/LobbyMarathon.Check.dll
+/work/LobbyMarathon.Check/bin/Debug/net8.0/LobbyMarathon.Check.pdb
+/work/LobbyMarathon.Check/obj/Debug/net8.0/LobbyMarathon.Check.csproj.AssemblyReference.cache
+/work/LobbyMarathon.Check/obj/Debug/net8.0/LobbyMarathon.Check.GeneratedMSBuildEditorConfig.editorconfig
+/work/LobbyMarathon.Check/obj/Debug/net8.0/Sentry.Attributes.cs
+/work/LobbyMarathon.Check/obj/Debug/net8.0/LobbyMarathon.Check.AssemblyInfoInputs.cache
+/work/LobbyMarathon.Check/obj/Debug/net8.0/LobbyMarathon.Check.AssemblyInfo.cs
+/work/LobbyMarathon.Check/obj/Debug/net8.0/LobbyMarathon.Check.csproj.CoreCompileInputs.cache
+/work/LobbyMarathon.Check/obj/Debug/net8.0/LobbyMarathon.Check.dll
+/work/LobbyMarathon.Check/obj/Debug/net8.0/refint/LobbyMarathon.Check.dll
+/work/LobbyMarathon.Check/obj/Debug/net8.0/LobbyMarathon.Check.pdb
+/work/LobbyMarathon.Check/obj/Debug/net8.0/LobbyMarathon.Check.genruntimeconfig.cache
+/work/LobbyMarathon.Check/obj/Debug/net8.0/ref/LobbyMarathon.Check.dll

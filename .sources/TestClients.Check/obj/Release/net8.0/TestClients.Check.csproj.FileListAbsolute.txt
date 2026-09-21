@@ -1,0 +1,14 @@
+/src/out/TestClients.Check
+/src/out/TestClients.Check.deps.json
+/src/out/TestClients.Check.runtimeconfig.json
+/src/out/TestClients.Check.dll
+/src/out/TestClients.Check.pdb
+/src/obj/Release/net8.0/TestClients.Check.GeneratedMSBuildEditorConfig.editorconfig
+/src/obj/Release/net8.0/TestClients.Check.AssemblyInfoInputs.cache
+/src/obj/Release/net8.0/TestClients.Check.AssemblyInfo.cs
+/src/obj/Release/net8.0/TestClients.Check.csproj.CoreCompileInputs.cache
+/src/obj/Release/net8.0/TestClients.Check.dll
+/src/obj/Release/net8.0/refint/TestClients.Check.dll
+/src/obj/Release/net8.0/TestClients.Check.pdb
+/src/obj/Release/net8.0/TestClients.Check.genruntimeconfig.cache
+/src/obj/Release/net8.0/ref/TestClients.Check.dll

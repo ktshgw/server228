@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "S+9V77uLVyQ=",
+  "success": true,
+  "projectFilePath": "/workspace/.sources/FullPatchLifecycle.Check/FullPatchLifecycle.Check.csproj",
+  "expectedPackageFiles": [
+    "/root/.nuget/packages/system.io.pipelines/10.0.9/system.io.pipelines.10.0.9.nupkg.sha512",
+    "/root/.nuget/packages/system.text.encodings.web/10.0.9/system.text.encodings.web.10.0.9.nupkg.sha512",
+    "/root/.nuget/packages/system.text.json/10.0.9/system.text.json.10.0.9.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "SomsAi.Client.Check/1.0.0": {
+        "runtime": {
+          "SomsAi.Client.Check.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "SomsAi.Client.Check/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

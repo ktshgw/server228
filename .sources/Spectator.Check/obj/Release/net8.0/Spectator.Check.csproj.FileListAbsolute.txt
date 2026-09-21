@@ -1,0 +1,14 @@
+/check/bin/Release/net8.0/Spectator.Check
+/check/bin/Release/net8.0/Spectator.Check.deps.json
+/check/bin/Release/net8.0/Spectator.Check.runtimeconfig.json
+/check/bin/Release/net8.0/Spectator.Check.dll
+/check/bin/Release/net8.0/Spectator.Check.pdb
+/check/obj/Release/net8.0/Spectator.Check.GeneratedMSBuildEditorConfig.editorconfig
+/check/obj/Release/net8.0/Spectator.Check.AssemblyInfoInputs.cache
+/check/obj/Release/net8.0/Spectator.Check.AssemblyInfo.cs
+/check/obj/Release/net8.0/Spectator.Check.csproj.CoreCompileInputs.cache
+/check/obj/Release/net8.0/Spectator.Check.dll
+/check/obj/Release/net8.0/refint/Spectator.Check.dll
+/check/obj/Release/net8.0/Spectator.Check.pdb
+/check/obj/Release/net8.0/Spectator.Check.genruntimeconfig.cache
+/check/obj/Release/net8.0/ref/Spectator.Check.dll

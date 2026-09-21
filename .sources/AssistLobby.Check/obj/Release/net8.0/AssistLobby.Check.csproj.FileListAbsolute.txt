@@ -1,0 +1,16 @@
+/work/AssistLobby.Check/bin/Release/net8.0/AssistLobby.Check
+/work/AssistLobby.Check/bin/Release/net8.0/AssistLobby.Check.deps.json
+/work/AssistLobby.Check/bin/Release/net8.0/AssistLobby.Check.runtimeconfig.json
+/work/AssistLobby.Check/bin/Release/net8.0/AssistLobby.Check.dll
+/work/AssistLobby.Check/bin/Release/net8.0/AssistLobby.Check.pdb
+/work/AssistLobby.Check/obj/Release/net8.0/AssistLobby.Check.csproj.AssemblyReference.cache
+/work/AssistLobby.Check/obj/Release/net8.0/AssistLobby.Check.GeneratedMSBuildEditorConfig.editorconfig
+/work/AssistLobby.Check/obj/Release/net8.0/Sentry.Attributes.cs
+/work/AssistLobby.Check/obj/Release/net8.0/AssistLobby.Check.AssemblyInfoInputs.cache
+/work/AssistLobby.Check/obj/Release/net8.0/AssistLobby.Check.AssemblyInfo.cs
+/work/AssistLobby.Check/obj/Release/net8.0/AssistLobby.Check.csproj.CoreCompileInputs.cache
+/work/AssistLobby.Check/obj/Release/net8.0/AssistLobby.Check.dll
+/work/AssistLobby.Check/obj/Release/net8.0/refint/AssistLobby.Check.dll
+/work/AssistLobby.Check/obj/Release/net8.0/AssistLobby.Check.pdb
+/work/AssistLobby.Check/obj/Release/net8.0/AssistLobby.Check.genruntimeconfig.cache
+/work/AssistLobby.Check/obj/Release/net8.0/ref/AssistLobby.Check.dll

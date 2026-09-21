@@ -1,0 +1,82 @@
+----------------------------------------------------------
+runtime Log (LogLevel: Verbose)
+Running somsai-load-64067f7e3df44e0cb608f8f49a027e7e 1.0.0.0 on .NET 8.0.20
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 03:02:07 [verbose]: 🖼️ Initialising "Dummy" renderer with "OpenGL" surface
+2026-09-06 03:02:07 [verbose]: Host execution state changed to Running
+2026-09-06 03:02:07 [verbose]: Execution mode changed to MultiThreaded
+2026-09-06 03:02:07 [verbose]: 🔈 BASS initialised
+2026-09-06 03:02:07 [verbose]: BASS version:           2.4.17.48
+2026-09-06 03:02:07 [verbose]: BASS FX version:        2.4.12.16
+2026-09-06 03:02:07 [verbose]: BASS MIX version:       2.4.12.10
+2026-09-06 03:02:07 [verbose]: Device:                 Default
+2026-09-06 03:02:07 [verbose]: Driver:
+2026-09-06 03:02:07 [verbose]: Device period length:   0
+2026-09-06 03:02:07 [verbose]: Device buffer length:   10 ms
+2026-09-06 03:02:07 [verbose]: Update period:          5 ms
+2026-09-06 03:02:07 [verbose]: Playback buffer length: 100 ms
+2026-09-06 03:02:07 [verbose]: Beginning realm file store cleanup
+2026-09-06 03:02:07 [verbose]: Finished realm file store cleanup (0 of 0 deleted)
+2026-09-06 03:02:08 [verbose]: Opened realm "E:\333\pythonEPTA\SERVAK\.sources\SomsAi.Load.Check\headless\somsai-load-64067f7e3df44e0cb608f8f49a027e7e\client.realm" at version 51
+2026-09-06 03:02:08 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 03:02:08 [verbose]: 📺 ScreenStack#230(depth:1) loading SomsAiScreen#594
+2026-09-06 03:02:09 [error]: An unhandled error has occurred.
+2026-09-06 03:02:09 [error]: System.NullReferenceException: Object reference not set to an instance of an object.
+2026-09-06 03:02:09 [error]: at osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen.load() in /src/osu.Game.Rulesets.EnhancedAuth/UI/SomsAiScreen.cs:line 63
+2026-09-06 03:02:09 [error]: at osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen.<>c.<RegisterForDependencyActivation>b__54_0(Object t, IReadOnlyDependencyContainer d) in /src/osu.Game.Rulesets.EnhancedAuth/obj/Release/net8.0/osu.Framework.SourceGeneration/osu.Framework.SourceGeneration.Generators.Dependencies.DependencyInjectionSourceGenerator/g_osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen_Dependencies.cs:line 17
+2026-09-06 03:02:09 [error]: at osu.Framework.Allocation.DependencyActivator.<Activate>g__activateRecursively|8_0[T](Object obj, IReadOnlyDependencyContainer dependencies, Type currentType)
+2026-09-06 03:02:09 [error]: at osu.Framework.Allocation.DependencyActivator.Activate[T](T obj, IReadOnlyDependencyContainer dependencies)
+2026-09-06 03:02:09 [error]: at osu.Framework.Allocation.DependencyContainer.Inject[T](T instance)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Drawable.InjectDependencies(IReadOnlyDependencyContainer dependencies)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.InjectDependencies(IReadOnlyDependencyContainer dependencies)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Drawable.load(IFrameBasedClock clock, IReadOnlyDependencyContainer dependencies)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Drawable.Load(IFrameBasedClock clock, IReadOnlyDependencyContainer dependencies, Boolean isDirectAsyncContext)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Drawable.LoadFromAsync(IFrameBasedClock clock, IReadOnlyDependencyContainer dependencies, Boolean isDirectAsyncContext)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.loadComponents[TLoadable](List`1 components, IReadOnlyDependencyContainer dependencies, Boolean isDirectAsyncContext, CancellationToken cancellation)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.<>c__DisplayClass13_0`1.<LoadComponentsAsync>b__1()
+2026-09-06 03:02:09 [error]: at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+2026-09-06 03:02:09 [error]: --- End of stack trace from previous location ---
+2026-09-06 03:02:09 [error]: at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+2026-09-06 03:02:09 [error]: at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+2026-09-06 03:02:09 [error]: --- End of stack trace from previous location ---
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.<>c__DisplayClass13_2`1.<LoadComponentsAsync>b__4()
+2026-09-06 03:02:09 [error]: at osu.Framework.Threading.ScheduledDelegate.InvokeTask()
+2026-09-06 03:02:09 [error]: at osu.Framework.Threading.ScheduledDelegate.RunTaskInternal()
+2026-09-06 03:02:09 [error]: at osu.Framework.Threading.Scheduler.Update()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Drawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 03:02:09 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 03:02:09 [error]: at osu.Framework.Platform.GameHost.UpdateFrame()
+2026-09-06 03:02:09 [error]: at osu.Framework.Platform.HeadlessGameHost.UpdateFrame()
+2026-09-06 03:02:09 [error]: at osu.Framework.Threading.GameThread.processFrame()
+2026-09-06 03:02:09 [verbose]: Host execution state changed to Stopping
+2026-09-06 03:02:09 [verbose]: Too many unhandled exceptions, crashing out.
+2026-09-06 03:02:19 [verbose]: Host execution state changed to Stopped

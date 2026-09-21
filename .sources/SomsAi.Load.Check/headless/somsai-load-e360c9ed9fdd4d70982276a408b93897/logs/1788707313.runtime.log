@@ -1,0 +1,65 @@
+----------------------------------------------------------
+runtime Log (LogLevel: Verbose)
+Running somsai-load-e360c9ed9fdd4d70982276a408b93897 1.0.0.0 on .NET 8.0.20
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:08:34 [verbose]: 🖼️ Initialising "Dummy" renderer with "OpenGL" surface
+2026-09-06 15:08:34 [verbose]: Host execution state changed to Running
+2026-09-06 15:08:34 [verbose]: Execution mode changed to MultiThreaded
+2026-09-06 15:08:34 [verbose]: 🔈 BASS initialised
+2026-09-06 15:08:34 [verbose]: BASS version:           2.4.17.48
+2026-09-06 15:08:34 [verbose]: BASS FX version:        2.4.12.16
+2026-09-06 15:08:34 [verbose]: BASS MIX version:       2.4.12.10
+2026-09-06 15:08:34 [verbose]: Device:                 Default
+2026-09-06 15:08:34 [verbose]: Driver:
+2026-09-06 15:08:34 [verbose]: Device period length:   0
+2026-09-06 15:08:34 [verbose]: Device buffer length:   10 ms
+2026-09-06 15:08:34 [verbose]: Update period:          5 ms
+2026-09-06 15:08:34 [verbose]: Playback buffer length: 100 ms
+2026-09-06 15:08:34 [verbose]: Beginning realm file store cleanup
+2026-09-06 15:08:34 [verbose]: Finished realm file store cleanup (0 of 0 deleted)
+2026-09-06 15:08:35 [verbose]: Opened realm "E:\333\pythonEPTA\SERVAK\.sources\SomsAi.Load.Check\headless\somsai-load-e360c9ed9fdd4d70982276a408b93897\client.realm" at version 51
+2026-09-06 15:08:35 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 15:08:35 [verbose]: 📺 OsuScreenStack#389(depth:1) loading SomsAiScreen#124
+2026-09-06 15:08:36 [verbose]: 📺 OsuScreenStack#389(depth:1) entered SomsAiScreen#124
+2026-09-06 15:08:37 [verbose]: 📺 OsuScreenStack#389(depth:1) suspended SomsAiScreen#124 (waiting on SomsAiMatchScreen#751)
+2026-09-06 15:08:37 [verbose]: 📺 OsuScreenStack#389(depth:2) loading SomsAiMatchScreen#751
+2026-09-06 15:08:37 [verbose]: 📺 OsuScreenStack#389(depth:2) entered SomsAiMatchScreen#751
+2026-09-06 15:08:38 [error]: An unhandled error has occurred.
+2026-09-06 15:08:38 [error]: System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation.
+2026-09-06 15:08:38 [error]: ---> System.InvalidOperationException: Cannot access child value on Newtonsoft.Json.Linq.JValue.
+2026-09-06 15:08:38 [error]: at Newtonsoft.Json.Linq.JToken.get_Item(Object key)
+2026-09-06 15:08:38 [error]: at osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen.updateMapBoard(SomsAiMatch match, Int32 localId) in /src/osu.Game.Rulesets.EnhancedAuth/UI/SomsAiMatchScreen.cs:line 80
+2026-09-06 15:08:38 [error]: at osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen.renderMatch() in /src/osu.Game.Rulesets.EnhancedAuth/UI/SomsAiScreen.cs:line 288
+2026-09-06 15:08:38 [error]: at osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen.render() in /src/osu.Game.Rulesets.EnhancedAuth/UI/SomsAiScreen.cs:line 182
+2026-09-06 15:08:38 [error]: at InvokeStub_SomsAiScreen.render(Object, Object, IntPtr*)
+2026-09-06 15:08:38 [error]: at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+2026-09-06 15:08:38 [error]: --- End of inner exception stack trace ---
+2026-09-06 15:08:38 [error]: at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+2026-09-06 15:08:38 [error]: at System.Reflection.MethodBase.Invoke(Object obj, Object[] parameters)
+2026-09-06 15:08:38 [error]: at LoadGame.setDashboardState(String json)
+2026-09-06 15:08:38 [error]: at LoadGame.Update()
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Drawable.UpdateSubTree()
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.updateChild(Drawable c)
+2026-09-06 15:08:38 [error]: at osu.Framework.Graphics.Containers.CompositeDrawable.UpdateSubTree()
+2026-09-06 15:08:38 [error]: at osu.Framework.Platform.GameHost.UpdateFrame()
+2026-09-06 15:08:38 [error]: at osu.Framework.Platform.HeadlessGameHost.UpdateFrame()
+2026-09-06 15:08:38 [error]: at osu.Framework.Threading.GameThread.processFrame()
+2026-09-06 15:08:38 [error]: An unhandled error has occurred. (inner)
+2026-09-06 15:08:38 [error]: System.InvalidOperationException: Cannot access child value on Newtonsoft.Json.Linq.JValue.
+2026-09-06 15:08:38 [error]: at Newtonsoft.Json.Linq.JToken.get_Item(Object key)
+2026-09-06 15:08:38 [error]: at osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen.updateMapBoard(SomsAiMatch match, Int32 localId) in /src/osu.Game.Rulesets.EnhancedAuth/UI/SomsAiMatchScreen.cs:line 80
+2026-09-06 15:08:38 [error]: at osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen.renderMatch() in /src/osu.Game.Rulesets.EnhancedAuth/UI/SomsAiScreen.cs:line 288
+2026-09-06 15:08:38 [error]: at osu.Game.Rulesets.EnhancedAuth.UI.SomsAiScreen.render() in /src/osu.Game.Rulesets.EnhancedAuth/UI/SomsAiScreen.cs:line 182
+2026-09-06 15:08:38 [error]: at InvokeStub_SomsAiScreen.render(Object, Object, IntPtr*)
+2026-09-06 15:08:38 [error]: at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+2026-09-06 15:08:38 [verbose]: Host execution state changed to Stopping
+2026-09-06 15:08:38 [verbose]: Too many unhandled exceptions, crashing out.
+2026-09-06 15:08:48 [verbose]: Host execution state changed to Stopped

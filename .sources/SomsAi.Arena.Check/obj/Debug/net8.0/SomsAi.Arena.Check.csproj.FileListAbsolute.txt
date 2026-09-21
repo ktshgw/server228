@@ -1,0 +1,16 @@
+/work/SomsAi.Arena.Check/bin/Debug/net8.0/SomsAi.Arena.Check
+/work/SomsAi.Arena.Check/bin/Debug/net8.0/SomsAi.Arena.Check.deps.json
+/work/SomsAi.Arena.Check/bin/Debug/net8.0/SomsAi.Arena.Check.runtimeconfig.json
+/work/SomsAi.Arena.Check/bin/Debug/net8.0/SomsAi.Arena.Check.dll
+/work/SomsAi.Arena.Check/bin/Debug/net8.0/SomsAi.Arena.Check.pdb
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/SomsAi.Arena.Check.csproj.AssemblyReference.cache
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/SomsAi.Arena.Check.GeneratedMSBuildEditorConfig.editorconfig
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/Sentry.Attributes.cs
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/SomsAi.Arena.Check.AssemblyInfoInputs.cache
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/SomsAi.Arena.Check.AssemblyInfo.cs
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/SomsAi.Arena.Check.csproj.CoreCompileInputs.cache
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/SomsAi.Arena.Check.dll
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/refint/SomsAi.Arena.Check.dll
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/SomsAi.Arena.Check.pdb
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/SomsAi.Arena.Check.genruntimeconfig.cache
+/work/SomsAi.Arena.Check/obj/Debug/net8.0/ref/SomsAi.Arena.Check.dll

@@ -1,0 +1,16 @@
+/work/Marathon.Check/obj/Release/net8.0/Marathon.Check.csproj.AssemblyReference.cache
+/work/Marathon.Check/obj/Release/net8.0/Marathon.Check.GeneratedMSBuildEditorConfig.editorconfig
+/work/Marathon.Check/obj/Release/net8.0/Sentry.Attributes.cs
+/work/Marathon.Check/obj/Release/net8.0/Marathon.Check.AssemblyInfoInputs.cache
+/work/Marathon.Check/obj/Release/net8.0/Marathon.Check.AssemblyInfo.cs
+/work/Marathon.Check/obj/Release/net8.0/Marathon.Check.csproj.CoreCompileInputs.cache
+/work/Marathon.Check/bin/Release/Marathon.Check
+/work/Marathon.Check/bin/Release/Marathon.Check.deps.json
+/work/Marathon.Check/bin/Release/Marathon.Check.runtimeconfig.json
+/work/Marathon.Check/bin/Release/Marathon.Check.dll
+/work/Marathon.Check/bin/Release/Marathon.Check.pdb
+/work/Marathon.Check/obj/Release/net8.0/Marathon.Check.dll
+/work/Marathon.Check/obj/Release/net8.0/refint/Marathon.Check.dll
+/work/Marathon.Check/obj/Release/net8.0/Marathon.Check.pdb
+/work/Marathon.Check/obj/Release/net8.0/Marathon.Check.genruntimeconfig.cache
+/work/Marathon.Check/obj/Release/net8.0/ref/Marathon.Check.dll

@@ -1,0 +1,35 @@
+----------------------------------------------------------
+runtime Log (LogLevel: Verbose)
+Running somsai-load-de042646c4874ab0b197a97c67ea2467 1.0.0.0 on .NET 8.0.20
+Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
+----------------------------------------------------------
+2026-09-06 15:11:15 [verbose]: 🖼️ Initialising "Dummy" renderer with "OpenGL" surface
+2026-09-06 15:11:15 [verbose]: Host execution state changed to Running
+2026-09-06 15:11:15 [verbose]: Execution mode changed to MultiThreaded
+2026-09-06 15:11:15 [verbose]: 🔈 BASS initialised
+2026-09-06 15:11:15 [verbose]: BASS version:           2.4.17.48
+2026-09-06 15:11:15 [verbose]: BASS FX version:        2.4.12.16
+2026-09-06 15:11:15 [verbose]: BASS MIX version:       2.4.12.10
+2026-09-06 15:11:15 [verbose]: Device:                 Default
+2026-09-06 15:11:15 [verbose]: Driver:
+2026-09-06 15:11:15 [verbose]: Device period length:   0
+2026-09-06 15:11:15 [verbose]: Device buffer length:   10 ms
+2026-09-06 15:11:15 [verbose]: Update period:          5 ms
+2026-09-06 15:11:15 [verbose]: Playback buffer length: 100 ms
+2026-09-06 15:11:16 [verbose]: Beginning realm file store cleanup
+2026-09-06 15:11:16 [verbose]: Finished realm file store cleanup (0 of 0 deleted)
+2026-09-06 15:11:16 [verbose]: Opened realm "E:\333\pythonEPTA\SERVAK\.sources\SomsAi.Load.Check\headless\somsai-load-de042646c4874ab0b197a97c67ea2467\client.realm" at version 51
+2026-09-06 15:11:16 [verbose]: [EnhancedAuth] authlib_local_config.json not found, using default config.
+2026-09-06 15:11:17 [verbose]: 📺 OsuScreenStack#389(depth:1) loading SomsAiScreen#124
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:1) entered SomsAiScreen#124
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:1) suspended SomsAiScreen#124 (waiting on SomsAiMatchScreen#751)
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:2) loading SomsAiMatchScreen#751
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:2) entered SomsAiMatchScreen#751
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:2) suspended SomsAiMatchScreen#751 (waiting on SomsAiScreen#187)
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:3) loading SomsAiScreen#187
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:3) entered SomsAiScreen#187
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:3) suspended SomsAiScreen#187 (waiting on SomsTeamRankedPlayScreen#407)
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:4) loading SomsTeamRankedPlayScreen#407
+2026-09-06 15:11:18 [verbose]: 📺 OsuScreenStack#389(depth:4) entered SomsTeamRankedPlayScreen#407
+2026-09-06 15:11:18 [verbose]: Host execution state changed to Stopping
+2026-09-06 15:11:18 [verbose]: Host execution state changed to Stopped

@@ -1,0 +1,5 @@
+/check/out/Spectator.Interop.Check
+/check/out/Spectator.Interop.Check.dll
+/check/out/Spectator.Interop.Check.deps.json
+/check/out/Spectator.Interop.Check.runtimeconfig.json
+/check/out/Spectator.Interop.Check.pdb
