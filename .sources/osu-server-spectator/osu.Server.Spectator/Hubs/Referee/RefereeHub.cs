@@ -1,0 +1,851 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Online.Multiplayer;
+using osu.Game.Online.Rooms;
+using osu.Game.Rulesets;
+using osu.Server.Spectator.Database;
+using osu.Server.Spectator.Database.Models;
+using osu.Server.Spectator.Entities;
+using osu.Server.Spectator.Extensions;
+using osu.Server.Spectator.Hubs.Multiplayer;
+using osu.Server.Spectator.Hubs.Multiplayer.Standard;
+using osu.Server.Spectator.Hubs.Referee.Models.Requests;
+using osu.Server.Spectator.Hubs.Referee.Models.Responses;
+using osu.Server.Spectator.Services;
+using MatchType = osu.Game.Online.Rooms.MatchType;
+using RollRequest = osu.Server.Spectator.Hubs.Referee.Models.Requests.RollRequest;
+
+namespace osu.Server.Spectator.Hubs.Referee
+{
+    [Authorize]
+    public class RefereeHub : LoggingHub<IRefereeHubClient>, IRefereeHubServer
+    {
+        private readonly IDatabaseFactory databaseFactory;
+        private readonly ISharedInterop sharedInterop;
+        private readonly IMultiplayerRoomController roomController;
+        private readonly MultiplayerEventDispatcher eventDispatcher;
+        private readonly EntityStore<RefereeClientState> refereeStates;
+        private readonly EntityStore<MultiplayerClientState> playerStates;
+        private readonly ChatFilters chatFilters;
+        private readonly RulesetManager rulesetManager;
+
+        public RefereeHub(
+            IDatabaseFactory databaseFactory,
+            ILoggerFactory loggerFactory,
+            ISharedInterop sharedInterop,
+            IMultiplayerRoomController roomController,
+            MultiplayerEventDispatcher eventDispatcher,
+            EntityStore<RefereeClientState> refereeStates,
+            EntityStore<MultiplayerClientState> playerStates,
+            ChatFilters chatFilters,
+            RulesetManager rulesetManager)
+            : base(loggerFactory)
+        {
+            this.databaseFactory = databaseFactory;
+            this.sharedInterop = sharedInterop;
+            this.roomController = roomController;
+            this.eventDispatcher = eventDispatcher;
+            this.refereeStates = refereeStates;
+            this.playerStates = playerStates;
+            this.chatFilters = chatFilters;
+            this.rulesetManager = rulesetManager;
+        }
+
+        public override async Task OnConnectedAsync()
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId(), true))
+            {
+                // contrary to `StatefulUserHub`s which fully drop users' states on reconnection, we preserve the set of refereed rooms from previous connections, if any.
+                // this is done to allow reconnections after an unclean connection drop-out.
+                // note that this setup only supports at most ONE connection per user ID at any given time (this limit being independent of stateful hubs).
+                // this is because of the singular `ConnectionId` and its use when subscribing to relevant groups.
+                // if it becomes a problem, that can be pretty trivially remedied by tracking multiple `ConnectionId`s in `RefereeClientState` -
+                // but note there will be no separation between `ConnectionId`s for a single user, so any connection associated with a single user will have the same permissions.
+                userUsage.Item = new RefereeClientState(Context.ConnectionId, Context.GetUserId(), userUsage.Item?.RefereedRoomIds);
+            }
+
+            await base.OnConnectedAsync();
+        }
+
+        [Obsolete]
+        public async Task Ping(string message)
+        {
+            string? username;
+
+            using (var db = databaseFactory.GetInstance())
+                username = await db.GetUsernameAsync(Context.GetUserId());
+
+            await Clients.Caller.Pong($"Hi {username}! Here's your message back: {message}");
+        }
+
+        public async Task<RoomJoinedResponse> MakeRoom(MakeRoomRequest request)
+        {
+            log("Attempting to make room", null);
+
+            using (var db = databaseFactory.GetInstance())
+            {
+                if (await db.IsUserRestrictedAsync(Context.GetUserId()))
+                    ThrowHelper.ThrowUserRestricted();
+            }
+
+            var room = new MultiplayerRoom(new Room
+            {
+                Name = request.RoomName,
+                Password = Guid.NewGuid().ToString(),
+                Type = MatchType.HeadToHead,
+                QueueMode = QueueMode.HostOnly,
+                AutoSkip = true,
+                Playlist =
+                [
+                    new PlaylistItem(new APIBeatmap { OnlineID = request.BeatmapId }).With(ruleset: request.RulesetId)
+                ],
+                MaxParticipants = request.MaxParticipants == 0 ? null : request.MaxParticipants,
+            });
+
+            long roomId = await sharedInterop.CreateRoomAsync(Context.GetUserId(), room, tournamentMode: true);
+            await eventDispatcher.PostRoomCreatedAsync(roomId, Context.GetUserId());
+
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                var createdRoom = await roomController.CreateRoom(userUsage.Item, roomId, room.Settings.Password);
+                return new RoomJoinedResponse(createdRoom);
+            }
+        }
+
+        public async Task<RoomJoinedResponse> JoinRoom(long roomId)
+        {
+            using (var db = databaseFactory.GetInstance())
+            {
+                if (await db.IsUserRestrictedAsync(Context.GetUserId()))
+                    ThrowHelper.ThrowUserRestricted();
+            }
+
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                string password;
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    Debug.Assert(roomUsage.Item != null);
+
+                    if (!await roomUsage.Item.UserCanJoin(userUsage.Item.UserId))
+                        ThrowHelper.ThrowRoomNotJoinable();
+
+                    password = roomUsage.Item.Settings.Password;
+                }
+
+                var joinedRoom = await roomController.JoinRoom(userUsage.Item, roomId, password);
+                return new RoomJoinedResponse(joinedRoom);
+            }
+        }
+
+        public async Task CloseRoom(long roomId)
+        {
+            using (var closingUserUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(closingUserUsage.Item != null);
+
+                ensureIsReferee(roomId, closingUserUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    var room = roomUsage.Item;
+
+                    if (room == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    log("Closing room", room);
+
+                    foreach (var user in room.Users.ToArray())
+                    {
+                        switch (user.Role)
+                        {
+                            case MultiplayerRoomUserRole.Player:
+                                using (var targetPlayerUsage = await playerStates.GetForUse(user.UserID))
+                                {
+                                    Debug.Assert(targetPlayerUsage.Item != null);
+
+                                    if (!targetPlayerUsage.Item.IsAssociatedWithRoom(roomId))
+                                        ThrowHelper.ThrowUserNotInRoom();
+
+                                    await roomController.KickUserFromRoom(targetPlayerUsage.Item, roomUsage, closingUserUsage.Item.UserId);
+                                }
+
+                                break;
+
+                            case MultiplayerRoomUserRole.Referee:
+                                await tryKickRefereeFromMultiplayerHub(roomUsage, user.UserID, closingUserUsage.Item.UserId);
+
+                                if (user.UserID != closingUserUsage.Item.UserId)
+                                    await kickRefereeFromRefereeHub(roomUsage, user.UserID, closingUserUsage.Item.UserId);
+
+                                break;
+                        }
+                    }
+
+                    await roomController.LeaveRoom(closingUserUsage.Item, roomUsage, forceCloseOnEmpty: true);
+                    closingUserUsage.Item.DisassociateFromRoom(roomId);
+                }
+            }
+        }
+
+        public async Task InvitePlayer(long roomId, int userId)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    if (roomUsage.Item.BannedUsers.Contains(userId))
+                        ThrowHelper.ThrowUserBanned();
+
+                    // check whether the target user is online.
+                    // this relies on the fact that `MultiplayerHub` eagerly creates empty user states on connect,
+                    // which should be fine to do since https://github.com/ppy/osu-server-spectator/pull/338/changes/3080a14b174f8417cf95b939efd349da762da533.
+                    // note that this is querying a memory store, which means that it can break down if multiple concurrent instances of spectator server are active.
+                    // right now this is only the case during instance handover post-deploys, and https://github.com/ppy/osu/pull/37506 hopefully makes that not painful.
+                    // lock is purposefully not taken as taking it has little practical benefit and only increases contention / deadlock fears.
+                    var targetUser = playerStates.GetEntityUnsafe(userId);
+                    if (targetUser == null)
+                        ThrowHelper.ThrowUserNotConnected();
+
+                    await roomUsage.Item.InvitePlayer(userId, invitedBy: userUsage.Item.UserId);
+                }
+            }
+        }
+
+        public async Task KickPlayer(long roomId, int userId)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    var user = roomUsage.Item.Users.SingleOrDefault(u => u.UserID == userId);
+                    if (user == null)
+                        ThrowHelper.ThrowUserNotInRoom();
+
+                    using (var targetUserUsage = await playerStates.GetForUse(user.UserID))
+                    {
+                        Debug.Assert(targetUserUsage.Item != null);
+                        await roomController.KickUserFromRoom(targetUserUsage.Item, roomUsage, userUsage.Item.UserId);
+                    }
+                }
+            }
+        }
+
+        public async Task BanUser(long roomId, int bannedUserId)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                if (userUsage.Item.UserId == bannedUserId)
+                    ThrowHelper.ThrowCannotPerformOperationOnSelf();
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    await roomController.BanUserFromRoom(bannedUserId, roomUsage, userUsage.Item.UserId);
+
+                    await eventDispatcher.PostUserBannedEvent(roomId, bannedUserId, userUsage.Item.UserId);
+                }
+            }
+        }
+
+        public async Task AddReferee(long roomId, int targetUserId)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    if (targetUserId == userUsage.Item.UserId)
+                        ThrowHelper.ThrowCannotPerformOperationOnSelf();
+
+                    // referee addition is unique in that it can only be performed by the room host
+                    // this mirrors bancho
+                    if (userUsage.Item.UserId != roomUsage.Item.Host?.UserID)
+                        ThrowHelper.ThrowUserNotHost();
+
+                    if (roomUsage.Item.BannedUsers.Contains(targetUserId))
+                        ThrowHelper.ThrowUserBanned();
+
+                    using (var db = databaseFactory.GetInstance())
+                    {
+                        if (await db.IsUserRestrictedAsync(targetUserId))
+                            ThrowHelper.ThrowUserRestricted();
+                    }
+
+                    using (var targetUserUsage = await refereeStates.GetForUse(targetUserId))
+                    {
+                        targetUserUsage.Item ??= new RefereeClientState(string.Empty, targetUserId);
+                        targetUserUsage.Item.AssociateWithRoom(roomId);
+                    }
+
+                    await eventDispatcher.PostRefereeAddedAsync(roomId, targetUserId);
+                }
+            }
+        }
+
+        public async Task RemoveReferee(long roomId, int targetUserId)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    // referee removal is unique in that it can only be performed by the room host
+                    // this mirrors bancho
+                    if (userUsage.Item.UserId != roomUsage.Item.Host?.UserID)
+                        ThrowHelper.ThrowUserNotHost();
+
+                    if (targetUserId == userUsage.Item.UserId)
+                        ThrowHelper.ThrowCannotPerformOperationOnSelf();
+
+                    await tryKickRefereeFromMultiplayerHub(roomUsage, targetUserId, userUsage.Item.UserId);
+                    await kickRefereeFromRefereeHub(roomUsage, targetUserId, userUsage.Item.UserId);
+
+                    await eventDispatcher.PostRefereeRemovedAsync(roomId, targetUserId);
+                }
+            }
+        }
+
+        private async Task tryKickRefereeFromMultiplayerHub(ItemUsage<ServerMultiplayerRoom> roomUsage, int targetUserId, int kickingUserId)
+        {
+            Debug.Assert(roomUsage.Item != null);
+
+            // the referee COULD be joined to the multiplayer hub in order to spectate the room.
+            // first, clean this up so that they don't persist in a closed room.
+            // however, this is completely optional and a missing state is NOT indicative of failure.
+            try
+            {
+                using (var playerUsage = await playerStates.GetForUse(targetUserId))
+                {
+                    Debug.Assert(playerUsage.Item != null);
+
+                    if (playerUsage.Item.IsAssociatedWithRoom(roomUsage.Item.RoomID))
+                        await roomController.KickUserFromRoom(playerUsage.Item, roomUsage, kickingUserId);
+                }
+            }
+            catch (KeyNotFoundException)
+            {
+                // see preceding comment, this is not a failure condition.
+            }
+        }
+
+        private async Task kickRefereeFromRefereeHub(ItemUsage<ServerMultiplayerRoom> roomUsage, int targetUserId, int kickingUserId)
+        {
+            Debug.Assert(roomUsage.Item != null);
+
+            using (var refereeUsage = await refereeStates.GetForUse(targetUserId))
+            {
+                Debug.Assert(refereeUsage.Item != null);
+
+                if (!refereeUsage.Item.IsAssociatedWithRoom(roomUsage.Item.RoomID))
+                    ThrowHelper.ThrowUserNotInRoom();
+
+                await kickRefereeFromRefereeHub(roomUsage, refereeUsage, kickingUserId);
+            }
+        }
+
+        private async Task kickRefereeFromRefereeHub(ItemUsage<ServerMultiplayerRoom> roomUsage, ItemUsage<RefereeClientState> refereeUsage, int kickingUserId)
+        {
+            Debug.Assert(roomUsage.Item != null);
+
+            if (refereeUsage.Item == null || !refereeUsage.Item.IsAssociatedWithRoom(roomUsage.Item.RoomID))
+                ThrowHelper.ThrowUserNotInRoom();
+
+            var targetUser = roomUsage.Item.Users.SingleOrDefault(u => u.UserID == refereeUsage.Item.UserId);
+
+            if (targetUser != null)
+            {
+                // user is joined to the room. proceed with a full kick to flush them out.
+                await roomController.KickUserFromRoom(refereeUsage.Item, roomUsage, kickingUserId);
+            }
+
+            // finally, disassociate the referee from the room so they can't join or perform referee actions again.
+            refereeUsage.Item.DisassociateFromRoom(roomUsage.Item.RoomID);
+        }
+
+        public async Task<ListRoomsResponse> ListRooms()
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                return new ListRoomsResponse
+                {
+                    RoomIDs = userUsage.Item.RefereedRoomIds.ToArray()
+                };
+            }
+        }
+
+        public async Task ChangeRoomSettings(long roomId, ChangeRoomSettingsRequest request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    if (roomUsage.Item.State != MultiplayerRoomState.Open)
+                        ThrowHelper.ThrowRoomStateInvalidForOperation();
+
+                    var oldSettings = roomUsage.Item.Settings;
+
+                    var maxParticipants = oldSettings.MaxParticipants;
+                    if (request.MaxParticipants.HasValue)
+                        maxParticipants = request.MaxParticipants.Value == 0 ? null : request.MaxParticipants.Value;
+
+                    var newSettings = new MultiplayerRoomSettings
+                    {
+                        Name = await chatFilters.FilterAsync(request.Name ?? oldSettings.Name),
+                        PlaylistItemId = oldSettings.PlaylistItemId,
+                        Password = request.Password ?? oldSettings.Password,
+                        MatchType = request.MatchType != null ? (MatchType)request.MatchType : oldSettings.MatchType,
+                        QueueMode = oldSettings.QueueMode,
+                        AutoStartDuration = oldSettings.AutoStartDuration,
+                        AutoSkip = oldSettings.AutoSkip,
+                        MaxParticipants = maxParticipants,
+                    };
+
+                    await roomUsage.Item.ChangeRoomSettings(newSettings);
+                }
+            }
+        }
+
+        public async Task EditCurrentPlaylistItem(long roomId, EditCurrentPlaylistItemRequest request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    if (roomUsage.Item.State != MultiplayerRoomState.Open)
+                        ThrowHelper.ThrowRoomStateInvalidForOperation();
+
+                    var oldPlaylistItem = roomUsage.Item.CurrentPlaylistItem;
+                    var newPlaylistItem = await applyUpdatesToPlaylistItem(request, oldPlaylistItem);
+
+                    await roomUsage.Item.EditPlaylistItem(Context.GetUserId(), newPlaylistItem);
+                }
+            }
+        }
+
+        public async Task AddPlaylistItem(long roomId, AddPlaylistItemRequest request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    database_beatmap? beatmap;
+
+                    using (var db = databaseFactory.GetInstance())
+                        beatmap = await db.GetBeatmapAsync(request.BeatmapId);
+
+                    if (beatmap == null)
+                        ThrowHelper.ThrowBeatmapDoesNotExist();
+
+                    var newPlaylistItem = new MultiplayerPlaylistItem
+                    {
+                        OwnerID = Context.GetUserId(),
+                        BeatmapID = beatmap.beatmap_id,
+                        BeatmapChecksum = beatmap.checksum!,
+                        RulesetID = request.RulesetId,
+                        RequiredMods = request.RequiredMods.Select(mod => mod.ToAPIMod()).ToArray(),
+                        AllowedMods = request.AllowedMods.Select(mod => mod.ToAPIMod()).ToArray(),
+                        StarRating = beatmap.difficulty_rating,
+                        Freestyle = request.Freestyle,
+                    };
+
+                    ensurePlaylistItemValid(newPlaylistItem, beatmap, rulesetManager);
+
+                    await roomUsage.Item.AddPlaylistItem(Context.GetUserId(), newPlaylistItem);
+                }
+            }
+        }
+
+        public async Task EditPlaylistItem(long roomId, EditPlaylistItemRequest request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    var oldPlaylistItem = roomUsage.Item.Playlist.SingleOrDefault(item => item.ID == request.PlaylistItemId);
+
+                    if (oldPlaylistItem == null)
+                        ThrowHelper.ThrowPlaylistItemDoesNotExist();
+
+                    var newPlaylistItem = await applyUpdatesToPlaylistItem(request, oldPlaylistItem);
+
+                    await roomUsage.Item.EditPlaylistItem(Context.GetUserId(), newPlaylistItem);
+                }
+            }
+        }
+
+        public async Task RemovePlaylistItem(long roomId, RemovePlaylistItemRequest request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    var playlistItem = roomUsage.Item.Playlist.SingleOrDefault(item => item.ID == request.PlaylistItemId);
+
+                    if (playlistItem == null)
+                        ThrowHelper.ThrowPlaylistItemDoesNotExist();
+
+                    if (ReferenceEquals(playlistItem, roomUsage.Item.CurrentPlaylistItem))
+                    {
+                        if ((roomUsage.Item.MatchController as StandardMatchController)?.UpcomingItems.Count() == 1)
+                            ThrowHelper.ThrowRoomStateInvalidForOperation();
+
+                        if (roomUsage.Item.State != MultiplayerRoomState.Open)
+                            ThrowHelper.ThrowRoomStateInvalidForOperation();
+                    }
+
+                    await roomUsage.Item.RemovePlaylistItem(Context.GetUserId(), playlistItem.ID);
+                }
+            }
+        }
+
+        private async Task<MultiplayerPlaylistItem> applyUpdatesToPlaylistItem(EditPlaylistItemRequestParameters request, MultiplayerPlaylistItem oldPlaylistItem)
+        {
+            int newBeatmapId = request.BeatmapId ?? oldPlaylistItem.BeatmapID;
+
+            using var db = databaseFactory.GetInstance();
+            database_beatmap? newBeatmap = await db.GetBeatmapAsync(newBeatmapId);
+
+            if (newBeatmap == null)
+                ThrowHelper.ThrowBeatmapDoesNotExist();
+
+            string newBeatmapChecksum = newBeatmap.checksum!;
+
+            int oldRuleset = oldPlaylistItem.RulesetID;
+            int newRuleset = request.RulesetId ?? oldRuleset;
+
+            var newRequiredMods = oldRuleset != newRuleset && request.RequiredMods == null
+                ? []
+                : (request.RequiredMods?.Select(mod => mod.ToAPIMod()).ToArray() ?? oldPlaylistItem.RequiredMods);
+
+            var newAllowedMods = oldRuleset != newRuleset && request.AllowedMods == null
+                ? []
+                : (request.AllowedMods?.Select(mod => mod.ToAPIMod()).ToArray() ?? oldPlaylistItem.AllowedMods);
+
+            var newPlaylistItem = new MultiplayerPlaylistItem
+            {
+                ID = oldPlaylistItem.ID,
+                OwnerID = oldPlaylistItem.OwnerID,
+                BeatmapID = newBeatmapId,
+                BeatmapChecksum = newBeatmapChecksum,
+                RulesetID = newRuleset,
+                RequiredMods = newRequiredMods,
+                AllowedMods = newAllowedMods,
+                Expired = oldPlaylistItem.Expired,
+                PlaylistOrder = oldPlaylistItem.PlaylistOrder,
+                PlayedAt = oldPlaylistItem.PlayedAt,
+                // TODO: this is probably not what users expect because of lack of accounting for mods,
+                // but client doesn't really try to do any better
+                // (https://github.com/ppy/osu/blob/815bf9c37bc920231bd024636d4690914f396793/osu.Game/Online/Rooms/MultiplayerPlaylistItem.cs#L105),
+                // so this is probably fine for now
+                StarRating = newBeatmap.difficulty_rating,
+                Freestyle = request.Freestyle ?? oldPlaylistItem.Freestyle,
+            };
+
+            ensurePlaylistItemValid(newPlaylistItem, newBeatmap, rulesetManager);
+            return newPlaylistItem;
+        }
+
+        private static void ensurePlaylistItemValid(MultiplayerPlaylistItem playlistItem, database_beatmap beatmap, RulesetManager rulesetMgr)
+        {
+            if (playlistItem.RulesetID < 0 || playlistItem.RulesetID > ILegacyRuleset.MAX_LEGACY_RULESET_ID)
+                ThrowHelper.ThrowInvalidRuleset();
+
+            if (beatmap.playmode != 0 && playlistItem.RulesetID != beatmap.playmode)
+                ThrowHelper.ThrowInvalidBeatmapRulesetCombination();
+
+            if (playlistItem.Freestyle && playlistItem.AllowedMods.Any())
+                ThrowHelper.ThrowNoAllowedModsInFreestyle();
+
+            try
+            {
+                playlistItem.EnsureModsValid(rulesetMgr);
+            }
+            catch (Exception ex)
+            {
+                ThrowHelper.ThrowInvalidMods(ex.Message);
+            }
+        }
+
+        public async Task Roll(long roomId, RollRequest? request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    var user = roomUsage.Item.Users.SingleOrDefault(u => u.UserID == userUsage.Item.UserId);
+                    if (user == null)
+                        ThrowHelper.ThrowUserNotInRoom();
+
+                    await roomUsage.Item.MatchController.HandleUserRequest(user, new Game.Online.Multiplayer.RollRequest { Max = request?.Max });
+                }
+            }
+        }
+
+        public async Task MoveUser(long roomId, MoveUserRequest request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    var targetUser = roomUsage.Item.Users.SingleOrDefault(u => u.UserID == request.UserId);
+                    if (targetUser == null)
+                        ThrowHelper.ThrowUserNotInRoom();
+
+                    if (request.Slot != null)
+                    {
+                        var standardMatchController = roomUsage.Item.MatchController as StandardMatchController;
+                        if (standardMatchController == null)
+                            ThrowHelper.ThrowIncorrectMatchType();
+
+                        await standardMatchController.ChangeUserSlot(targetUser, request.Slot.Value);
+                    }
+
+                    if (request.Team != null)
+                    {
+                        var teamVersusMatchController = roomUsage.Item.MatchController as TeamVersusMatchController;
+                        if (teamVersusMatchController == null)
+                            ThrowHelper.ThrowIncorrectMatchType();
+
+                        await teamVersusMatchController.ChangeUserTeam(targetUser, (int)request.Team);
+                    }
+                }
+            }
+        }
+
+        public async Task SetLockState(long roomId, Models.Requests.SetLockStateRequest request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    var user = roomUsage.Item.Users.SingleOrDefault(u => u.UserID == userUsage.Item.UserId);
+                    if (user == null)
+                        ThrowHelper.ThrowUserNotInRoom();
+
+                    await roomUsage.Item.HandleUserRequest(user, new osu.Game.Online.Multiplayer.SetLockStateRequest { Locked = request.Locked });
+                }
+            }
+        }
+
+        public async Task StartMatch(long roomId, StartGameplayRequest request)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    if (roomUsage.Item.State != MultiplayerRoomState.Open)
+                        ThrowHelper.ThrowRoomStateInvalidForOperation();
+
+                    if (request.Countdown == null)
+                        await ServerMultiplayerRoom.StartMatch(roomUsage.Item);
+                    else
+                        await roomUsage.Item.StartMatchCountdown(TimeSpan.FromSeconds(request.Countdown.Value));
+                }
+            }
+        }
+
+        public async Task StopMatchCountdown(long roomId)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    var countdown = roomUsage.Item.FindCountdownOfType<MatchStartCountdown>();
+
+                    if (countdown == null)
+                        ThrowHelper.ThrowNoActiveCountdown();
+
+                    await roomUsage.Item.StopCountdown(countdown.ID);
+                }
+            }
+        }
+
+        public async Task AbortMatch(long roomId)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                Debug.Assert(userUsage.Item != null);
+
+                ensureIsReferee(roomId, userUsage);
+
+                using (var roomUsage = await getRefereeRoom(roomId))
+                {
+                    if (roomUsage.Item == null)
+                        ThrowHelper.ThrowRoomDoesNotExist();
+
+                    if (roomUsage.Item.State != MultiplayerRoomState.WaitingForLoad && roomUsage.Item.State != MultiplayerRoomState.Playing)
+                        ThrowHelper.ThrowRoomStateInvalidForOperation();
+
+                    await roomUsage.Item.AbortMatch();
+                }
+            }
+        }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            using (var userUsage = await refereeStates.GetForUse(Context.GetUserId()))
+            {
+                if (userUsage.Item == null)
+                {
+                    await base.OnDisconnectedAsync(exception);
+                    return;
+                }
+
+                // perform a full leave of all joined rooms.
+                // this will NOT remove the user from the set of referees on all their refereed rooms; they will be permitted to rejoin.
+                // additionally, purposefully leave the user state intact so the referee-room associations are not dropped.
+                foreach (long roomId in userUsage.Item.RefereedRoomIds.ToArray())
+                {
+                    using (var roomUsage = await roomController.GetRoom(roomId))
+                    {
+                        await tryKickRefereeFromMultiplayerHub(roomUsage, userUsage.Item.UserId, userUsage.Item.UserId);
+                        await roomController.LeaveRoom(userUsage.Item, roomUsage);
+                    }
+
+                    await eventDispatcher.PostRefereeRemovedAsync(roomId, userUsage.Item.UserId);
+                }
+            }
+
+            await base.OnDisconnectedAsync(exception);
+        }
+
+        private async Task<ItemUsage<ServerMultiplayerRoom>> getRefereeRoom(long roomId)
+        {
+            var usage = await roomController.GetRoom(roomId);
+            if (usage.Item?.MatchController is SomsaiMatchController)
+            {
+                usage.Dispose();
+                throw new InvalidStateException("SOMSAI rooms are managed by the server.");
+            }
+            return usage;
+        }
+
+        private static void ensureIsReferee(long roomId, ItemUsage<RefereeClientState> userUsage)
+        {
+            Debug.Assert(userUsage.Item != null);
+
+            if (!userUsage.Item.IsAssociatedWithRoom(roomId))
+                ThrowHelper.ThrowUserNotReferee();
+        }
+
+        private void log(string message, ServerMultiplayerRoom? room, LogLevel level = LogLevel.Information)
+            => Log($"[room:{room?.RoomID.ToString() ?? "none"}] {message}", level);
+    }
+}

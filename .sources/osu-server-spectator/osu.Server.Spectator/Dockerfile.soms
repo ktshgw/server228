@@ -1,0 +1,13 @@
+# Keep the known runtime/dependencies and replace only the SOMS server assembly.
+# The .deps.json package set and osu.Game/Framework/ruleset binary hashes were
+# verified identical to the pinned runtime on 2026-09-05.
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS soms-build
+WORKDIR /src
+COPY osu.Server.Spectator.csproj ./
+RUN dotnet restore
+COPY . ./
+RUN dotnet publish osu.Server.Spectator.csproj -c Release --no-restore -o /out
+
+FROM ghcr.io/googuteam/osu-server-spectator:v2@sha256:65fbaec20d1435c1c737b1b021be9a14ccd636b215c6605d0d64b9a698e9e8af
+COPY --from=soms-build /out/osu.Server.Spectator.dll /app/osu.Server.Spectator.dll
+COPY --from=soms-build /out/osu.Server.Spectator.pdb /app/osu.Server.Spectator.pdb

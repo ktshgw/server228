@@ -1,0 +1,301 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Internal;
+using osu.Server.Spectator.Database.Models;
+using osu.Server.Spectator.Hubs.Multiplayer.Matchmaking.Elo;
+using osu.Server.Spectator.Hubs.Multiplayer.Matchmaking.Queue;
+using Xunit;
+
+namespace osu.Server.Spectator.Tests.Matchmaking
+{
+    public class MatchmakingQueueTest
+    {
+        private readonly MatchmakingQueue queue = new MatchmakingQueue(new matchmaking_pool());
+
+        [Fact]
+        public void EmptyUpdate()
+        {
+            queue.Pool.lobby_size = 1;
+
+            var bundle = queue.Update();
+            Assert.Empty(bundle.FormedGroups);
+            Assert.Empty(bundle.CompletedGroups);
+            Assert.Empty(bundle.AddedUsers);
+            Assert.Empty(bundle.RemovedUsers);
+            Assert.Empty(bundle.RecycledGroups);
+        }
+
+        [Fact]
+        public void SingleUserRoom()
+        {
+            queue.Pool.lobby_size = 1;
+
+            var bundle = queue.Add(new MatchmakingQueueUser("1"));
+            Assert.Single(bundle.AddedUsers);
+            Assert.Equal("1", bundle.AddedUsers[0].Identifier);
+
+            bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+            Assert.Single(bundle.FormedGroups[0].Users);
+            Assert.Empty(bundle.RecycledGroups);
+
+            bundle = queue.MarkInvitationAccepted(new MatchmakingQueueUser("1"));
+            Assert.Single(bundle.CompletedGroups);
+            Assert.Single(bundle.CompletedGroups[0].Users);
+            Assert.Empty(bundle.RecycledGroups);
+        }
+
+        [Fact]
+        public void MultipleUserRoom()
+        {
+            queue.Pool.lobby_size = 2;
+
+            var bundle = queue.Add(new MatchmakingQueueUser("1"));
+            Assert.Single(bundle.AddedUsers);
+
+            bundle = queue.Update();
+            Assert.Empty(bundle.FormedGroups);
+
+            bundle = queue.Add(new MatchmakingQueueUser("2"));
+            Assert.Single(bundle.AddedUsers);
+
+            bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+            Assert.Equal(2, bundle.FormedGroups[0].Users.Length);
+
+            bundle = queue.MarkInvitationAccepted(new MatchmakingQueueUser("1"));
+            Assert.Empty(bundle.CompletedGroups);
+
+            bundle = queue.MarkInvitationAccepted(new MatchmakingQueueUser("2"));
+            Assert.Single(bundle.CompletedGroups);
+            Assert.Equal(2, bundle.CompletedGroups[0].Users.Length);
+        }
+
+        [Fact]
+        public void DeclineInvitation()
+        {
+            queue.Pool.lobby_size = 2;
+
+            queue.Add(new MatchmakingQueueUser("1"));
+            queue.Add(new MatchmakingQueueUser("2"));
+
+            var bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+
+            bundle = queue.MarkInvitationDeclined(new MatchmakingQueueUser("1"));
+            Assert.Single(bundle.RecycledGroups);
+            Assert.Single(bundle.RemovedUsers);
+            Assert.Equal("1", bundle.RemovedUsers[0].Identifier);
+            Assert.Single(bundle.DeclinedUsers);
+            Assert.Equal("1", bundle.DeclinedUsers[0].Identifier);
+            Assert.Single(bundle.AddedUsers);
+            Assert.Equal("2", bundle.AddedUsers[0].Identifier);
+        }
+
+        [Fact]
+        public async Task InviteTimeout()
+        {
+            queue.Pool.lobby_size = 2;
+            queue.InviteTimeout = TimeSpan.FromSeconds(1);
+
+            queue.Add(new MatchmakingQueueUser("1"));
+            queue.Add(new MatchmakingQueueUser("2"));
+            queue.Update();
+            queue.MarkInvitationAccepted(new MatchmakingQueueUser("1"));
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            var bundle = queue.Update();
+            Assert.Single(bundle.RecycledGroups);
+            Assert.Single(bundle.RemovedUsers);
+            Assert.Equal("2", bundle.RemovedUsers[0].Identifier);
+            Assert.Single(bundle.DeclinedUsers);
+            Assert.Equal("2", bundle.DeclinedUsers[0].Identifier);
+            Assert.Single(bundle.AddedUsers);
+            Assert.Equal("1", bundle.AddedUsers[0].Identifier);
+        }
+
+        [Fact]
+        public void UsersAtDifferentRatingsEventuallyFindEachOther()
+        {
+            CustomSystemClock clock = new CustomSystemClock();
+
+            queue.Pool.lobby_size = 2;
+            queue.Clock = clock;
+            queue.Pool.rating_search_radius = 100;
+            queue.Pool.rating_search_radius_exp = 10;
+
+            queue.Add(new MatchmakingQueueUser("1")
+            {
+                Rating = new EloRating(1300, 350)
+            });
+
+            queue.Add(new MatchmakingQueueUser("2")
+            {
+                Rating = new EloRating(1700, 350)
+            });
+
+            var bundle = queue.Update();
+            Assert.Empty(bundle.FormedGroups);
+
+            clock.UtcNow += TimeSpan.FromSeconds(10);
+            bundle = queue.Update();
+            Assert.Empty(bundle.FormedGroups);
+
+            clock.UtcNow += TimeSpan.FromSeconds(10);
+            bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+        }
+
+        [Fact]
+        public void UserWaitingForALongTimeMatchesQuickly()
+        {
+            CustomSystemClock clock = new CustomSystemClock();
+
+            queue.Pool.lobby_size = 2;
+            queue.Clock = clock;
+            queue.Pool.rating_search_radius = 100;
+            queue.Pool.rating_search_radius_exp = 10;
+
+            queue.Add(new MatchmakingQueueUser("1")
+            {
+                Rating = new EloRating(1300, 350)
+            });
+
+            clock.UtcNow += TimeSpan.FromSeconds(20);
+
+            queue.Add(new MatchmakingQueueUser("2")
+            {
+                Rating = new EloRating(1700, 350)
+            });
+
+            var bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+        }
+
+        [Fact]
+        public void TemporarilyBannedUserExcludedFromQueue()
+        {
+            CustomSystemClock clock = new CustomSystemClock();
+
+            queue.Pool.lobby_size = 2;
+            queue.Clock = clock;
+
+            queue.Add(new MatchmakingQueueUser("1"));
+            queue.Add(new MatchmakingQueueUser("2")
+            {
+                BanEndTime = clock.UtcNow + TimeSpan.FromMinutes(1)
+            });
+
+            var bundle = queue.Update();
+            Assert.Empty(bundle.FormedGroups);
+
+            clock.UtcNow += TimeSpan.FromSeconds(30);
+
+            bundle = queue.Update();
+            Assert.Empty(bundle.FormedGroups);
+
+            clock.UtcNow += TimeSpan.FromSeconds(45);
+
+            bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+        }
+
+        [Fact]
+        public void ClearedUsersNotMarkedAsDeclined()
+        {
+            queue.Pool.lobby_size = 1;
+            queue.Add(new MatchmakingQueueUser("1"));
+
+            var bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+
+            bundle = queue.Clear();
+            Assert.Empty(bundle.DeclinedUsers);
+        }
+
+        [Fact]
+        public void CorrectNumberOfUsersMatched()
+        {
+            queue.Pool.lobby_size = 2;
+
+            queue.Add(new MatchmakingQueueUser("1"));
+            queue.Add(new MatchmakingQueueUser("2"));
+            queue.Add(new MatchmakingQueueUser("3"));
+
+            var bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+            Assert.Equal(2, bundle.FormedGroups[0].Users.Length);
+        }
+
+        [Fact]
+        public void Top100MatchesWithTop1()
+        {
+            CustomSystemClock clock = new CustomSystemClock();
+
+            queue.Pool.lobby_size = 2;
+            queue.Pool.rating_search_radius = 20;
+            queue.Pool.rating_search_radius_max = 200;
+            queue.Clock = clock;
+            queue.Top100Rating = 2000;
+
+            queue.Add(new MatchmakingQueueUser("1")
+            {
+                Rating = new EloRating(2600)
+            });
+
+            queue.Add(new MatchmakingQueueUser("2")
+            {
+                Rating = new EloRating(2000)
+            });
+
+            // Maximise search bonus.
+            clock.UtcNow += TimeSpan.FromMinutes(10);
+
+            var bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+        }
+
+        [Fact]
+        public void RecentMatchupsAvoided()
+        {
+            CustomSystemClock clock = new CustomSystemClock();
+
+            queue.Pool.lobby_size = 2;
+            queue.Pool.rating_search_radius = 9999;
+            queue.Clock = clock;
+            queue.RecentMatchupTimeout = TimeSpan.FromMinutes(10);
+
+            queue.Add(new MatchmakingQueueUser("1") { UserId = 1, Rating = new EloRating(1500) });
+            queue.Add(new MatchmakingQueueUser("2") { UserId = 2, Rating = new EloRating(1400) });
+            queue.Add(new MatchmakingQueueUser("3") { UserId = 3, Rating = new EloRating(1300) });
+
+            // Expires at +10m
+            queue.MarkRecentMatchup(1, 2);
+
+            // Expires at +15m
+            clock.UtcNow += TimeSpan.FromMinutes(5);
+            queue.MarkRecentMatchup(1, 3);
+            queue.MarkRecentMatchup(2, 3);
+
+            var bundle = queue.Update();
+            Assert.Empty(bundle.FormedGroups);
+
+            // Expire the first recent matchup.
+            clock.UtcNow += TimeSpan.FromMinutes(6);
+
+            bundle = queue.Update();
+            Assert.Single(bundle.FormedGroups);
+            Assert.NotEqual("3", bundle.FormedGroups[0].Users[0].Identifier);
+            Assert.NotEqual("3", bundle.FormedGroups[0].Users[1].Identifier);
+        }
+
+        private class CustomSystemClock : ISystemClock
+        {
+            public DateTimeOffset UtcNow { get; set; } = DateTimeOffset.UtcNow;
+        }
+    }
+}

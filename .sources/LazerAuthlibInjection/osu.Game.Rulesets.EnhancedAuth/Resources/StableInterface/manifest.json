@@ -1,0 +1,1145 @@
+{
+    "schema_version":  1,
+    "purpose":  "Original resources selected for the optional SOMS Legacy interface. User skin overrides take priority.",
+    "source_assemblies":  [
+                              {
+                                  "file":  "osu!ui.dll",
+                                  "size_bytes":  26019104,
+                                  "sha256":  "22e041674931161e2c2c15241fb6c5f3125f8d57e4660ef7c0b7fb64449253c7",
+                                  "resource_store":  "osu_ui.ResourcesStore.resources"
+                              },
+                              {
+                                  "file":  "osu!gameplay.dll",
+                                  "size_bytes":  31854304,
+                                  "sha256":  "ba3467a8db908d81a0729f78fdc5c8f1d1595d3da4e5a9a34be9a16e06da9f87",
+                                  "resource_store":  "osu_gameplay.ResourcesStore.resources"
+                              }
+                          ],
+    "assets":  [
+                   {
+                       "file":  "back-button-layer@2x.png",
+                       "key":  "back-button-layer@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "3b012917144f6235e9506abef8642344fed28d324bba2edf804eb66a63e42abf",
+                       "size_bytes":  2319,
+                       "logical_width":  160,
+                       "logical_height":  58
+                   },
+                   {
+                       "file":  "button-left@2x.png",
+                       "key":  "button-left@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "b25934e85ccb565dbc270cf1887329113539cfd6f51282bb2e0a47237b10d544",
+                       "size_bytes":  3968,
+                       "logical_width":  16,
+                       "logical_height":  71
+                   },
+                   {
+                       "file":  "button-middle@2x.png",
+                       "key":  "button-middle@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "52a155b55565d165072ff6d56fae29eaf2550a217858ee3eba32787c425ee903",
+                       "size_bytes":  3555,
+                       "logical_width":  283,
+                       "logical_height":  71
+                   },
+                   {
+                       "file":  "button-right@2x.png",
+                       "key":  "button-right@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "248e25f128503f91fa9b16d9bceacf0b4738665f19cd68f521fbfc280c68bc3c",
+                       "size_bytes":  3834,
+                       "logical_width":  16,
+                       "logical_height":  71
+                   },
+                   {
+                       "file":  "levelbar@2x.png",
+                       "key":  "levelbar@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "5b353740afe23a3c683ffef94ec0e3c64929e9a84d9928ed4c9584cffb6711ae",
+                       "size_bytes":  460,
+                       "logical_width":  200,
+                       "logical_height":  14
+                   },
+                   {
+                       "file":  "levelbar-bg@2x.png",
+                       "key":  "levelbar-bg@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "ca9fca56dcdfa51f47f3f2c3e6cd5bdea78331a29248e1559502ec800cf26cf8",
+                       "size_bytes":  1005,
+                       "logical_width":  200,
+                       "logical_height":  14
+                   },
+                   {
+                       "file":  "menu-background@2x.jpg",
+                       "key":  "menu-background@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "c1e783b79ced7d55254d426a66100bc9cbf607bb9d8d91e599a540e20d82121d",
+                       "size_bytes":  311663,
+                       "logical_width":  1361,
+                       "logical_height":  765.5
+                   },
+                   {
+                       "file":  "menu-button-back@2x.png",
+                       "key":  "menu-button-back@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "82cadf34e64acade1d7ce4d8050eaa0f0d9fc4893b8b5dbbbde4455eba35292e",
+                       "size_bytes":  53756,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-background@2x.png",
+                       "key":  "menu-button-background@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "e610f23cb1a8274654c22b93a88565073727fadaa99bb4ee8165f04eead40de9",
+                       "size_bytes":  16970,
+                       "logical_width":  699,
+                       "logical_height":  103
+                   },
+                   {
+                       "file":  "menu-button-back-over@2x.png",
+                       "key":  "menu-button-back-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "11289ecd823fc4ee5f41856abb85e55494a84e7b70ded37f595727524c1b6764",
+                       "size_bytes":  61299,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-edit@2x.png",
+                       "key":  "menu-button-edit@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "4fbbae1781ba015f123be26e0799dbf2b6463a15a6c7dc80cdb14dbdff04db63",
+                       "size_bytes":  57267,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-edit-over@2x.png",
+                       "key":  "menu-button-edit-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "9537d282294b70a46b7cb8f70712c5670f6698964ac0ff0828a2fdfd50d4ceee",
+                       "size_bytes":  69064,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-exit@2x.png",
+                       "key":  "menu-button-exit@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "f3842912886e43f23be01967140a9fa25f06d2b0d582ec4f23d070b97620abd3",
+                       "size_bytes":  50118,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-exit-over@2x.png",
+                       "key":  "menu-button-exit-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "f10cdb165b4eebdea14c0a5f122ef417b849555559d703c4f4001f4411c425c6",
+                       "size_bytes":  59072,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-freeplay@2x.png",
+                       "key":  "menu-button-freeplay@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "7eee11658d4dec0d7c7e4410ef9a46790376d86bd0268723999e77eb7ef31407",
+                       "size_bytes":  54999,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-freeplay-over@2x.png",
+                       "key":  "menu-button-freeplay-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "bae1d10619c107a81ebff321ac8201b43dda59e8b5b1fdfda3ab1cb088f4127c",
+                       "size_bytes":  68767,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-multiplayer@2x.png",
+                       "key":  "menu-button-multiplayer@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "245c8ef23fc4eef67c0305c380314d85caa9e05600f32b217a7f46ad34901ce9",
+                       "size_bytes":  61877,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-multiplayer-over@2x.png",
+                       "key":  "menu-button-multiplayer-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "d9f2ae3b6b5e4336768ba12f04c162d8d9c2f8acd4d02510ad38db7850d370d8",
+                       "size_bytes":  73101,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-options@2x.png",
+                       "key":  "menu-button-options@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "4b4b212d7a37f17285ab8df9113eef92a1704b3b5464941327093f849f503aed",
+                       "size_bytes":  61955,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-options-over@2x.png",
+                       "key":  "menu-button-options-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "9fd69ad85b4b015172034e1e4e0afb533181284b9a264522b81d9accfb95b5a5",
+                       "size_bytes":  72484,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-play@2x.png",
+                       "key":  "menu-button-play@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "dc51b577464550b9bf36238b24e2375e700cd63105adfd897a5d79aacf4905bb",
+                       "size_bytes":  55973,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-button-play-over@2x.png",
+                       "key":  "menu-button-play-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "a65fbebbceb47bdf337dc5c8bf4e453c01f2a5fb68db67dc4d771ba24f35e23b",
+                       "size_bytes":  78061,
+                       "logical_width":  583,
+                       "logical_height":  89
+                   },
+                   {
+                       "file":  "menu-np@2x.png",
+                       "key":  "menu-np@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "1f0f39a2e39bed82b5d5bd3aab53b795341579eecd55f7c99ed39a886a7950c9",
+                       "size_bytes":  40816,
+                       "logical_width":  682,
+                       "logical_height":  30
+                   },
+                   {
+                       "file":  "menu-osu@2x.png",
+                       "key":  "menu-osu@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "52108713bacd8a15b555dd79eb429b5c26373cc9d2b79494b5b6f6192c29ae3b",
+                       "size_bytes":  209997,
+                       "logical_width":  540,
+                       "logical_height":  540
+                   },
+                   {
+                       "file":  "menu-osu-shockwave@2x.png",
+                       "key":  "menu-osu-shockwave@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "8857a057f4e0b9e93b81d731f6b6a81436a2d506c396fedc76df461742aabdf5",
+                       "size_bytes":  145897,
+                       "logical_width":  520,
+                       "logical_height":  520
+                   },
+                   {
+                       "file":  "mode-fruits@2x.png",
+                       "key":  "mode-fruits@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "50c5dc977e774a2815a0a94565eb14facfd897d7d63ab2e1e2cb0e5ca4c286a7",
+                       "size_bytes":  24768,
+                       "logical_width":  248,
+                       "logical_height":  248
+                   },
+                   {
+                       "file":  "mode-fruits-med@2x.png",
+                       "key":  "mode-fruits-med@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "ef59698de8da63457e517ba37cc5a8772d0ade82f06893460e7facc963c0c516",
+                       "size_bytes":  9410,
+                       "logical_width":  108,
+                       "logical_height":  108
+                   },
+                   {
+                       "file":  "mode-fruits-small@2x.png",
+                       "key":  "mode-fruits-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "4470406ccb33f52135ccb445425edc3a4f2a5e56d5df7a09458ddd60386c2714",
+                       "size_bytes":  1827,
+                       "logical_width":  32,
+                       "logical_height":  32
+                   },
+                   {
+                       "file":  "mode-mania@2x.png",
+                       "key":  "mode-mania@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "106e3c5c4461d3f0ec565c0ac011ff2a3586163dd20c704f143a1d907ab84e7c",
+                       "size_bytes":  25770,
+                       "logical_width":  248,
+                       "logical_height":  248
+                   },
+                   {
+                       "file":  "mode-mania-med@2x.png",
+                       "key":  "mode-mania-med@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "e1b087f4d6bd02fe7927ecffe0653941c0efb51213b603c9f2075a7a8e9f0d28",
+                       "size_bytes":  10576,
+                       "logical_width":  108,
+                       "logical_height":  108
+                   },
+                   {
+                       "file":  "mode-mania-small@2x.png",
+                       "key":  "mode-mania-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "31cb8acfc694765b7758aff3dc50bb4d75aa2a8c5fd6d30f4b991ef932dc3027",
+                       "size_bytes":  2201,
+                       "logical_width":  32,
+                       "logical_height":  32
+                   },
+                   {
+                       "file":  "mode-osu@2x.png",
+                       "key":  "mode-osu@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "f64c1a1aebabc94a03b79ccdf15633a2267ca0e06139b8fd5d3a50f81abba6d6",
+                       "size_bytes":  42097,
+                       "logical_width":  248,
+                       "logical_height":  248
+                   },
+                   {
+                       "file":  "mode-osu-med@2x.png",
+                       "key":  "mode-osu-med@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "039fd72d674251db818dbb7f0b5d49d03ad4d5857d3cc48760a4eef3016a35fe",
+                       "size_bytes":  16554,
+                       "logical_width":  108,
+                       "logical_height":  108
+                   },
+                   {
+                       "file":  "mode-osu-small@2x.png",
+                       "key":  "mode-osu-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "194e533a5d789a073d11eaf4413b9063d93b27ec99657caaa1bf0ff2489bba96",
+                       "size_bytes":  2913,
+                       "logical_width":  32,
+                       "logical_height":  32
+                   },
+                   {
+                       "file":  "mode-taiko@2x.png",
+                       "key":  "mode-taiko@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "21ce567c5d4f3b65b87cbfa8895458d9562a650f09a52c8eb8dc1a718a0271e4",
+                       "size_bytes":  32713,
+                       "logical_width":  248,
+                       "logical_height":  248
+                   },
+                   {
+                       "file":  "mode-taiko-med@2x.png",
+                       "key":  "mode-taiko-med@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "be1dc1b965843e31b6455fc23e1b6bbaf8c2a2be1ee48cdec15db8f79cb08564",
+                       "size_bytes":  12133,
+                       "logical_width":  108,
+                       "logical_height":  108
+                   },
+                   {
+                       "file":  "mode-taiko-small@2x.png",
+                       "key":  "mode-taiko-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "7a8e1f7deebcba3aa73299c12a95e8c4df823e767092ad952a069c2442c2d736",
+                       "size_bytes":  2291,
+                       "logical_width":  32,
+                       "logical_height":  32
+                   },
+                   {
+                       "file":  "ranking-A@2x.png",
+                       "key":  "ranking-A@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "a7aa8522b951b60795440366586bd8ba214b521605b0f8416f4a9ce02b7306e8",
+                       "size_bytes":  107675,
+                       "logical_width":  369,
+                       "logical_height":  422
+                   },
+                   {
+                       "file":  "ranking-accuracy@2x.png",
+                       "key":  "ranking-accuracy@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "91d2fddf196315d50b0ea1d0e53e533c7ebcc00c49f2966fee35e15f275c6597",
+                       "size_bytes":  23204,
+                       "logical_width":  192,
+                       "logical_height":  58
+                   },
+                   {
+                       "file":  "ranking-A-small@2x.png",
+                       "key":  "ranking-A-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "37aaa0023e38dc77e0a83df5947f3c467ad75349e65fe0874732ad67a8b32d7f",
+                       "size_bytes":  7190,
+                       "logical_width":  34,
+                       "logical_height":  38
+                   },
+                   {
+                       "file":  "ranking-B@2x.png",
+                       "key":  "ranking-B@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "63aa708face77bc97fd2a5d72d5f26eb69ca1a54ad9c89a78033adef76234c95",
+                       "size_bytes":  123648,
+                       "logical_width":  358,
+                       "logical_height":  418
+                   },
+                   {
+                       "file":  "ranking-background-overlay@2x.png",
+                       "key":  "ranking-background-overlay@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "a58cdfc35c4a2bf40fdb62ac4950997aae065f5ad0ead0571d4785e821fb53f9",
+                       "size_bytes":  533387,
+                       "logical_width":  662,
+                       "logical_height":  668
+                   },
+                   {
+                       "file":  "ranking-B-small@2x.png",
+                       "key":  "ranking-B-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "695569840f3a813d31cd85e8b2ce471b853756089eca613bf220e6eaf420da2e",
+                       "size_bytes":  7230,
+                       "logical_width":  33,
+                       "logical_height":  38
+                   },
+                   {
+                       "file":  "ranking-C@2x.png",
+                       "key":  "ranking-C@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "3ef5cc13c516a523247f38de49f1044c168d1d0191884456a67f2c46a1aa4818",
+                       "size_bytes":  85333,
+                       "logical_width":  335,
+                       "logical_height":  419
+                   },
+                   {
+                       "file":  "ranking-C-small@2x.png",
+                       "key":  "ranking-C-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "24be6e4f94be3bc781ef6c69cdde8e17053e93f640b16759f5f511a26583f951",
+                       "size_bytes":  6001,
+                       "logical_width":  30,
+                       "logical_height":  38
+                   },
+                   {
+                       "file":  "ranking-D@2x.png",
+                       "key":  "ranking-D@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "d129bc5b94dd8211944771ca8fff9b36f0009faf5c1cb66241e0bc31d806ce64",
+                       "size_bytes":  115109,
+                       "logical_width":  361,
+                       "logical_height":  418
+                   },
+                   {
+                       "file":  "ranking-dialog-left@2x.png",
+                       "key":  "ranking-dialog-left@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "d6104c3588c2018883790cc540741724f495793993b7ddfc422c871028c89889",
+                       "size_bytes":  33324,
+                       "logical_width":  270,
+                       "logical_height":  709
+                   },
+                   {
+                       "file":  "ranking-dialog-middle@2x.png",
+                       "key":  "ranking-dialog-middle@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "5d897cf78559ae77ac71ef72555b0f55f11c1299aecdeb3cc15f8d76e857ddfe",
+                       "size_bytes":  797,
+                       "logical_width":  1,
+                       "logical_height":  709
+                   },
+                   {
+                       "file":  "ranking-dialog-right@2x.png",
+                       "key":  "ranking-dialog-right@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "e59afb67c84ae988d1898aec8d7247649e5bc92412a7555a3a6b69e4fc0341c2",
+                       "size_bytes":  6153,
+                       "logical_width":  280,
+                       "logical_height":  709
+                   },
+                   {
+                       "file":  "ranking-D-small@2x.png",
+                       "key":  "ranking-D-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "0a2c4f67cbd717701a4050e9470bcdae9044cd33e30b3a4d6e3d243f65c7fb59",
+                       "size_bytes":  6590,
+                       "logical_width":  33,
+                       "logical_height":  38
+                   },
+                   {
+                       "file":  "ranking-graph@2x.png",
+                       "key":  "ranking-graph@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "b7e725d033b68ea5d624996cda6bb61df51a0ee0669f112acb5afa97bd62567d",
+                       "size_bytes":  15873,
+                       "logical_width":  317,
+                       "logical_height":  152
+                   },
+                   {
+                       "file":  "ranking-maxcombo@2x.png",
+                       "key":  "ranking-maxcombo@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "aebf4f2bb64fa5e45c8b9674fb393d2d2ece407c983792ee1cf6fefa4299f6d8",
+                       "size_bytes":  18362,
+                       "logical_width":  162,
+                       "logical_height":  50
+                   },
+                   {
+                       "file":  "ranking-panel@2x.png",
+                       "key":  "ranking-panel@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "f74771df952b0d69ebfef0b5212ba4c9001202727a1bf852bf9f564572abb675",
+                       "size_bytes":  35514,
+                       "logical_width":  622,
+                       "logical_height":  505
+                   },
+                   {
+                       "file":  "ranking-perfect@2x.png",
+                       "key":  "ranking-perfect@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "6f7cf3b719a8ee8dfa9136016f8bbe4aa22833817be9c72ea60327e5f1396107",
+                       "size_bytes":  180830,
+                       "logical_width":  478,
+                       "logical_height":  150
+                   },
+                   {
+                       "file":  "ranking-S@2x.png",
+                       "key":  "ranking-S@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "4594a396e89d2e504859e3541ee436204dd1dc222fbef1ed76d1dfb36ee16f46",
+                       "size_bytes":  97098,
+                       "logical_width":  341,
+                       "logical_height":  418
+                   },
+                   {
+                       "file":  "ranking-SH@2x.png",
+                       "key":  "ranking-SH@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "062bd368ed4134f8e0d4a457c7c6411bbfd76f037c41cd2ffba8fcbb86c8f140",
+                       "size_bytes":  102214,
+                       "logical_width":  341,
+                       "logical_height":  419
+                   },
+                   {
+                       "file":  "ranking-SH-small@2x.png",
+                       "key":  "ranking-SH-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "0e72313a39444432b0d63da9902ca4f9c7b78293bba003ba8c73c6184513b7ff",
+                       "size_bytes":  6482,
+                       "logical_width":  31,
+                       "logical_height":  38
+                   },
+                   {
+                       "file":  "ranking-S-small@2x.png",
+                       "key":  "ranking-S-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "6fae299dd1a878d45ebf45621c97364b81769736872a46916710f67b06abf1ce",
+                       "size_bytes":  6707,
+                       "logical_width":  31,
+                       "logical_height":  38
+                   },
+                   {
+                       "file":  "ranking-title@2x.png",
+                       "key":  "ranking-title@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "c4d6c31ae8ecd0ad075cd7be0164135f5e8702b5d7fcfc2fc1f8b273ae42ff95",
+                       "size_bytes":  64926,
+                       "logical_width":  371,
+                       "logical_height":  124
+                   },
+                   {
+                       "file":  "ranking-winner@2x.png",
+                       "key":  "ranking-winner@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "4cc0286492c438c43d84704615b53fc48d17f9ab01b9082e8b40e79b8894cc94",
+                       "size_bytes":  20086,
+                       "logical_width":  200,
+                       "logical_height":  227
+                   },
+                   {
+                       "file":  "ranking-X@2x.png",
+                       "key":  "ranking-X@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "cd812e4dfdaa7cc9d9b84c33f8b725ade728aea62dc8088b64596b5ca49a4ab9",
+                       "size_bytes":  125363,
+                       "logical_width":  368,
+                       "logical_height":  445
+                   },
+                   {
+                       "file":  "ranking-XH@2x.png",
+                       "key":  "ranking-XH@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "e76d5b0ad8a279b086bcb0dacb1c2fc032a5e27228e48150e27a9de34a07aae9",
+                       "size_bytes":  128553,
+                       "logical_width":  367,
+                       "logical_height":  445
+                   },
+                   {
+                       "file":  "ranking-XH-small@2x.png",
+                       "key":  "ranking-XH-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "974aad84ce69db3082c0eadea050d8180174534be38ef13e1306e48a388e4478",
+                       "size_bytes":  7540,
+                       "logical_width":  34,
+                       "logical_height":  41
+                   },
+                   {
+                       "file":  "ranking-X-small@2x.png",
+                       "key":  "ranking-X-small@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "85445dcbcd18b9d0745563fdc22b5263d4403927b55661289b46024070527400",
+                       "size_bytes":  8017,
+                       "logical_width":  34,
+                       "logical_height":  40
+                   },
+                   {
+                       "file":  "selection-approved@2x.png",
+                       "key":  "selection-approved@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "f44d5ac099225c0a60c45a94f825a9acd18ec14aa4ffde11358924eabacee535",
+                       "size_bytes":  527,
+                       "logical_width":  28,
+                       "logical_height":  28
+                   },
+                   {
+                       "file":  "selection-drop@2x.png",
+                       "key":  "selection-drop@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "363918e4d20c9a8573277ec4a7bb04e422b8113c9fb0774dbbdeb4af05e58b15",
+                       "size_bytes":  17151,
+                       "logical_width":  406,
+                       "logical_height":  156
+                   },
+                   {
+                       "file":  "selection-latestranked@2x.png",
+                       "key":  "selection-latestranked@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "79a610603976aee8665f7fd8457a06503c67f17c39f7a66819eaa39e54a4e017",
+                       "size_bytes":  22196,
+                       "logical_width":  343,
+                       "logical_height":  47
+                   },
+                   {
+                       "file":  "selection-lazeronly@2x.png",
+                       "key":  "selection-lazeronly@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "b50de1dc163f9ad7a21cb589fcd012583d92afe737b0362f1729e337ed4e4cad",
+                       "size_bytes":  10544,
+                       "logical_width":  349.5,
+                       "logical_height":  53.5
+                   },
+                   {
+                       "file":  "selection-loved@2x.png",
+                       "key":  "selection-loved@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "ef85e459775e0b3575dfc2fad1aa08de6e08057e790f53f4ccb2968395257c93",
+                       "size_bytes":  603,
+                       "logical_width":  28,
+                       "logical_height":  28
+                   },
+                   {
+                       "file":  "selection-mod-autoplay@2x.png",
+                       "key":  "selection-mod-autoplay@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "11a9e946ad996df5ab114150d55b8adee6024eaf1d1888837975d7f807ddfcc6",
+                       "size_bytes":  13565,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-cinema@2x.png",
+                       "key":  "selection-mod-cinema@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "607d0f865c20ab0b61d4042d53d9f25f14824f31d05906ed5a9b412abacf449b",
+                       "size_bytes":  15637,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-doubletime@2x.png",
+                       "key":  "selection-mod-doubletime@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "931a4a02c55852ede4923ef600381af6734cee9e4f964259192b87605933e9c6",
+                       "size_bytes":  21008,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mode@2x.png",
+                       "key":  "selection-mode@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "24ef6c45f1ef1a3498c35ecb818b37908f3d670caa8404e3e2f2ac218b080d48",
+                       "size_bytes":  10876,
+                       "logical_width":  88,
+                       "logical_height":  90
+                   },
+                   {
+                       "file":  "selection-mod-easy@2x.png",
+                       "key":  "selection-mod-easy@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "705b1f9e670799f833454a9941ba385711dbfe75072aee87ad13fbfb4d60dd3a",
+                       "size_bytes":  12772,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mode-over@2x.png",
+                       "key":  "selection-mode-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "fa3e5dc31a56e1a7d23d1a0ddcaeff6dc8149b9d8a0cb71c50e5cab00ada52fd",
+                       "size_bytes":  14537,
+                       "logical_width":  88,
+                       "logical_height":  90
+                   },
+                   {
+                       "file":  "selection-mod-fadein@2x.png",
+                       "key":  "selection-mod-fadein@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "1c48b8eb7bda27baba6938de0d8bb5fb12f549f7fec0dec64edd77345312caeb",
+                       "size_bytes":  19030,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-fadeout@2x.png",
+                       "key":  "selection-mod-fadeout@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "b41d2a5ec618907eb090d6e7a2fca4da3a570ec9419d9a20c5c6bc4335c88a74",
+                       "size_bytes":  19626,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-flashlight@2x.png",
+                       "key":  "selection-mod-flashlight@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "77ffb4451106524ff2bdd65e5f7c9db66b7aa6fdedef38913c3862666ec7def0",
+                       "size_bytes":  11037,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-halftime@2x.png",
+                       "key":  "selection-mod-halftime@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "d67e369ff6aff72021554d3c6cf3714dbd5029dcfd16f155dafa60342e48c0e0",
+                       "size_bytes":  14014,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-hardrock@2x.png",
+                       "key":  "selection-mod-hardrock@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "9b90c74c6a9444f4b02ea8d4bfacd6757442f6834b15a76a07db8b5f36e4f041",
+                       "size_bytes":  17881,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-hidden@2x.png",
+                       "key":  "selection-mod-hidden@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "7682e086e5ec855b33df016714842dcd86577b4e8cf120591edc6a82976d922d",
+                       "size_bytes":  24252,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key1@2x.png",
+                       "key":  "selection-mod-key1@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "e75b40c442fa86dd38dfa84c87e6bc9276ba6e24f9309d173700f931f99326fa",
+                       "size_bytes":  6663,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key2@2x.png",
+                       "key":  "selection-mod-key2@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "2914882ae0ccf96cf714625bbacea994e0b5501d2f2a4838da7a1a5799cbd1d7",
+                       "size_bytes":  8304,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key3@2x.png",
+                       "key":  "selection-mod-key3@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "d6dabfe19923cdb50478c895df30bab6bccda4bebe2e78317a81c266e7d77b28",
+                       "size_bytes":  9363,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key4@2x.png",
+                       "key":  "selection-mod-key4@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "4a5259bae6a1d682e5596139c8e3150a835b3abbdedefd0acdb8af1ccb1c5494",
+                       "size_bytes":  9805,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key5@2x.png",
+                       "key":  "selection-mod-key5@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "69f061160f3359354c71f17cbbc24a7f7d58cdea063bebc8557761e6f6030d74",
+                       "size_bytes":  11068,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key6@2x.png",
+                       "key":  "selection-mod-key6@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "6d22a2869684162f3f61bdcd0af2edfe98bd7ca0d21e2e44b44b6bf5bdaa4f30",
+                       "size_bytes":  12089,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key7@2x.png",
+                       "key":  "selection-mod-key7@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "17f8983a25d859417879478a59a0c3a591fc762f5d82148bc21cc22b2141492a",
+                       "size_bytes":  12767,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key8@2x.png",
+                       "key":  "selection-mod-key8@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "78587898a3f86110bdf0edb608f8af2d264d6d89df5a206b94558a9ad43f1363",
+                       "size_bytes":  13571,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-key9@2x.png",
+                       "key":  "selection-mod-key9@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "5a7322fbf9fa4673dde47d773317c5e4f9a4138249ae55d035ae7255a6ea88e2",
+                       "size_bytes":  13425,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-keycoop@2x.png",
+                       "key":  "selection-mod-keycoop@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "585c4dccaddfc61114d019bfc72932c9fb90cdadab6f2ff871591d7aae46dda6",
+                       "size_bytes":  14731,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-mirror@2x.png",
+                       "key":  "selection-mod-mirror@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "a233e6f1a49062b1d0e3f4acb80a2cc4ef4e89d8007dad25516ffc9105145c0b",
+                       "size_bytes":  18587,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-nightcore@2x.png",
+                       "key":  "selection-mod-nightcore@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "f8056326d0352457c4d8215f75ba8bdcedc6d65b149a7b3475f7f82e09e338fe",
+                       "size_bytes":  17139,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-nofail@2x.png",
+                       "key":  "selection-mod-nofail@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "94f991ca03d0e8760bd0cb2ddffce3e608823a5946189d190fe3c88e0d0eeeba",
+                       "size_bytes":  21833,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-perfect@2x.png",
+                       "key":  "selection-mod-perfect@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "a3016bf3cc5cfecd7a26caee7d4964611103b764ceb41bb7e0f8171a865d03bb",
+                       "size_bytes":  15442,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-random@2x.png",
+                       "key":  "selection-mod-random@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "467f586598a87b9346a20a8fb8905c1363dc08e233849ce9aa1ffb8644e12946",
+                       "size_bytes":  18984,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-relax@2x.png",
+                       "key":  "selection-mod-relax@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "7ffb0e2af21a7f9a77245e811065e734219f657c4566eb7b8ec5aac0421c214d",
+                       "size_bytes":  11535,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-relax2@2x.png",
+                       "key":  "selection-mod-relax2@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "1726b2d600472f301f4bae7e1a882881022b382d4982578ab67cd256d2f3f503",
+                       "size_bytes":  15515,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mods@2x.png",
+                       "key":  "selection-mods@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "36f4ceb4cb83e7cf94c989d1d041ded71977abf1a8233a9152a7d6bd9b886ef1",
+                       "size_bytes":  11063,
+                       "logical_width":  74,
+                       "logical_height":  90
+                   },
+                   {
+                       "file":  "selection-mod-scorev2@2x.png",
+                       "key":  "selection-mod-scorev2@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "631716d0bd18cbb7ca189e183c593ed9b535b8d05c0a02c80e8a3ab4d6f92969",
+                       "size_bytes":  8851,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mods-over@2x.png",
+                       "key":  "selection-mods-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "48cdd2b098b7d719beabab808f93bede56a7600317ba024f05302b7857781f43",
+                       "size_bytes":  15511,
+                       "logical_width":  74,
+                       "logical_height":  90
+                   },
+                   {
+                       "file":  "selection-mod-spunout@2x.png",
+                       "key":  "selection-mod-spunout@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "52e981c077b17bfdbdb2b58cf9934fbc3f23bbc73f70ac2cd5166cde7af26e1a",
+                       "size_bytes":  17618,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-suddendeath@2x.png",
+                       "key":  "selection-mod-suddendeath@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "ee9e38cb036efba44d522a06f9ec9938f41b68de4e1675133e5214ee5a3424d5",
+                       "size_bytes":  18752,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-mod-target@2x.png",
+                       "key":  "selection-mod-target@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "9816fcae28df7494e97c0b4f4fa9d340b807496713fd6b070e7ea7c4bf0d9037",
+                       "size_bytes":  28232,
+                       "logical_width":  68,
+                       "logical_height":  66
+                   },
+                   {
+                       "file":  "selection-norecords@2x.png",
+                       "key":  "selection-norecords@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "76dbbcfd193e2c148290b98652c88d69ffb2abdc6705ae0b958ff8ad4ac39066",
+                       "size_bytes":  20346,
+                       "logical_width":  343,
+                       "logical_height":  47
+                   },
+                   {
+                       "file":  "selection-notranked@2x.png",
+                       "key":  "selection-notranked@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "66c85ac3634d025ae642978daecbba68b668036863f90251fbac79c0d1c11892",
+                       "size_bytes":  23530,
+                       "logical_width":  343,
+                       "logical_height":  48
+                   },
+                   {
+                       "file":  "selection-notsubmitted@2x.png",
+                       "key":  "selection-notsubmitted@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "70c8413fef7e24d20b242c731ef4a88bad0c20212141bfad4d9ce93fce4670cc",
+                       "size_bytes":  19796,
+                       "logical_width":  343,
+                       "logical_height":  47
+                   },
+                   {
+                       "file":  "selection-options@2x.png",
+                       "key":  "selection-options@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "24e72acf7a49532964f4cbc186f713d07d087a2e2836a097b6b55bfb2d63726e",
+                       "size_bytes":  20306,
+                       "logical_width":  77,
+                       "logical_height":  90
+                   },
+                   {
+                       "file":  "selection-options-over@2x.png",
+                       "key":  "selection-options-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "6fae794625fbcb7b39d057029368781c7121812e76920683b964b43e7625a3c1",
+                       "size_bytes":  22649,
+                       "logical_width":  77,
+                       "logical_height":  90
+                   },
+                   {
+                       "file":  "selection-question@2x.png",
+                       "key":  "selection-question@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "3d28cb6ecaad66bceb60012757cd18021bf61a376b893f2f9bafdc820c7da049",
+                       "size_bytes":  3762,
+                       "logical_width":  15,
+                       "logical_height":  26
+                   },
+                   {
+                       "file":  "selection-random@2x.png",
+                       "key":  "selection-random@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "00b8b5a92a5ce5c608cb3c67f39a6443a69552e7b5eec892c7a7ac1d0ce04258",
+                       "size_bytes":  12392,
+                       "logical_width":  74,
+                       "logical_height":  90
+                   },
+                   {
+                       "file":  "selection-random-over@2x.png",
+                       "key":  "selection-random-over@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "3e610e9074e2a8ef622864d9abd05e50a84f95a962c259a700d33cc7b266b662",
+                       "size_bytes":  15591,
+                       "logical_width":  74,
+                       "logical_height":  90
+                   },
+                   {
+                       "file":  "selection-ranked@2x.png",
+                       "key":  "selection-ranked@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "d9a99dcc44896b95388be2789900e85aaee6fdf4bf3df2fac606e47c36007c54",
+                       "size_bytes":  543,
+                       "logical_width":  28,
+                       "logical_height":  28
+                   },
+                   {
+                       "file":  "selection-tab@2x.png",
+                       "key":  "selection-tab@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "044244ca3177e582332b1ac40edee229e5e39432e2a5e78e434b7f2918c7f8e3",
+                       "size_bytes":  1159,
+                       "logical_width":  143,
+                       "logical_height":  24
+                   },
+                   {
+                       "file":  "selection-tab-add@2x.png",
+                       "key":  "selection-tab-add@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "1a26b273985fa0d78c3c5e7ec41249d701191d8df6b6e14659895ef02c970e8d",
+                       "size_bytes":  1631,
+                       "logical_width":  48,
+                       "logical_height":  24
+                   },
+                   {
+                       "file":  "selection-tab-close@2x.png",
+                       "key":  "selection-tab-close@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "01aa01069e71e4ff648716da0e989751f83944cda5223692430f0123fed89204",
+                       "size_bytes":  1531,
+                       "logical_width":  19,
+                       "logical_height":  19
+                   },
+                   {
+                       "file":  "selection-unknown@2x.png",
+                       "key":  "selection-unknown@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "086b22d0fee099a50094f94f3afdd9f3bb3732737bb32993e36f480cd1539dc2",
+                       "size_bytes":  14713,
+                       "logical_width":  343,
+                       "logical_height":  47
+                   },
+                   {
+                       "file":  "selection-update@2x.png",
+                       "key":  "selection-update@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "64552c667001aeb0fb194d71305faa96871fc87b73ef0534ead67f1a297a7299",
+                       "size_bytes":  23652,
+                       "logical_width":  343,
+                       "logical_height":  48
+                   },
+                   {
+                       "file":  "songselect-bottom@2x.png",
+                       "key":  "songselect-bottom@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "2660a481b18493827cbe40c54aacb8ff5a024cfdb70d6f3dfaacaea2c89ef55e",
+                       "size_bytes":  3715,
+                       "logical_width":  320,
+                       "logical_height":  101
+                   },
+                   {
+                       "file":  "songselect-top@2x.png",
+                       "key":  "songselect-top@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "c55ffda3d4e8d00af4be9d48d508f69de80d5d28e673b61766665b584d9336aa",
+                       "size_bytes":  17499,
+                       "logical_width":  1366,
+                       "logical_height":  155
+                   },
+                   {
+                       "file":  "star@2x.png",
+                       "key":  "star@2x",
+                       "source":  "osu!gameplay.dll",
+                       "sha256":  "3347604526db07484a963d2a43093f1695acfe6849e5b886915541fa0863573d",
+                       "size_bytes":  3985,
+                       "logical_width":  45.5,
+                       "logical_height":  46
+                   },
+                   {
+                       "file":  "star2@2x.png",
+                       "key":  "star2@2x",
+                       "source":  "osu!gameplay.dll",
+                       "sha256":  "f03a7b4c31692b0d2abbad3ccb7fac3c7a5e0ef74e26b0a10f4228c8c3657ac4",
+                       "size_bytes":  7392,
+                       "logical_width":  33,
+                       "logical_height":  34
+                   },
+                   {
+                       "file":  "star3@2x.png",
+                       "key":  "star3@2x",
+                       "source":  "osu!gameplay.dll",
+                       "sha256":  "fec42442061808e25ce58e5c69a4cd56a8f6ea6de4444618b90283c40a460106",
+                       "size_bytes":  6890,
+                       "logical_width":  49,
+                       "logical_height":  47
+                   },
+                   {
+                       "file":  "user-bg@2x.png",
+                       "key":  "user-bg@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "7c2eb45db65aab0546198c9526e85a8fa1643a644b778f5412953d47faa3ec1e",
+                       "size_bytes":  1769,
+                       "logical_width":  330,
+                       "logical_height":  86
+                   },
+                   {
+                       "file":  "user-border@2x.png",
+                       "key":  "user-border@2x",
+                       "source":  "osu!ui.dll",
+                       "sha256":  "cbd25217a9f524eb84dfe60596be2b83a77e3caab887ca74078bd18ea5581644",
+                       "size_bytes":  3494,
+                       "logical_width":  330,
+                       "logical_height":  86
+                   }
+               ]
+}

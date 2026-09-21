@@ -1,0 +1,585 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using osu.Game.Online.Multiplayer;
+using osu.Game.Online.Rooms;
+using osu.Game.Rulesets;
+using osu.Server.Spectator.Database;
+using osu.Server.Spectator.Database.Models;
+using osu.Server.Spectator.Extensions;
+
+namespace osu.Server.Spectator.Hubs.Multiplayer.Standard
+{
+    /// <summary>
+    /// Abstract class that implements the logic for a generic multiplayer room.
+    /// </summary>
+    [NonController]
+    public abstract class StandardMatchController : IMatchController
+    {
+        public const int HOST_PLAYLIST_LIMIT = 50;
+        public const int GUEST_PLAYLIST_LIMIT = 3;
+
+        public MultiplayerPlaylistItem CurrentItem => room.Playlist[currentPlaylistItemIndex];
+
+        protected StandardMatchRoomState State { get; }
+
+        private readonly ServerMultiplayerRoom room;
+        private readonly IDatabaseFactory dbFactory;
+        private readonly MultiplayerEventDispatcher eventDispatcher;
+
+        private QueueMode queueMode;
+        private int currentPlaylistItemIndex;
+
+        protected StandardMatchController(ServerMultiplayerRoom room, IDatabaseFactory dbFactory, MultiplayerEventDispatcher eventDispatcher)
+        {
+            this.room = room;
+            this.dbFactory = dbFactory;
+            this.eventDispatcher = eventDispatcher;
+
+            queueMode = room.Settings.QueueMode;
+            room.MatchState = State = CreateRoomState();
+        }
+
+        protected virtual StandardMatchRoomState CreateRoomState() => new StandardMatchRoomState();
+
+        /// <summary>
+        /// Initialises the queue from the database.
+        /// </summary>
+        public virtual async Task Initialise()
+        {
+            using (var db = dbFactory.GetInstance())
+                await updatePlaylistOrder(db);
+
+            await updateCurrentItem();
+            updateSlotsFromSettings();
+            await eventDispatcher.PostMatchRoomStateChangedAsync(room);
+        }
+
+        public Task<bool> UserCanJoin(int userId)
+            => Task.FromResult(room.Settings.MaxParticipants == null || room.Users.Count < room.Settings.MaxParticipants);
+
+        /// <summary>
+        /// Updates the queue as a result of a change in the queueing mode.
+        /// </summary>
+        public virtual async Task HandleSettingsChanged()
+        {
+            await updateQueueFromModeChange();
+
+            if (updateSlotsFromSettings())
+                await eventDispatcher.PostMatchRoomStateChangedAsync(room);
+        }
+
+        private async Task updateQueueFromModeChange()
+        {
+            if (queueMode == room.Settings.QueueMode)
+                return;
+
+            queueMode = room.Settings.QueueMode;
+
+            using (var db = dbFactory.GetInstance())
+            {
+                // When changing to host-only mode, ensure that at least one non-expired playlist item exists by duplicating the current item.
+                if (room.Settings.QueueMode == QueueMode.HostOnly && room.Playlist.All(item => item.Expired))
+                    await addItem(db, CurrentItem.Clone());
+
+                if (room.State == MultiplayerRoomState.Open)
+                    await updatePlaylistOrder(db);
+            }
+
+            if (room.State == MultiplayerRoomState.Open)
+                await updateCurrentItem();
+        }
+
+        /// <summary>
+        /// Expires the current playlist item and advances to the next one in the order defined by the queueing mode.
+        /// </summary>
+        public virtual async Task HandleGameplayCompleted()
+        {
+            using (var db = dbFactory.GetInstance())
+            {
+                // Expire and let clients know that the current item has finished.
+                await db.MarkPlaylistItemAsPlayedAsync(room.RoomID, CurrentItem.ID);
+                room.Playlist[currentPlaylistItemIndex] = (await db.GetPlaylistItemAsync(room.RoomID, CurrentItem.ID)).ToMultiplayerPlaylistItem();
+
+                await room.HandlePlaylistItemChanged(CurrentItem, true);
+                await updatePlaylistOrder(db);
+
+                // In host-only mode, duplicate the playlist item for the next round if no other non-expired items exist.
+                if (room.Settings.QueueMode == QueueMode.HostOnly && room.Playlist.All(item => item.Expired))
+                    await addItem(db, CurrentItem.Clone());
+            }
+
+            await updateCurrentItem();
+        }
+
+        public virtual async Task HandleUserRequest(MultiplayerRoomUser user, MatchUserRequest request)
+        {
+            switch (request)
+            {
+                case RollRequest rollRequest:
+                    if (rollRequest.Max < 2 || rollRequest.Max > 100)
+                        throw new InvalidStateException("Invalid roll request. Max must be in [2, 100] range inclusive.");
+
+                    uint max = rollRequest.Max ?? 100;
+                    uint result = (uint)Random.Shared.Next(1, 1 + (int)max);
+                    var resultEvent = new RollEvent { UserID = user.UserID, Max = max, Result = result };
+                    await eventDispatcher.PostRollEventAsync(room.RoomID, resultEvent);
+                    break;
+
+                case SetLockStateRequest setRoomLock:
+                    if (State.Locked == setRoomLock.Locked)
+                        break;
+
+                    State.Locked = setRoomLock.Locked;
+                    await eventDispatcher.PostMatchRoomStateChangedAsync(room);
+                    break;
+
+                case ChangeSlotRequest changeSlotRequest:
+                    if (State.Locked)
+                        throw new InvalidStateException("Slots are currently locked.");
+
+                    await ChangeUserSlot(user, changeSlotRequest.SlotID);
+                    break;
+            }
+        }
+
+        public virtual async Task HandleUserJoined(MultiplayerRoomUser user)
+        {
+            await assignUserSlot(user);
+        }
+
+        public virtual async Task HandleUserLeft(MultiplayerRoomUser user)
+        {
+            await clearUserSlot(user);
+        }
+
+        public virtual Task HandleUserStateChanged(MultiplayerRoomUser user)
+        {
+            return Task.CompletedTask;
+        }
+
+        #region Slot management
+
+        private bool updateSlotsFromSettings()
+        {
+            // participant limit has been unset
+            if (room.Settings.MaxParticipants == null)
+            {
+                // no slots in state => nothing to do
+                if (State.Slots == null)
+                    return false;
+
+                // slots in state => discard slots
+                if (State.Slots != null)
+                {
+                    State.Slots = null;
+                    return true;
+                }
+            }
+
+            // by this point it is guaranteed that a participant limit has been set
+            Debug.Assert(room.Settings.MaxParticipants != null);
+
+            if (room.Settings.MaxParticipants < room.Users.Count)
+                throw new InvalidStateException("There are more players currently in the room than your new requested max participant limit. Please kick some players first.");
+
+            // no slots in state => initialise slots
+            if (State.Slots == null)
+            {
+                State.Slots = new int?[room.Settings.MaxParticipants.Value];
+
+                for (int i = 0; i < room.Users.Count; i++)
+                {
+                    var user = room.Users[i];
+                    int slot = GetNextBestSlot(user, State.Slots);
+                    State.Slots[slot] = user.UserID;
+                }
+
+                return true;
+            }
+
+            // slots in state
+            if (State.Slots != null)
+            {
+                // no change in slot count => nothing to do
+                if (room.Settings.MaxParticipants.Value == State.Slots.Length)
+                    return false;
+
+                int?[] oldSlots = State.Slots;
+                State.Slots = new int?[room.Settings.MaxParticipants.Value];
+
+                // slot count increased => pad with empty slots
+                if (room.Settings.MaxParticipants > oldSlots.Length)
+                {
+                    Array.Copy(oldSlots, State.Slots, oldSlots.Length);
+                    return true;
+                }
+
+                // slot count decreased => move users around from removed slots into previously-empty slots
+                int i;
+
+                for (i = 0; i < State.Slots.Length; ++i)
+                {
+                    if (oldSlots[i] != null)
+                        State.Slots[i] = oldSlots[i];
+                }
+
+                for (i = State.Slots.Length; i < oldSlots.Length; ++i)
+                {
+                    int? userId = oldSlots[i];
+
+                    if (userId == null)
+                        continue;
+
+                    var user = room.Users.SingleOrDefault(u => u.UserID == userId.Value);
+                    if (user == null)
+                        continue;
+
+                    int newSlot = GetNextBestSlot(user, State.Slots);
+                    State.Slots[newSlot] = user.UserID;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task ChangeUserSlot(MultiplayerRoomUser user, byte newSlotId)
+        {
+            if (State.Slots == null)
+                throw new InvalidStateException("The room does not have slots.");
+
+            if (newSlotId >= State.Slots.Length)
+                throw new InvalidStateException("Invalid slot.");
+
+            int oldSlotId = Array.IndexOf(State.Slots, user.UserID);
+
+            if (oldSlotId < 0)
+                throw new InvalidStateException("User is not in the room.");
+            if (State.Slots[newSlotId] != null)
+                throw new InvalidStateException("The requested slot is already taken.");
+
+            (State.Slots[oldSlotId], State.Slots[newSlotId]) = (State.Slots[newSlotId], State.Slots[oldSlotId]);
+            await eventDispatcher.PostMatchRoomStateChangedAsync(room);
+        }
+
+        private async Task assignUserSlot(MultiplayerRoomUser user)
+        {
+            // assign a slot to the user if they already don't have one.
+            // them having one can be the case particularly on match type changes, as they also call this method on every user in the room.
+            if (State.Slots != null && Array.IndexOf(State.Slots, user.UserID) < 0)
+            {
+                int slot = GetNextBestSlot(user, State.Slots);
+                State.Slots[slot] = user.UserID;
+                await eventDispatcher.PostMatchRoomStateChangedAsync(room);
+            }
+        }
+
+        protected virtual int GetNextBestSlot(MultiplayerRoomUser user, int?[] slots)
+        {
+            int nextEmptySlot = Array.FindIndex(slots, item => item == null);
+            if (nextEmptySlot < 0)
+                throw new InvalidOperationException("Ran out of slots in the room. This should never happen, as the user should not have been able to join the room to begin with.");
+
+            return nextEmptySlot;
+        }
+
+        private async Task clearUserSlot(MultiplayerRoomUser user)
+        {
+            if (State.Slots == null)
+                return;
+
+            int userSlot = Array.IndexOf(State.Slots, user.UserID);
+            if (userSlot >= 0)
+                State.Slots[userSlot] = null;
+
+            await eventDispatcher.PostMatchRoomStateChangedAsync(room);
+        }
+
+        #endregion
+
+        private bool isHostOrReferee(MultiplayerRoomUser user)
+            => user.Equals(room.Host) || user.Role == MultiplayerRoomUserRole.Referee;
+
+        /// <summary>
+        /// Add a playlist item to the room's queue.
+        /// </summary>
+        /// <param name="item">The item to add.</param>
+        /// <param name="user">The user adding the item.</param>
+        /// <exception cref="NotHostException">If the adding user is not the host in host-only mode.</exception>
+        /// <exception cref="InvalidStateException">If the given playlist item is not valid.</exception>
+        public virtual async Task AddPlaylistItem(MultiplayerPlaylistItem item, MultiplayerRoomUser user)
+        {
+            bool isHostOnly = room.Settings.QueueMode == QueueMode.HostOnly;
+
+            if (isHostOnly && !isHostOrReferee(user))
+                throw new NotHostException();
+
+            int limit = isHostOrReferee(user) ? HOST_PLAYLIST_LIMIT : GUEST_PLAYLIST_LIMIT;
+
+            if (room.Playlist.Count(i => i.OwnerID == user.UserID && !i.Expired) >= limit)
+                throw new InvalidStateException($"Can't enqueue more than {limit} items at once.");
+
+            if (item.Freestyle && item.AllowedMods.Any())
+                throw new InvalidStateException("Cannot enqueue freestyle item with mods.");
+
+            using (var db = dbFactory.GetInstance())
+            {
+                var beatmap = await db.GetBeatmapAsync(item.BeatmapID);
+
+                if (beatmap == null)
+                    throw new InvalidStateException("Attempted to add a beatmap which does not exist online.");
+
+                if (item.BeatmapChecksum != beatmap.checksum)
+                    throw new InvalidStateException("Attempted to add a beatmap which has been modified.");
+
+                if (item.RulesetID < 0 || item.RulesetID > ILegacyRuleset.MAX_LEGACY_RULESET_ID)
+                    throw new InvalidStateException("Attempted to select an unsupported ruleset.");
+
+                if (beatmap.playmode != 0 && item.RulesetID != beatmap.playmode)
+                    throw new InvalidStateException("Attempted to select an invalid beatmap and ruleset combination.");
+
+                item.EnsureModsValid(room.RulesetManager);
+                item.OwnerID = user.UserID;
+                item.StarRating = beatmap.difficulty_rating;
+
+                await addItem(db, item);
+                if (room.State == MultiplayerRoomState.Open)
+                    await updateCurrentItem();
+            }
+        }
+
+        public virtual async Task EditPlaylistItem(MultiplayerPlaylistItem item, MultiplayerRoomUser user)
+        {
+            if (item.Freestyle && item.AllowedMods.Any())
+                throw new InvalidStateException("Cannot enqueue freestyle item with mods.");
+
+            using (var db = dbFactory.GetInstance())
+            {
+                var beatmap = await db.GetBeatmapAsync(item.BeatmapID);
+
+                if (beatmap == null)
+                    throw new InvalidStateException("Attempted to add a beatmap which does not exist online.");
+
+                if (item.BeatmapChecksum != beatmap.checksum)
+                    throw new InvalidStateException("Attempted to add a beatmap which has been modified.");
+
+                if (item.RulesetID < 0 || item.RulesetID > ILegacyRuleset.MAX_LEGACY_RULESET_ID)
+                    throw new InvalidStateException("Attempted to select an unsupported ruleset.");
+
+                if (beatmap.playmode != 0 && item.RulesetID != beatmap.playmode)
+                    throw new InvalidStateException("Attempted to select an invalid beatmap and ruleset combination.");
+
+                item.EnsureModsValid(room.RulesetManager);
+                item.OwnerID = user.UserID;
+                item.StarRating = beatmap.difficulty_rating;
+
+                var existingItem = room.Playlist.SingleOrDefault(i => i.ID == item.ID);
+
+                if (ReferenceEquals(existingItem, CurrentItem))
+                {
+                    if (room.State != MultiplayerRoomState.Open)
+                        throw new InvalidStateException("The current item in the room cannot be edited when currently being played.");
+                }
+
+                if (existingItem == null)
+                    throw new InvalidStateException("Attempted to change an item that doesn't exist.");
+
+                if (existingItem.OwnerID != user.UserID && !isHostOrReferee(user))
+                    throw new InvalidStateException("Attempted to change an item which is not owned by the user.");
+
+                if (existingItem.Expired)
+                    throw new InvalidStateException("Attempted to change an item which has already been played.");
+
+                // Ensure the playlist order doesn't change.
+                item.PlaylistOrder = existingItem.PlaylistOrder;
+
+                await db.UpdatePlaylistItemAsync(new multiplayer_playlist_item(room.RoomID, item));
+                room.Playlist[room.Playlist.IndexOf(existingItem)] = item;
+
+                await room.HandlePlaylistItemChanged(item, existingItem.BeatmapChecksum != item.BeatmapChecksum);
+            }
+        }
+
+        /// <summary>
+        /// Removes a playlist item from the room's queue.
+        /// </summary>
+        /// <param name="playlistItemId">The item to remove.</param>
+        /// <param name="user">The user removing the item.</param>
+        public virtual async Task RemovePlaylistItem(long playlistItemId, MultiplayerRoomUser user)
+        {
+            var item = room.Playlist.FirstOrDefault(item => item.ID == playlistItemId);
+
+            if (item == null)
+                throw new InvalidStateException("Item does not exist in the room.");
+
+            if (ReferenceEquals(item, CurrentItem))
+            {
+                // The current item check is only an optimisation for this condition. It is guaranteed for the single item in the room to be the current item.
+                if (UpcomingItems.Count() == 1)
+                    throw new InvalidStateException("The only item in the room cannot be removed.");
+
+                if (room.State != MultiplayerRoomState.Open)
+                    throw new InvalidStateException("The current item in the room cannot be removed when currently being played.");
+            }
+
+            if (item.OwnerID != user.UserID && !isHostOrReferee(user))
+                throw new InvalidStateException("Attempted to remove an item which is not owned by the user.");
+
+            if (item.Expired)
+                throw new InvalidStateException("Attempted to remove an item which has already been played.");
+
+            using (var db = dbFactory.GetInstance())
+            {
+                if (await db.AnyScoreTokenExistsFor(playlistItemId, room.RoomID))
+                    throw new InvalidStateException("Attempted to remove an item which has already been played.");
+
+                await db.RemovePlaylistItemAsync(room.RoomID, playlistItemId);
+
+                room.Playlist.Remove(item);
+
+                // If either an item indexed earlier in the list was removed or the current item was removed, the index needs to be refreshed.
+                // Importantly, this is done before the playlist order is updated since the update requires the current item.
+                currentPlaylistItemIndex = room.Playlist.IndexOf(UpcomingItems.First());
+
+                if (room.State == MultiplayerRoomState.Open)
+                    await updatePlaylistOrder(db);
+            }
+
+            if (room.State == MultiplayerRoomState.Open)
+                await updateCurrentItem();
+
+            // It's important for clients to be notified of the removal AFTER settings are changed
+            // so that PlaylistItemId always points to a valid item in the playlist.
+            await eventDispatcher.PostPlaylistItemRemovedAsync(room.RoomID, playlistItemId);
+        }
+
+        public virtual MatchStartedEventDetail GetMatchDetails()
+        {
+            var details = new MatchStartedEventDetail
+            {
+                room_type = room.Settings.MatchType.ToDatabaseMatchType()
+            };
+
+            if (State.Slots != null)
+            {
+                details.slots = new Dictionary<int, byte>();
+
+                for (int i = 0; i < State.Slots.Length; i++)
+                {
+                    int? userId = State.Slots[i];
+                    if (userId != null)
+                        details.slots.Add(userId.Value, (byte)i);
+                }
+            }
+
+            return details;
+        }
+
+        private async Task addItem(IDatabaseAccess db, MultiplayerPlaylistItem item)
+        {
+            // Add the item to the end of the list initially.
+            item.PlaylistOrder = ushort.MaxValue;
+            item.Expired = false;
+            item.PlayedAt = null;
+            item.ID = await db.AddPlaylistItemAsync(new multiplayer_playlist_item(room.RoomID, item));
+
+            room.Playlist.Add(item);
+            await eventDispatcher.PostPlaylistItemAddedAsync(room.RoomID, item);
+
+            if (room.State == MultiplayerRoomState.Open)
+                await updatePlaylistOrder(db);
+        }
+
+        public IEnumerable<MultiplayerPlaylistItem> UpcomingItems => room.Playlist.Where(i => !i.Expired).OrderBy(i => i.PlaylistOrder);
+
+        /// <summary>
+        /// Updates <see cref="CurrentItem"/> and the playlist item ID stored in the room's settings.
+        /// </summary>
+        private async Task updateCurrentItem()
+        {
+            if (room.State != MultiplayerRoomState.Open)
+                throw new InvalidOperationException("Can't update current item when game is being played");
+
+            // Pick the next non-expired playlist item by playlist order, or default to the most-recently-expired item.
+            MultiplayerPlaylistItem nextItem = UpcomingItems.FirstOrDefault() ?? room.Playlist.OrderByDescending(i => i.PlayedAt).First();
+
+            currentPlaylistItemIndex = room.Playlist.IndexOf(nextItem);
+
+            long lastItemID = room.Settings.PlaylistItemId;
+            room.Settings.PlaylistItemId = nextItem.ID;
+
+            if (nextItem.ID != lastItemID)
+                await room.HandleSettingsChanged(true);
+        }
+
+        /// <summary>
+        /// Updates the order of items in the playlist according to the queueing mode.
+        /// </summary>
+        private async Task updatePlaylistOrder(IDatabaseAccess db)
+        {
+            if (room.State != MultiplayerRoomState.Open)
+                throw new InvalidOperationException("Can't update playlist order when game is being played");
+
+            List<MultiplayerPlaylistItem> orderedActiveItems;
+
+            switch (room.Settings.QueueMode)
+            {
+                default:
+                    orderedActiveItems = room.Playlist.Where(item => !item.Expired).OrderBy(item => item.ID).ToList();
+                    break;
+
+                case QueueMode.AllPlayersRoundRobin:
+                    orderedActiveItems = new List<MultiplayerPlaylistItem>();
+
+                    bool isFirstSet = true;
+                    var firstSetOrderByUserId = new Dictionary<int, int>();
+
+                    // Group each user's items in order of addition.
+                    var userItemGroups = room.Playlist.Where(item => !item.Expired).OrderBy(item => item.ID).GroupBy(item => item.OwnerID);
+
+                    foreach (IEnumerable<MultiplayerPlaylistItem> set in userItemGroups.Interleave())
+                    {
+                        // Do some post processing on the set of items to ensure that the order is consistent.
+                        if (isFirstSet)
+                        {
+                            // For the first set, preserve the existing order of items and break ties based on the order in which items were added to the queue.
+                            orderedActiveItems.AddRange(set.OrderBy(item => item.PlaylistOrder).ThenBy(item => item.ID));
+
+                            // Store the order of items to be used for all future sets.
+                            firstSetOrderByUserId = orderedActiveItems.Select((item, index) => (item, index)).ToDictionary(i => i.item.OwnerID, i => i.index);
+                        }
+                        else
+                        {
+                            // For the non-first set, preserve the same ordering of users as in the first set.
+                            orderedActiveItems.AddRange(set.OrderBy(i => firstSetOrderByUserId[i.OwnerID]));
+                        }
+
+                        isFirstSet = false;
+                    }
+
+                    break;
+            }
+
+            for (int i = 0; i < orderedActiveItems.Count; i++)
+            {
+                var item = orderedActiveItems[i];
+
+                if (item.PlaylistOrder == i)
+                    continue;
+
+                item.PlaylistOrder = (ushort)i;
+
+                await db.UpdatePlaylistItemAsync(new multiplayer_playlist_item(room.RoomID, item));
+                await room.HandlePlaylistItemChanged(item, false);
+            }
+        }
+    }
+}

@@ -1,0 +1,36 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+//
+// Portions of this file are adapted from Elo-MMR (https://github.com/EbTech/Elo-MMR)
+// See THIRD_PARTY_LICENCES in the repository root for full licence text.
+
+using System;
+using Newtonsoft.Json;
+
+namespace osu.Server.Spectator.Hubs.Multiplayer.Matchmaking.Elo
+{
+    [Serializable]
+    public struct EloRating
+    {
+        [JsonProperty("mu")]
+        public double Mu { get; set; } = 1500;
+
+        [JsonProperty("sig")]
+        public double Sig { get; set; } = 150;
+
+        public EloRating()
+        {
+        }
+
+        public EloRating(double mu)
+        {
+            Mu = mu;
+        }
+
+        public EloRating(double mu, double sig)
+        {
+            Mu = mu;
+            Sig = sig;
+        }
+    }
+}

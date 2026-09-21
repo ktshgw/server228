@@ -1,0 +1,573 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using OpenSkillSharp.Models;
+using OpenSkillSharp.Rating;
+using osu.Game.Online.Multiplayer;
+using osu.Game.Online.Multiplayer.MatchTypes.RankedPlay;
+using osu.Game.Online.RankedPlay;
+using osu.Game.Online.Rooms;
+using osu.Server.Spectator.Database;
+using osu.Server.Spectator.Database.Models;
+using osu.Server.Spectator.Hubs.Multiplayer.Matchmaking.Elo;
+using osu.Server.Spectator.Hubs.Multiplayer.Matchmaking.Queue;
+using osu.Server.Spectator.Hubs.Multiplayer.Matchmaking.RankedPlay.Stages;
+
+namespace osu.Server.Spectator.Hubs.Multiplayer.Matchmaking.RankedPlay
+{
+    [NonController]
+    public class RankedPlayMatchController : IMatchController, IMatchmakingMatchController
+    {
+        public const int PLAYER_HAND_SIZE = 5;
+        public const int DECK_SIZE = 50;
+
+        public MultiplayerPlaylistItem CurrentItem => Room.Playlist.Single(item => item.ID == Room.Settings.PlaylistItemId);
+
+        public IMatchmakingQueueBackgroundService MatchmakingService { get; private set; } = null!;
+        public matchmaking_pool Pool { get; private set; } = null!;
+        public bool Ranked { get; private set; }
+
+        public readonly ServerMultiplayerRoom Room;
+        public readonly IDatabaseFactory DbFactory;
+        public readonly MultiplayerEventDispatcher EventDispatcher;
+        public readonly RankedPlayRoomState State;
+
+        /// <summary>
+        /// The card that was last activated by any user.
+        /// </summary>
+        public RankedPlayCardItem? LastActivatedCard { get; private set; }
+
+        /// <summary>
+        /// The number of cards in the deck.
+        /// </summary>
+        public int DeckCount => deck.Count;
+
+        /// <summary>
+        /// The current stage implementation.
+        /// </summary>
+        public RankedPlayStageImplementation Stage { get; private set; }
+
+        /// <summary>
+        /// All users participating in this match ordered by their turn order.
+        /// </summary>
+        public int[] UserIdsByTurnOrder { get; private set; } = [];
+
+        public Dictionary<int, EloRating> RatingByUser { get; private set; } = [];
+        public Dictionary<int, int> TeamByUser { get; private set; } = [];
+        public bool IsTeamMatch => State.Users.Count == 4 && Pool.lobby_size == 4;
+        public int MaximumLife => IsTeamMatch ? 2_000_000 : 1_000_000;
+        public int? WinningTeamId { get; private set; }
+
+        public int[] TeamMembers(int userId) => TeamByUser.Where(entry => entry.Value == TeamByUser[userId]).Select(entry => entry.Key).ToArray();
+
+        public void ForfeitUser(int userId)
+        {
+            foreach (int member in TeamMembers(userId))
+                State.Users[member].Life = 0;
+        }
+
+        /// <summary>
+        /// Mapping of cards to their associated effect.
+        /// </summary>
+        private readonly Dictionary<RankedPlayCardItem, MultiplayerPlaylistItem> cardToEffectMap = [];
+
+        /// <summary>
+        /// Cards that may be drawn from the deck.
+        /// </summary>
+        private readonly List<RankedPlayCardItem> deck = [];
+
+        /// <summary>
+        /// Indicates whether the final user ratings have been updated.
+        /// Todo: This is public for testing purposes, but should not be.
+        /// </summary>
+        public bool UserRatingsUpdated { get; set; }
+
+        /// <summary>An early cancellation never awards a win or modifies Elo.</summary>
+        public bool CancelledByDodge { get; private set; }
+
+        private readonly HashSet<int> initialHandConfirmed = [];
+
+        public void ConfirmInitialHand(int userId) => initialHandConfirmed.Add(userId);
+
+        public bool CanDodge(int userId) => Ranked && !CancelledByDodge && !UserRatingsUpdated
+                                                  && !initialHandConfirmed.Contains(userId)
+                                                  && State.CurrentRound <= 1
+                                                  && State.Stage is RankedPlayStage.WaitForJoin or RankedPlayStage.RoundWarmup or RankedPlayStage.CardDiscard;
+
+        public RankedPlayMatchController(ServerMultiplayerRoom room, IDatabaseFactory dbFactory, MultiplayerEventDispatcher eventDispatcher)
+        {
+            Room = room;
+            DbFactory = dbFactory;
+            EventDispatcher = eventDispatcher;
+
+            State = new RankedPlayRoomState();
+            Stage = new EmptyStage(this);
+
+            room.MatchState = State;
+        }
+
+        async Task IMatchController.Initialise()
+        {
+            await EventDispatcher.PostMatchRoomStateChangedAsync(Room);
+            await GotoStage(RankedPlayStage.WaitForJoin);
+        }
+
+        async Task IMatchmakingMatchController.Initialise(matchmaking_pool pool, MatchmakingQueueUser[] users, MatchmakingBeatmapSelector beatmapSelector,
+                                                          IMatchmakingQueueBackgroundService matchmakingService)
+        {
+            MatchmakingService = matchmakingService;
+            Pool = pool;
+            Ranked = pool.ranked;
+
+            if (pool.lobby_size == 4)
+            {
+                if (users.Count(user => user.TeamId == 0) == 2 && users.Count(user => user.TeamId == 1) == 2)
+                {
+                    var teamA = users.Where(user => user.TeamId == 0).ToArray();
+                    var teamB = users.Where(user => user.TeamId == 1).ToArray();
+                    users = [teamA[0], teamB[0], teamA[1], teamB[1]];
+                }
+                else
+                    users = RankedTeams.Arrange(users);
+            }
+            else if (users.Length != 2)
+                throw new InvalidStateException("Ranked supports either 1v1 or 2v2 pools.");
+
+            // Build the deck.
+            matchmaking_pool_beatmap[] beatmaps = beatmapSelector.GetAppropriateBeatmaps(DECK_SIZE, users.Select(u => u.Rating).ToArray());
+            if (beatmaps.Length < PLAYER_HAND_SIZE * users.Length)
+                throw new InvalidStateException("SOMS!: not enough eligible ranked beatmaps to deal a full hand.");
+            Random.Shared.Shuffle(beatmaps);
+
+            foreach (var beatmap in beatmaps)
+            {
+                var card = new RankedPlayCardItem();
+                cardToEffectMap[card] = beatmap.ToPlaylistItem();
+                cardToEffectMap[card].OwnerID = AppSettings.BanchoBotUserId;
+                deck.Add(card);
+            }
+
+            State.StarRating = beatmaps.Select(b => b.difficultyrating).DefaultIfEmpty(0).Average();
+
+            // Create an initial playlist item for the room. Clients require this to operate correctly.
+            using (var db = DbFactory.GetInstance())
+            {
+                // room_playlists requires a real beatmap and owner (FKs).
+                MultiplayerPlaylistItem initialItem = beatmaps[0].ToPlaylistItem();
+                initialItem.OwnerID = AppSettings.BanchoBotUserId;
+                initialItem.ID = await db.AddPlaylistItemAsync(new multiplayer_playlist_item(Room.RoomID, initialItem));
+
+                Room.Playlist.Add(initialItem);
+                Room.Settings.PlaylistItemId = initialItem.ID;
+            }
+
+            // Create the user states.
+            for (int index = 0; index < users.Length; index++)
+            {
+                MatchmakingQueueUser user = users[index];
+                TeamByUser[user.UserId] = pool.lobby_size == 4 ? index % 2 : index;
+                RatingByUser[user.UserId] = user.Rating;
+                State.Users[user.UserId] = new RankedPlayUserInfo
+                {
+                    Rating = (int)Math.Round(user.Rating.Mu),
+                    RatingAfter = (int)Math.Round(user.Rating.Mu),
+                    Life = pool.lobby_size == 4 ? 2_000_000 : 1_000_000
+                };
+            }
+
+            UserIdsByTurnOrder = pool.lobby_size == 4 ? users.Select(u => u.UserId).ToArray() : users
+                                 .OrderBy(u => u.Rating.Mu)
+                                 .ThenBy(_ => Random.Shared.NextSingle())
+                                 .Select(u => u.UserId)
+                                 .ToArray();
+
+            // Populate the initial active user, for use by the client to display the first turn's user.
+            State.ActiveUserId = UserIdsByTurnOrder[0];
+
+            await EventDispatcher.PostMatchRoomStateChangedAsync(Room);
+        }
+
+        Task<bool> IMatchController.UserCanJoin(int userId)
+        {
+            return Task.FromResult(State.Users.ContainsKey(userId));
+        }
+
+        Task IMatchController.HandleSettingsChanged()
+        {
+            return Task.CompletedTask;
+        }
+
+        async Task IMatchController.HandleGameplayCompleted()
+        {
+            using (var db = DbFactory.GetInstance())
+            {
+                await db.MarkPlaylistItemAsPlayedAsync(Room.RoomID, CurrentItem.ID);
+
+                multiplayer_playlist_item newItem = await db.GetPlaylistItemAsync(Room.RoomID, CurrentItem.ID);
+                CurrentItem.Expired = newItem.expired;
+                CurrentItem.PlayedAt = newItem.played_at;
+
+                await Room.HandlePlaylistItemChanged(CurrentItem, true);
+            }
+
+            await Stage.HandleGameplayCompleted();
+        }
+
+        async Task IMatchController.HandleUserRequest(MultiplayerRoomUser user, MatchUserRequest request)
+        {
+            switch (request)
+            {
+                case RankedPlayCardHandReplayRequest cardHandReplay:
+                    await Stage.HandleCardHandReplayRequest(user, cardHandReplay);
+                    await EventDispatcher.PostMatchEventAsync(Room.RoomID, new RankedPlayCardHandReplayEvent
+                    {
+                        UserId = user.UserID,
+                        Frames = cardHandReplay.Frames
+                    });
+                    break;
+            }
+        }
+
+        async Task IMatchController.HandleUserJoined(MultiplayerRoomUser user)
+        {
+            await EventDispatcher.PostPlayerJoinedMatchmakingRoomAsync(Room.RoomID, user.UserID);
+            await Stage.HandleUserJoined(user);
+        }
+
+        async Task IMatchController.HandleUserLeft(MultiplayerRoomUser user)
+        {
+            if (CanDodge(user.UserID))
+            {
+                // Room actions are serialised by the room lock. End even if the
+                // app is temporarily unavailable: this match must never award Elo.
+                CancelledByDodge = true;
+                State.WinningUserId = null;
+                try
+                {
+                    await MatchmakingService.RegisterRankedDodgeAsync(Room.RoomID, user.UserID);
+                }
+                finally
+                {
+                    await GotoStage(RankedPlayStage.Ended);
+                }
+                return;
+            }
+            await Stage.HandleUserLeft(user);
+        }
+
+        Task IMatchController.AddPlaylistItem(MultiplayerPlaylistItem item, MultiplayerRoomUser user)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IMatchController.EditPlaylistItem(MultiplayerPlaylistItem item, MultiplayerRoomUser user)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IMatchController.RemovePlaylistItem(long playlistItemId, MultiplayerRoomUser user)
+        {
+            return Task.CompletedTask;
+        }
+
+        async Task IMatchController.HandleUserStateChanged(MultiplayerRoomUser user)
+        {
+            await Stage.HandleUserStateChanged(user);
+        }
+
+        public void SkipToNextStage(out Task countdownTask)
+        {
+            if (!AppSettings.MatchmakingRoomAllowSkip)
+                throw new InvalidStateException("Skipping matchmaking rounds is not allowed.");
+
+            countdownTask = Room.SkipToEndOfCountdown(Room.FindCountdownOfType<RankedPlayStageCountdown>());
+        }
+
+        public async Task DiscardCards(MultiplayerRoomUser user, RankedPlayCardItem[] cards)
+        {
+            await Stage.HandleDiscardCards(user, cards);
+        }
+
+        public async Task PlayCard(MultiplayerRoomUser user, RankedPlayCardItem card)
+        {
+            await Stage.HandlePlayCard(user, card);
+        }
+
+        public async Task GotoStage(RankedPlayStage stage)
+        {
+            Stage = stage switch
+            {
+                RankedPlayStage.WaitForJoin => new WaitForJoinStage(this),
+                RankedPlayStage.RoundWarmup => new RoundWarmupStage(this),
+                RankedPlayStage.CardDiscard => new CardDiscardStage(this),
+                RankedPlayStage.FinishCardDiscard => new FinishCardDiscardStage(this),
+                RankedPlayStage.CardPlay => new CardPlayStage(this),
+                RankedPlayStage.FinishCardPlay => new FinishCardPlayStage(this),
+                RankedPlayStage.GameplayWarmup => new GameplayWarmupStage(this),
+                RankedPlayStage.Gameplay => new GameplayStage(this),
+                RankedPlayStage.Results => new ResultsStage(this),
+                RankedPlayStage.Ended => new EndedStage(this),
+                _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null)
+            };
+
+            await Stage.Enter();
+        }
+
+        /// <summary>
+        /// Draws a number of cards for a given user, placing them in their hand.
+        /// </summary>
+        /// <param name="userId">The user to draw cards for.</param>
+        /// <param name="count">The maximum number of cards to draw from the deck.</param>
+        public async Task AddCards(int userId, int count)
+        {
+            RankedPlayCardItem[] cards = deck.Take(count).ToArray();
+            deck.RemoveRange(0, cards.Length);
+
+            foreach (var card in cards)
+            {
+                State.Users[userId].Hand.Add(card);
+                await EventDispatcher.PostRankedPlayCardAdded(Room.RoomID, userId, card);
+                await EventDispatcher.PostRankedPlayCardRevealed(userId, card, cardToEffectMap[card]);
+            }
+
+            await EventDispatcher.PostMatchRoomStateChangedAsync(Room);
+        }
+
+        /// <summary>
+        /// Discards cards, removing them from a user's hand.
+        /// </summary>
+        /// <param name="userId">The user to discard cards from.</param>
+        /// <param name="cards">The cards to discard.</param>
+        public async Task RemoveCards(int userId, RankedPlayCardItem[] cards)
+        {
+            foreach (var card in cards)
+            {
+                State.Users[userId].Hand.Remove(card);
+                await EventDispatcher.PostRankedPlayCardRemoved(Room.RoomID, userId, card);
+            }
+
+            await EventDispatcher.PostMatchRoomStateChangedAsync(Room);
+        }
+
+        /// <summary>
+        /// Activates the card, placing its effect on the room.
+        /// </summary>
+        public async Task ActivateCard(RankedPlayCardItem card)
+        {
+            MultiplayerPlaylistItem effect = cardToEffectMap[card];
+
+            await EventDispatcher.PostRankedPlayCardRevealed(Room.RoomID, card, effect);
+            await EventDispatcher.PostRankedPlayCardPlayed(Room.RoomID, card);
+
+            // Todo: If we ever have cards with non-"play beatmap" effects, then
+            //       this is the first responder to perform any relevant actions.
+
+            using (var db = DbFactory.GetInstance())
+            {
+                if (CurrentItem.Expired)
+                {
+                    effect.ID = await db.AddPlaylistItemAsync(new multiplayer_playlist_item(Room.RoomID, effect));
+
+                    Room.Playlist.Add(effect);
+                    await EventDispatcher.PostPlaylistItemAddedAsync(Room.RoomID, effect);
+                }
+                else
+                {
+                    effect.ID = CurrentItem.ID;
+
+                    Room.Playlist[Room.Playlist.IndexOf(CurrentItem)] = effect;
+                    await db.UpdatePlaylistItemAsync(new multiplayer_playlist_item(Room.RoomID, effect));
+                    await Room.HandlePlaylistItemChanged(CurrentItem, true);
+                }
+            }
+
+            Room.Settings.PlaylistItemId = effect.ID;
+            await Room.HandleSettingsChanged(true);
+
+            LastActivatedCard = card;
+        }
+
+        /// <summary>
+        /// Causes a player to take damage.
+        /// </summary>
+        /// <param name="userId">The user ID of the player taking damage.</param>
+        /// <param name="directDamage">Direct amount of damage before any multipliers are added.</param>
+        /// <param name="multiplier">A multiplier of <paramref name="directDamage"/>.</param>
+        /// <param name="bonusDamage">Damage dealt for winning a round. Does not scale with <paramref name="multiplier"/>.</param>
+        /// <returns>A descriptor for the damage taken.</returns>
+        public RankedPlayDamageInfo Damage(int userId, int directDamage = 0, double multiplier = 1, int bonusDamage = 0)
+        {
+            RankedPlayUserInfo userInfo = State.Users[userId];
+
+            int totalDamage = (int)Math.Ceiling(directDamage * multiplier) + bonusDamage;
+
+            RankedPlayDamageInfo damageInfo = new RankedPlayDamageInfo
+            {
+                RawDamage = directDamage + bonusDamage,
+                Damage = totalDamage,
+                OldLife = userInfo.Life,
+                NewLife = Math.Max(userInfo.Life == MaximumLife ? 1 : 0, userInfo.Life - totalDamage),
+                DirectDamage = directDamage,
+                Multiplier = multiplier,
+                BonusDamage = bonusDamage,
+            };
+
+            foreach (int member in TeamMembers(userId))
+                State.Users[member].Life = damageInfo.NewLife;
+
+            return damageInfo;
+        }
+
+        public async Task HandleMatchCompleted()
+        {
+            if (UserRatingsUpdated)
+                return;
+
+            UserRatingsUpdated = true;
+
+            // Forego any rating calculations if the match hasn't started yet.
+            // Naturally, this also means we don't have a winner to crown.
+            if (State.CurrentRound == 0 || CancelledByDodge)
+            {
+                await MatchmakingService.RecordMatch((int)Pool.id, State);
+                return;
+            }
+
+            if (IsTeamMatch)
+            {
+                await completeTeamMatch();
+                await MatchmakingService.RecordMatch((int)Pool.id, State);
+                return;
+            }
+
+            int maxLife = State.Users.Max(u => u.Value.Life);
+            int[] winningUsers = State.Users.Where(u => u.Value.Life == maxLife).Select(u => u.Key).ToArray();
+            if (winningUsers.Length == 1)
+                State.WinningUserId = winningUsers.Single();
+
+            if (Ranked)
+            {
+                using (var db = DbFactory.GetInstance())
+                {
+                    PlackettLuce model = new PlackettLuce
+                    {
+                        Mu = 1500,
+                        Sigma = 150,
+                        Beta = 0,
+                        Tau = 15.0,
+                        Gamma = (_, _, _, _, _, _, _) => 1.0
+                    };
+
+                    List<matchmaking_user_stats> stats = [];
+                    List<ITeam> teams = [];
+                    List<double> scores = [];
+
+                    foreach ((int userId, RankedPlayUserInfo user) in State.Users)
+                    {
+                        matchmaking_user_stats userStats = await db.GetMatchmakingUserStatsAsync(userId, Pool.id) ?? new matchmaking_user_stats
+                        {
+                            user_id = (uint)userId,
+                            pool_id = Pool.id
+                        };
+
+                        stats.Add(userStats);
+                        teams.Add(new Team { Players = [model.Rating(userStats.EloData.Rating.Mu, userStats.EloData.Rating.Sig)] });
+                        scores.Add(user.Life);
+                    }
+
+                    IRating[] newRatings = model.Rate(teams, scores: scores).Select(t => t.Players.Single()).ToArray();
+
+                    for (int i = 0; i < stats.Count; i++)
+                    {
+                        matchmaking_room_result result;
+
+                        if (State.WinningUserId == null)
+                            result = matchmaking_room_result.draw;
+                        else if (State.WinningUserId == stats[i].user_id)
+                        {
+                            stats[i].first_placements++;
+                            result = matchmaking_room_result.win;
+                        }
+                        else
+                            result = matchmaking_room_result.loss;
+
+                        await db.InsertUserEloHistoryEntry(
+                            (ulong)Room.RoomID,
+                            Pool.id,
+                            stats[i].user_id,
+                            stats.First(u => u.user_id != stats[i].user_id).user_id,
+                            result,
+                            (int)Math.Round(stats[i].EloData.Rating.Mu),
+                            (int)Math.Round(newRatings[i].Mu));
+
+                        stats[i].EloData.ContestCount++;
+                        stats[i].EloData.Rating = new EloRating(newRatings[i].Mu, newRatings[i].Sigma);
+                        await db.UpdateMatchmakingUserStatsAsync(stats[i]);
+
+                        State.Users[(int)stats[i].user_id].RatingAfter = (int)Math.Round(newRatings[i].Mu);
+                    }
+                }
+            }
+
+            await MatchmakingService.RecordMatch((int)Pool.id, State);
+        }
+
+        private async Task completeTeamMatch()
+        {
+            int[][] members = [TeamMembers(UserIdsByTurnOrder[0]), TeamMembers(UserIdsByTurnOrder[1])];
+            int[] life = members.Select(team => State.Users[team[0]].Life).ToArray();
+            WinningTeamId = life[0] == life[1] ? null : life[0] > life[1] ? 0 : 1;
+            State.WinningUserId = WinningTeamId is int winner ? members[winner][0] : null;
+            if (!Ranked)
+                return;
+
+            using var db = DbFactory.GetInstance();
+            var model = new PlackettLuce
+            {
+                Mu = 1500, Sigma = 150, Beta = 0, Tau = 15.0,
+                Gamma = (_, _, _, _, _, _, _) => 1.0
+            };
+            var stats = new Dictionary<int, matchmaking_user_stats>();
+            foreach (int userId in UserIdsByTurnOrder)
+                stats[userId] = await db.GetMatchmakingUserStatsAsync(userId, Pool.id) ?? new matchmaking_user_stats
+                {
+                    user_id = (uint)userId, pool_id = Pool.id
+                };
+
+            ITeam[] teams = members.Select(team => (ITeam)new Team
+            {
+                Players = team.Select(userId => model.Rating(stats[userId].EloData.Rating.Mu, stats[userId].EloData.Rating.Sig)).ToList()
+            }).ToArray();
+            ITeam[] rated = model.Rate(teams, scores: life.Select(value => (double)value).ToList()).ToArray();
+            for (int team = 0; team < members.Length; team++)
+            {
+                IRating[] ratings = rated[team].Players.ToArray();
+                for (int index = 0; index < members[team].Length; index++)
+                {
+                    int userId = members[team][index];
+                    matchmaking_user_stats userStats = stats[userId];
+                    matchmaking_room_result result = WinningTeamId == null ? matchmaking_room_result.draw
+                        : WinningTeamId == team ? matchmaking_room_result.win : matchmaking_room_result.loss;
+                    if (result == matchmaking_room_result.win)
+                        userStats.first_placements++;
+                    await db.InsertUserEloHistoryEntry((ulong)Room.RoomID, Pool.id, (uint)userId, (uint)members[1 - team][0], result,
+                        (int)Math.Round(userStats.EloData.Rating.Mu), (int)Math.Round(ratings[index].Mu));
+                    userStats.EloData.ContestCount++;
+                    userStats.EloData.Rating = new EloRating(ratings[index].Mu, ratings[index].Sigma);
+                    await db.UpdateMatchmakingUserStatsAsync(userStats);
+                    State.Users[userId].RatingAfter = (int)Math.Round(ratings[index].Mu);
+                }
+            }
+        }
+
+        public MatchStartedEventDetail GetMatchDetails() => new MatchStartedEventDetail
+        {
+            room_type = database_match_type.ranked_play
+        };
+    }
+}

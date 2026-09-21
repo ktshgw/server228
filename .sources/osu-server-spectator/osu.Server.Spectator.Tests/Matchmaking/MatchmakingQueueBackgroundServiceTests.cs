@@ -1,0 +1,272 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using System;
+using System.Threading.Tasks;
+using Moq;
+using osu.Game.Online.Matchmaking;
+using osu.Game.Online.Matchmaking.Requests;
+using osu.Game.Online.Multiplayer;
+using osu.Server.Spectator.Database.Models;
+using osu.Server.Spectator.Services;
+using osu.Server.Spectator.Tests.Multiplayer;
+using Xunit;
+
+namespace osu.Server.Spectator.Tests.Matchmaking
+{
+    public class MatchmakingQueueBackgroundServiceTests : MultiplayerTest
+    {
+        public MatchmakingQueueBackgroundServiceTests()
+        {
+            Database.Setup(db => db.GetMatchmakingPoolAsync(It.IsAny<uint>()))
+                    .Returns<uint>(id => Task.FromResult<matchmaking_pool?>(new matchmaking_pool
+                    {
+                        id = id,
+                        name = $"pool-{id}",
+                        active = true,
+                        lobby_size = 2,
+                    }));
+
+            Database.Setup(db => db.GetRealtimeRoomAsync(0))
+                    .Callback<long>(roomId => InitialiseRoom(roomId, 10))
+                    .ReturnsAsync(() => new multiplayer_room
+                    {
+                        type = database_match_type.matchmaking,
+                        ends_at = DateTimeOffset.Now.AddMinutes(5),
+                        host_id = int.Parse(Hub.Context.UserIdentifier!),
+                    });
+        }
+
+        [Fact]
+        public async Task AddToQueue()
+        {
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingQueueJoined(), Times.Once);
+            UserReceiver.Verify(u => u.MatchmakingQueueLeft(), Times.Never);
+        }
+
+        [Fact]
+        public async Task PersistedDodgeBlocksQueueAfterServiceRestart()
+        {
+            Database.Setup(db => db.GetMatchmakingPoolAsync(1)).ReturnsAsync(new matchmaking_pool { id = 1, active = true, ranked = true });
+            LegacyIO.Setup(io => io.GetRankedDodgeStatusAsync(USER_ID)).ReturnsAsync(new RankedDodgeStatus
+            {
+                UserId = USER_ID, Level = 3, ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30)
+            });
+            InvalidStateException error = await Assert.ThrowsAsync<InvalidStateException>(
+                () => MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1));
+            Assert.Contains("3/14", error.Message);
+            Assert.False(MatchmakingBackgroundService.IsInQueue(UserStates.GetEntityUnsafe(USER_ID)!));
+            UserReceiver.Verify(u => u.MatchmakingQueueJoined(), Times.Never);
+        }
+
+        [Fact]
+        public async Task TemporaryDodgeBanAllowsDuel()
+        {
+            LegacyIO.Setup(io => io.GetRankedDodgeStatusAsync(USER_ID)).ReturnsAsync(new RankedDodgeStatus
+            {
+                UserId = USER_ID, Level = 3, ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30)
+            });
+            await MatchmakingBackgroundService.IssueDuelAsync(UserStates.GetEntityUnsafe(USER_ID)!, new MatchmakingIssueDuelRequest
+            {
+                PoolId = 1, UserId = USER_ID_2
+            });
+            UserReceiver.Verify(u => u.MatchmakingQueueJoined(), Times.Once);
+        }
+
+        [Fact]
+        public async Task AccountBanAlsoBlocksDuel()
+        {
+            LegacyIO.Setup(io => io.GetRankedDodgeStatusAsync(USER_ID)).ReturnsAsync(new RankedDodgeStatus { UserId = USER_ID, AccountBanned = true });
+            await Assert.ThrowsAsync<InvalidStateException>(() => MatchmakingBackgroundService.IssueDuelAsync(
+                UserStates.GetEntityUnsafe(USER_ID)!, new MatchmakingIssueDuelRequest { PoolId = 1, UserId = USER_ID_2 }));
+            UserReceiver.Verify(u => u.MatchmakingQueueJoined(), Times.Never);
+        }
+
+        [Fact]
+        public async Task FailedPenaltyWriteIsRetriedAndBlocksQueueUntilSaved()
+        {
+            Database.Setup(db => db.GetMatchmakingPoolAsync(1)).ReturnsAsync(new matchmaking_pool { id = 1, active = true, ranked = true });
+            LegacyIO.SetupSequence(io => io.RegisterRankedDodgeAsync(7, USER_ID))
+                    .ThrowsAsync(new InvalidOperationException("App unavailable"))
+                    .ReturnsAsync(new RankedDodgeStatus { UserId = USER_ID, Level = 1, ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5) });
+            await MatchmakingBackgroundService.RegisterRankedDodgeAsync(7, USER_ID);
+            await Assert.ThrowsAsync<InvalidStateException>(() => MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1));
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+            LegacyIO.Verify(io => io.RegisterRankedDodgeAsync(7, USER_ID), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task HangingPenaltyWriteDoesNotBlockRoomOrQueueWorker()
+        {
+            var completion = new TaskCompletionSource<RankedDodgeStatus>();
+            LegacyIO.Setup(io => io.RegisterRankedDodgeAsync(7, USER_ID)).Returns(completion.Task);
+            await MatchmakingBackgroundService.RegisterRankedDodgeAsync(7, USER_ID).WaitAsync(TimeSpan.FromSeconds(1));
+            await MatchmakingBackgroundService.ExecuteOnceAsync().WaitAsync(TimeSpan.FromSeconds(1));
+            LegacyIO.Verify(io => io.RegisterRankedDodgeAsync(7, USER_ID), Times.Once);
+            completion.SetResult(new RankedDodgeStatus { UserId = USER_ID, ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5) });
+        }
+
+        [Fact]
+        public async Task RemoveFromQueue()
+        {
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1);
+            await MatchmakingBackgroundService.RemoveFromQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingQueueJoined(), Times.Once);
+            UserReceiver.Verify(u => u.MatchmakingQueueLeft(), Times.Once);
+        }
+
+        [Fact]
+        public async Task MatchReady()
+        {
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Never);
+            User2Receiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Never);
+
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID_2)!, 1);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AcceptInvitation()
+        {
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1);
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID_2)!, 1);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+
+            await MatchmakingBackgroundService.AcceptInvitationAsync(UserStates.GetEntityUnsafe(USER_ID)!);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+            User2Receiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+
+            await MatchmakingBackgroundService.AcceptInvitationAsync(UserStates.GetEntityUnsafe(USER_ID_2)!);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeclineInvitation()
+        {
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1);
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID_2)!, 1);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+
+            await MatchmakingBackgroundService.AcceptInvitationAsync(UserStates.GetEntityUnsafe(USER_ID)!);
+            await MatchmakingBackgroundService.DeclineInvitationAsync(UserStates.GetEntityUnsafe(USER_ID_2)!);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+            UserReceiver.Verify(u => u.MatchmakingQueueJoined(), Times.Exactly(2));
+            UserReceiver.Verify(u => u.MatchmakingQueueLeft(), Times.Never);
+
+            User2Receiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+            User2Receiver.Verify(u => u.MatchmakingQueueJoined(), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingQueueLeft(), Times.Once);
+        }
+
+        [Fact]
+        public async Task LeaveQueueAfterInvite()
+        {
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1);
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID_2)!, 1);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+
+            await MatchmakingBackgroundService.AcceptInvitationAsync(UserStates.GetEntityUnsafe(USER_ID)!);
+            await MatchmakingBackgroundService.RemoveFromQueueAsync(UserStates.GetEntityUnsafe(USER_ID_2)!);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            // Should be the same as DeclineInvitation()
+            UserReceiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+            UserReceiver.Verify(u => u.MatchmakingQueueJoined(), Times.Exactly(2));
+            UserReceiver.Verify(u => u.MatchmakingQueueLeft(), Times.Never);
+
+            // Should be the same as DeclineInvitation()
+            User2Receiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+            User2Receiver.Verify(u => u.MatchmakingQueueJoined(), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingQueueLeft(), Times.Once);
+        }
+
+        [Fact]
+        public async Task QueueLeftOnDisconnect()
+        {
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID)!, 1);
+            await MatchmakingBackgroundService.AddToQueueAsync(UserStates.GetEntityUnsafe(USER_ID_2)!, 1);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+
+            await MatchmakingBackgroundService.AcceptInvitationAsync(UserStates.GetEntityUnsafe(USER_ID)!);
+            SetUserContext(ContextUser2);
+            await Hub.OnDisconnectedAsync(null);
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            // Should be the same as DeclineInvitation()
+            UserReceiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+            UserReceiver.Verify(u => u.MatchmakingQueueJoined(), Times.Exactly(2));
+            UserReceiver.Verify(u => u.MatchmakingQueueLeft(), Times.Never);
+
+            // Should be the same as DeclineInvitation()
+            User2Receiver.Verify(u => u.MatchmakingRoomReady(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+            User2Receiver.Verify(u => u.MatchmakingQueueJoined(), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingQueueLeft(), Times.Once);
+        }
+
+        [Fact]
+        public async Task CancelledDuelDoesNotRequeue()
+        {
+            Guid duelId = Guid.NewGuid();
+
+            User2Receiver.Setup(u => u.MatchmakingDuelIssued(It.IsAny<MatchmakingDuelIssuedParams>()))
+                         .Callback<MatchmakingDuelIssuedParams>(p => duelId = p.Id);
+
+            await MatchmakingBackgroundService.IssueDuelAsync(UserStates.GetEntityUnsafe(USER_ID)!, new MatchmakingIssueDuelRequest
+            {
+                PoolId = 1,
+                UserId = USER_ID_2
+            });
+
+            User2Receiver.Verify(u => u.MatchmakingDuelIssued(It.IsAny<MatchmakingDuelIssuedParams>()), Times.Once);
+
+            SetUserContext(ContextUser2);
+
+            await MatchmakingBackgroundService.AcceptDuelAsync(UserStates.GetEntityUnsafe(USER_ID_2)!, new MatchmakingAcceptDuelRequest
+            {
+                Id = duelId
+            });
+
+            await MatchmakingBackgroundService.ExecuteOnceAsync();
+
+            UserReceiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+            User2Receiver.Verify(u => u.MatchmakingRoomInvitedWithParams(It.IsAny<MatchmakingRoomInvitationParams>()), Times.Once);
+
+            SetUserContext(ContextUser);
+            User2Receiver.Invocations.Clear();
+
+            await MatchmakingBackgroundService.DeclineInvitationAsync(UserStates.GetEntityUnsafe(USER_ID)!);
+
+            User2Receiver.Verify(u => u.MatchmakingQueueStatusChanged(It.IsAny<MatchmakingQueueStatus.Searching>()), Times.Never);
+        }
+    }
+}

@@ -1,0 +1,47 @@
+$buildPath = "./bin/Release"
+$sourceFilename = "osu.Game.Rulesets.EnhancedAuth.source.dll"
+$source = "$buildPath/$sourceFilename"
+$output = "$buildPath/osu.Game.Rulesets.EnhancedAuth.dll"
+
+try
+{
+    Write-Output "Running dotnet build..."
+    dotnet build -c Release -o $buildPath
+
+    # Rename the original build output for backup purposes
+    if (Test-Path $source) {
+        Remove-Item -Path $source
+    }
+    Rename-Item $output $sourceFilename
+
+    dotnet tool restore
+
+    Write-Output "Running ILRepack..."
+    # Change the path if needed 
+    $HarmonyPath = "$HOME/.nuget/packages/lib.harmony/2.4.1/lib/net8.0/0Harmony.dll"
+    $NewtonsoftPath = Get-ChildItem "$HOME/.nuget/packages/newtonsoft.json/*/lib/net6.0/Newtonsoft.Json.dll" |
+        Sort-Object FullName |
+        Select-Object -Last 1
+
+    if ($null -eq $NewtonsoftPath) {
+        throw "Newtonsoft.Json was not found in the local NuGet cache"
+    }
+
+    dotnet tool run ilrepack -out:$output `
+    $source `
+    $HarmonyPath `
+    -lib:./fakelib `
+    -lib:$($NewtonsoftPath.DirectoryName) `
+    /internalize
+
+    Write-Output "Build success"
+    exit 0
+}
+catch
+{
+    Write-Output "Build failed"
+    
+    # Must present the exception
+    throw
+    exit 1
+}

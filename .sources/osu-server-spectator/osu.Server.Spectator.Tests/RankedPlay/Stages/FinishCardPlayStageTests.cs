@@ -1,0 +1,110 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using System.Linq;
+using System.Threading.Tasks;
+using osu.Game.Online.Multiplayer;
+using osu.Game.Online.Multiplayer.MatchTypes.RankedPlay;
+using osu.Game.Online.Rooms;
+using Xunit;
+
+namespace osu.Server.Spectator.Tests.RankedPlay.Stages
+{
+    public class FinishCardPlayStageTests : RankedPlayStageImplementationTest
+    {
+        public FinishCardPlayStageTests()
+            : base(RankedPlayStage.FinishCardPlay)
+        {
+        }
+
+        protected override async Task SetupForEnter()
+        {
+            await base.SetupForEnter();
+
+            await MatchController.ActivateCard(RoomState.ActiveUser!.Hand.First());
+        }
+
+        [Fact]
+        public void UsersUnreadiedOnEnter()
+        {
+            Assert.Equal(MultiplayerUserState.Idle, Room.Users[0].State);
+            Assert.Equal(BeatmapAvailability.Unknown().State, Room.Users[0].BeatmapAvailability.State);
+        }
+
+        [Fact]
+        public async Task ContinuesToGameplayWarmupWhenAllPlayersReady()
+        {
+            await Hub.ChangeBeatmapAvailability(BeatmapAvailability.LocallyAvailable());
+            Assert.Equal(RankedPlayStage.FinishCardPlay, RoomState.Stage);
+
+            SetUserContext(ContextUser2);
+            await Hub.ChangeBeatmapAvailability(BeatmapAvailability.LocallyAvailable());
+            Assert.Equal(RankedPlayStage.GameplayWarmup, RoomState.Stage);
+        }
+
+        [Fact]
+        public async Task ContinuesToEndedWhenAnyPlayerLeaves()
+        {
+            await Hub.LeaveRoom();
+
+            Assert.Equal(RankedPlayStage.Ended, RoomState.Stage);
+            Assert.Equal(0, UserState.Life);
+        }
+
+        [Fact]
+        public async Task ContinuesToNextRoundWhenAnyPlayerFailsToBecomeReady()
+        {
+            int firstActiveUser = RoomState.ActiveUserId!.Value;
+
+            await Hub.ChangeBeatmapAvailability(BeatmapAvailability.LocallyAvailable());
+            Assert.Equal(RankedPlayStage.FinishCardPlay, RoomState.Stage);
+
+            await FinishCountdown();
+            Assert.Equal(RankedPlayStage.CardPlay, RoomState.Stage);
+
+            int secondActiveUser = RoomState.ActiveUserId!.Value;
+
+            Assert.NotEqual(firstActiveUser, secondActiveUser);
+
+            Assert.Equal(4, RoomState.Users[firstActiveUser].Hand.Count);
+            Assert.Equal(5, RoomState.Users[secondActiveUser].Hand.Count);
+
+            Assert.Equal(1_000_000, RoomState.Users[USER_ID].Life);
+            Assert.Equal(950_000, RoomState.Users[USER_ID_2].Life);
+        }
+
+        [Fact]
+        public async Task ContinuesToNextRoundWhenAllPlayersFailToBecomeReady()
+        {
+            int firstActiveUser = RoomState.ActiveUserId!.Value;
+
+            await FinishCountdown();
+            Assert.Equal(RankedPlayStage.CardPlay, RoomState.Stage);
+
+            int secondActiveUser = RoomState.ActiveUserId!.Value;
+
+            Assert.NotEqual(firstActiveUser, secondActiveUser);
+
+            Assert.Equal(4, RoomState.Users[firstActiveUser].Hand.Count);
+            Assert.Equal(5, RoomState.Users[secondActiveUser].Hand.Count);
+
+            Assert.Equal(1_000_000, RoomState.Users[USER_ID].Life);
+            Assert.Equal(1_000_000, RoomState.Users[USER_ID_2].Life);
+        }
+
+        [Fact]
+        public async Task ContinuesToEndedWhenPlayerDiesFromFailingToBecomeReady()
+        {
+            RoomState.Users[USER_ID].Life = 1;
+
+            SetUserContext(ContextUser2);
+            await MarkCurrentUserReadyAndAvailable();
+
+            await FinishCountdown();
+            Assert.Equal(RankedPlayStage.Ended, RoomState.Stage);
+
+            Assert.Equal(0, RoomState.Users[USER_ID].Life);
+            Assert.Equal(1_000_000, RoomState.Users[USER_ID_2].Life);
+        }
+    }
+}
