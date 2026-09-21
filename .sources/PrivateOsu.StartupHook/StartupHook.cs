@@ -5,86 +5,37 @@ internal static class StartupHook
 {
     public static void Initialize()
     {
-        string logPath = Path.Combine(
-            Path.GetTempPath(),
-            "soms-startup-hook.txt"
-        );
-
-        void Log(string message)
-        {
-            File.AppendAllText(
-                logPath,
-                message + Environment.NewLine
+        string? pluginPath =
+            Environment.GetEnvironmentVariable(
+                "PRIVATE_OSU_ENHANCED_AUTH_PATH"
             );
-        }
 
-        try
-        {
-            Log($"HOOK EXECUTED {DateTime.Now:O}");
+        if (string.IsNullOrWhiteSpace(pluginPath))
+            throw new InvalidOperationException(
+                "PRIVATE_OSU_ENHANCED_AUTH_PATH is missing."
+            );
 
-            string? pluginPath =
-                Environment.GetEnvironmentVariable(
-                    "PRIVATE_OSU_ENHANCED_AUTH_PATH"
-                );
+        pluginPath = Path.GetFullPath(pluginPath);
 
-            Log($"PRIVATE_OSU_ENHANCED_AUTH_PATH = {pluginPath}");
+        if (!File.Exists(pluginPath))
+            throw new FileNotFoundException(
+                "EnhancedAuth assembly was not found.",
+                pluginPath
+            );
 
-            if (string.IsNullOrWhiteSpace(pluginPath))
-                throw new InvalidOperationException(
-                    "PRIVATE_OSU_ENHANCED_AUTH_PATH is missing."
-                );
+        string clientDirectory =
+            Path.GetDirectoryName(Environment.ProcessPath!)!;
 
-            pluginPath = Path.GetFullPath(pluginPath);
+        string pluginDirectory =
+            Path.GetDirectoryName(pluginPath)!;
 
-            if (!File.Exists(pluginPath))
-                throw new FileNotFoundException(
-                    "EnhancedAuth assembly was not found.",
-                    pluginPath
-                );
-
-            string clientDirectory =
-                Path.GetDirectoryName(Environment.ProcessPath!)!;
-
-            string pluginDirectory =
-                Path.GetDirectoryName(pluginPath)!;
-
-            Log($"Client directory = {clientDirectory}");
-            Log($"Plugin directory = {pluginDirectory}");
-
-            AssemblyLoadContext.Default.Resolving += ResolveAssembly;
-
-            Log($"Loading: {pluginPath}");
-
-            Assembly plugin =
-                AssemblyLoadContext.Default.LoadFromAssemblyPath(
-                    pluginPath
-                );
-
-            Log($"Assembly loaded: {plugin.FullName}");
-
-            Type rulesetType = plugin.GetType(
-                "osu.Game.Rulesets.EnhancedAuth.EnhancedAuthRuleset",
-                throwOnError: true
-            )!;
-
-            Log($"Type found: {rulesetType.FullName}");
-
-            _ = Activator.CreateInstance(rulesetType)
-                ?? throw new InvalidOperationException(
-                    "EnhancedAuth could not be initialised."
-                );
-
-            Log("EnhancedAuth initialized successfully");
-
-            Assembly? ResolveAssembly(
-                AssemblyLoadContext context,
-                AssemblyName assemblyName)
+        AssemblyLoadContext.Default.Resolving +=
+            (_, assemblyName) =>
             {
                 if (string.IsNullOrEmpty(assemblyName.Name))
                     return null;
 
-                Log($"Resolving: {assemblyName.FullName}");
-
+                // osu! assemblies must come from the running lazer client.
                 if (assemblyName.Name.StartsWith(
                         "osu.",
                         StringComparison.OrdinalIgnoreCase))
@@ -94,10 +45,12 @@ internal static class StartupHook
                         assemblyName.Name + ".dll"
                     );
 
-                    if (File.Exists(clientPath))
-                    {
-                        Assembly? alreadyLoaded =
-                            context.Assemblies.FirstOrDefault(
+                    if (!File.Exists(clientPath))
+                        return null;
+
+                    Assembly? alreadyLoaded =
+                        AssemblyLoadContext.Default.Assemblies
+                            .FirstOrDefault(
                                 a => string.Equals(
                                     a.GetName().Name,
                                     assemblyName.Name,
@@ -105,35 +58,25 @@ internal static class StartupHook
                                 )
                             );
 
-                        if (alreadyLoaded != null)
-                        {
-                            Log(
-                                $"Using already loaded client assembly: {alreadyLoaded.FullName}"
-                            );
+                    if (alreadyLoaded != null)
+                        return alreadyLoaded;
 
-                            return alreadyLoaded;
-                        }
-
-                        Assembly loaded =
-                            context.LoadFromAssemblyPath(clientPath);
-
-                        Log(
-                            $"Loaded client assembly: {loaded.FullName}"
-                        );
-
-                        return loaded;
-                    }
+                    return AssemblyLoadContext.Default
+                        .LoadFromAssemblyPath(clientPath);
                 }
 
+                // Plugin dependencies, e.g. 0Harmony.dll.
                 string pluginDependency = Path.Combine(
                     pluginDirectory,
                     assemblyName.Name + ".dll"
                 );
 
-                if (File.Exists(pluginDependency))
-                {
-                    Assembly? alreadyLoaded =
-                        context.Assemblies.FirstOrDefault(
+                if (!File.Exists(pluginDependency))
+                    return null;
+
+                Assembly? alreadyLoadedDependency =
+                    AssemblyLoadContext.Default.Assemblies
+                        .FirstOrDefault(
                             a => string.Equals(
                                 a.GetName().Name,
                                 assemblyName.Name,
@@ -141,36 +84,26 @@ internal static class StartupHook
                             )
                         );
 
-                    if (alreadyLoaded != null)
-                    {
-                        Log(
-                            $"Using already loaded plugin dependency: {alreadyLoaded.FullName}"
-                        );
+                if (alreadyLoadedDependency != null)
+                    return alreadyLoadedDependency;
 
-                        return alreadyLoaded;
-                    }
+                return AssemblyLoadContext.Default
+                    .LoadFromAssemblyPath(pluginDependency);
+            };
 
-                    Assembly loaded =
-                        context.LoadFromAssemblyPath(
-                            pluginDependency
-                        );
+        Assembly plugin =
+            AssemblyLoadContext.Default.LoadFromAssemblyPath(
+                pluginPath
+            );
 
-                    Log(
-                        $"Loaded plugin dependency: {loaded.FullName}"
-                    );
+        Type rulesetType = plugin.GetType(
+            "osu.Game.Rulesets.EnhancedAuth.EnhancedAuthRuleset",
+            throwOnError: true
+        )!;
 
-                    return loaded;
-                }
-
-                Log($"Assembly not found: {assemblyName.FullName}");
-
-                return null;
-            }
-        }
-        catch (Exception ex)
-        {
-            Log($"ERROR:{Environment.NewLine}{ex}");
-            throw;
-        }
+        _ = Activator.CreateInstance(rulesetType)
+            ?? throw new InvalidOperationException(
+                "EnhancedAuth could not be initialised."
+            );
     }
 }

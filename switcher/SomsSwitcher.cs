@@ -292,6 +292,7 @@ namespace SomsSwitcher
             Dictionary<string, object> versionEntry = AsDict(compatibility[osuVersion], "compatibility." + osuVersion);
             string enhancedAuthPath = DownloadModule(Dict(versionEntry, "enhanced_auth"));
             string startupHookPath = DownloadModule(Dict(versionEntry, "startup_hook"));
+            DownloadModule(Dict(versionEntry, "harmony"));
 
             string healthUrl = RequiredString(manifest, "health_url");
             RequireTrustedUrl(new Uri(ManifestUrl), new Uri(healthUrl, UriKind.Absolute));
@@ -331,6 +332,7 @@ namespace SomsSwitcher
             start.EnvironmentVariables["DOTNET_STARTUP_HOOKS"] = startupHookPath;
             start.EnvironmentVariables["PRIVATE_OSU_ENHANCED_AUTH_PATH"] = enhancedAuthPath;
             start.EnvironmentVariables["PRIVATE_OSU_CREDENTIAL_TARGET"] = credentialTarget;
+            EnsureStartupHooksEnabled(osuPath);
             Process.Start(start);
             SetStatus("osu! запущен на SOMS!. Вводи данные аккаунта SOMS!.", Color.FromArgb(139, 235, 171));
         }
@@ -373,6 +375,64 @@ namespace SomsSwitcher
             return DownloadModule(module, Path.Combine(SettingsDirectory(), "modules"));
         }
 
+        private void EnsureStartupHooksEnabled(string osuPath)
+        {
+            string directory = Path.GetDirectoryName(osuPath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidDataException(
+                    "Не удалось определить папку osu!lazer."
+                );
+
+            string runtimeConfig =
+                Path.Combine(
+                    directory,
+                    "osu!.runtimeconfig.json"
+                );
+
+            if (!File.Exists(runtimeConfig))
+                throw new InvalidDataException(
+                    "Не найден osu!.runtimeconfig.json."
+                );
+
+            string text =
+                File.ReadAllText(
+                    runtimeConfig,
+                    Encoding.UTF8
+                );
+
+            Match match = Regex.Match(
+                text,
+                "\"System\\.StartupHookProvider\\.IsSupported\"\\s*:\\s*(true|false)",
+                RegexOptions.IgnoreCase
+            );
+
+            if (!match.Success)
+                throw new InvalidDataException(
+                    "В osu!.runtimeconfig.json не найден параметр System.StartupHookProvider.IsSupported."
+                );
+
+            if (string.Equals(
+                    match.Groups[1].Value,
+                    "true",
+                    StringComparison.OrdinalIgnoreCase))
+                return;
+
+            text =
+                text.Substring(0, match.Groups[1].Index)
+                + "true"
+                + text.Substring(
+                    match.Groups[1].Index +
+                    match.Groups[1].Length
+                );
+
+            File.WriteAllText(
+                runtimeConfig,
+                text,
+                new UTF8Encoding(false)
+            );
+        }
+
         private string DownloadModule(Dictionary<string, object> module, string root)
         {
             string relativeUrl = RequiredString(module, "url");
@@ -389,7 +449,7 @@ namespace SomsSwitcher
                 throw new InvalidDataException("Модуль превышает лимит свитчера (64 МиБ). Скачай новую версию SOMS-switcher.exe с сайта.");
 
             Directory.CreateDirectory(root);
-            string destination = Path.Combine(root, expectedHash.Substring(0, 16) + "-" + filename);
+            string destination = Path.Combine(root, filename);
             if (File.Exists(destination) && new FileInfo(destination).Length == expectedSize && HashFile(destination) == expectedHash)
                 return destination;
 

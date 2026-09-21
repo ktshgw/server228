@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
-    [string]$OsuVersion = "2026.804.2",
-    [string]$EnhancedAuthPath = ""
+    [string]$OsuVersion = "2026.921.0",
+    [string]$EnhancedAuthPath = "",
+    [string]$HarmonyPath = ""
 )
 
 Set-StrictMode -Version Latest
@@ -27,10 +28,18 @@ if (-not [string]::IsNullOrWhiteSpace($EnhancedAuthPath)) {
 } else {
     throw "Specify the tested client DLL with -EnhancedAuthPath."
 }
-$startupHook = Join-Path $workspace ".sources\PrivateOsu.StartupHook\bin\Release\PrivateOsu.StartupHook.dll"
+
+if (-not [string]::IsNullOrWhiteSpace($HarmonyPath)) {
+    $harmony = (Resolve-Path -LiteralPath $HarmonyPath).Path
+} else {
+    $enhancedAuthDirectory = Split-Path -Parent $enhancedAuth
+    $harmony = Join-Path $enhancedAuthDirectory "0Harmony.dll"
+}
+
+$startupHook = Join-Path $workspace ".sources\PrivateOsu.StartupHook\bin\Release\net8.0\PrivateOsu.StartupHook.dll"
 $switcher = Join-Path $PSScriptRoot "dist\SOMS-switcher.exe"
 
-foreach ($path in @($enhancedAuth, $startupHook, $switcher)) {
+foreach ($path in @($enhancedAuth, $startupHook, $harmony, $switcher)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Required client module is missing: $path"
     }
@@ -38,6 +47,14 @@ foreach ($path in @($enhancedAuth, $startupHook, $switcher)) {
 
 $enhancedAuthHash = (Get-FileHash -LiteralPath $enhancedAuth -Algorithm SHA256).Hash.ToLowerInvariant()
 $startupHookHash = (Get-FileHash -LiteralPath $startupHook -Algorithm SHA256).Hash.ToLowerInvariant()
+$harmony = Join-Path (Split-Path -Parent $enhancedAuth) "0Harmony.dll"
+
+if (-not (Test-Path -LiteralPath $harmony -PathType Leaf)) {
+    throw "Required Harmony module is missing: $harmony"
+}
+
+$harmonyHash = (Get-FileHash -LiteralPath $harmony -Algorithm SHA256).Hash.ToLowerInvariant()
+Write-Host "0Harmony.dll: $harmonyHash"
 
 # Check the shipped executable, not an independently maintained size limit:
 # otherwise a larger DLL can pass publication but fail on every friend's launcher.
@@ -78,6 +95,7 @@ foreach ($launcherConfigPath in @($sharedLauncherConfig, (Join-Path $workspace "
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
 Copy-Item -LiteralPath $enhancedAuth -Destination (Join-Path $destination "osu.Game.Rulesets.EnhancedAuth.dll") -Force
 Copy-Item -LiteralPath $startupHook -Destination (Join-Path $destination "PrivateOsu.StartupHook.dll") -Force
+Copy-Item -LiteralPath $harmony -Destination (Join-Path $destination "0Harmony.dll") -Force
 Copy-Item -LiteralPath $switcher -Destination (Join-Path $workspace "server\static\client\SOMS-switcher.exe") -Force
 foreach ($updatedConfig in $updatedConfigs) {
     $updatedConfig.Json | Set-Content -LiteralPath $updatedConfig.Path -Encoding UTF8
