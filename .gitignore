@@ -6,3 +6,4 @@
 .tools/
 .uv-chache/
 tmp/
+test-clients/
