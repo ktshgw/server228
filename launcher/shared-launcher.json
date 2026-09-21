@@ -12,7 +12,7 @@
                       "EnhancedAuthPath":  "E:\\333\\pythonEPTA\\server228\\server228\\.sources\\LazerAuthlibInjection\\osu.Game.Rulesets.EnhancedAuth\\bin\\Release\\net10.0\\osu.Game.Rulesets.EnhancedAuth.dll",
                       "EnhancedAuthSha256":  "75e19ae47fea3fcc1a88637490068492a9d83a0be7b21101cea1ae318de6b64a",
                       "StartupHookPath":  "..\\.sources\\PrivateOsu.StartupHook\\bin\\Release\\net8.0\\PrivateOsu.StartupHook.dll",
-                      "StartupHookSha256":  "F626B0972D009BBB87B587CB9458800D17050085AE6AF2E1E1E75A6D453C374E",
+                      "StartupHookSha256":  "E8B1A69CB4A0937D1942763CA97141D758A0F6FF3D55F5A09E82C624702FD05C",
                       "CredentialTarget":  "FriendsPrivateOsu/soms.angelfish-leaffish.ts.net"
                   },
     "Server":  {

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Loader;
 
@@ -11,11 +10,11 @@ internal static class StartupHook
             "soms-startup-hook.txt"
         );
 
-        void Log(string text)
+        void Log(string message)
         {
             File.AppendAllText(
                 logPath,
-                text + Environment.NewLine
+                message + Environment.NewLine
             );
         }
 
@@ -43,19 +42,19 @@ internal static class StartupHook
                     pluginPath
                 );
 
-            string osuDirectory = Path.GetDirectoryName(
+            string clientDirectory = Path.GetDirectoryName(
                 Environment.ProcessPath!
             )!;
 
-            Log($"osu directory = {osuDirectory}");
+            string pluginDirectory = Path.GetDirectoryName(
+                pluginPath
+            )!;
 
-            // Explicitly load the assemblies from the running osu! client.
-            LoadClientAssembly("osu.Game.dll");
-            LoadClientAssembly("osu.Framework.dll");
+            Log($"Client directory = {clientDirectory}");
+            Log($"Plugin directory = {pluginDirectory}");
 
-            // Resolve dependencies requested by EnhancedAuth against
-            // assemblies shipped with the running osu! client.
-            AssemblyLoadContext.Default.Resolving += ResolveClientAssembly;
+            AssemblyLoadContext.Default.Resolving +=
+                ResolveAssembly;
 
             Log($"Loading: {pluginPath}");
 
@@ -80,86 +79,113 @@ internal static class StartupHook
 
             Log("EnhancedAuth initialized successfully");
 
-            AssemblyLoadContext.Default.Resolving -= ResolveClientAssembly;
-
-            return;
-
-            Assembly LoadClientAssembly(string fileName)
-            {
-                string path = Path.Combine(osuDirectory, fileName);
-
-                if (!File.Exists(path))
-                    throw new FileNotFoundException(
-                        $"Client assembly not found: {path}",
-                        path
-                    );
-
-                AssemblyName requestedName =
-                    AssemblyName.GetAssemblyName(path);
-
-                Assembly? alreadyLoaded =
-                    AssemblyLoadContext.Default.Assemblies
-                        .FirstOrDefault(a =>
-                            a.GetName().Name == requestedName.Name);
-
-                if (alreadyLoaded != null)
-                {
-                    Log(
-                        $"Already loaded: {alreadyLoaded.FullName}"
-                    );
-
-                    return alreadyLoaded;
-                }
-
-                Assembly loaded =
-                    AssemblyLoadContext.Default
-                        .LoadFromAssemblyPath(path);
-
-                Log($"Loaded client assembly: {loaded.FullName}");
-
-                return loaded;
-            }
-
-            Assembly? ResolveClientAssembly(
+            Assembly? ResolveAssembly(
                 AssemblyLoadContext context,
                 AssemblyName assemblyName)
             {
-                // Only intercept osu!/osu.Framework assemblies.
-                if (string.IsNullOrEmpty(assemblyName.Name) ||
-                    !assemblyName.Name.StartsWith("osu.",
+                if (string.IsNullOrEmpty(assemblyName.Name))
+                    return null;
+
+                Log(
+                    $"Resolving: {assemblyName.FullName}"
+                );
+
+                // osu! assemblies MUST come from the running
+                // osu! client, not from the EnhancedAuth build folder.
+                if (assemblyName.Name.StartsWith(
+                        "osu.",
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    return null;
-                }
-
-                string candidate =
-                    Path.Combine(
-                        osuDirectory,
+                    string clientPath = Path.Combine(
+                        clientDirectory,
                         assemblyName.Name + ".dll"
                     );
 
-                if (!File.Exists(candidate))
-                {
-                    Log(
-                        $"Resolver: not found {assemblyName} at {candidate}"
-                    );
+                    if (File.Exists(clientPath))
+                    {
+                        Assembly? alreadyLoaded =
+                            context.Assemblies.FirstOrDefault(
+                                a => string.Equals(
+                                    a.GetName().Name,
+                                    assemblyName.Name,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            );
 
-                    return null;
+                        if (alreadyLoaded != null)
+                        {
+                            Log(
+                                $"Using already loaded client assembly: {alreadyLoaded.FullName}"
+                            );
+
+                            return alreadyLoaded;
+                        }
+
+                        Assembly loaded =
+                            context.LoadFromAssemblyPath(
+                                clientPath
+                            );
+
+                        Log(
+                            $"Loaded client assembly: {loaded.FullName}"
+                        );
+
+                        return loaded;
+                    }
                 }
 
-                Assembly actual =
-                    context.LoadFromAssemblyPath(candidate);
-
-                Log(
-                    $"Resolver: {assemblyName.FullName} -> {actual.FullName}"
+                // Non-osu dependencies such as Harmony can come
+                // from the EnhancedAuth build directory.
+                string pluginPathCandidate = Path.Combine(
+                    pluginDirectory,
+                    assemblyName.Name + ".dll"
                 );
 
-                return actual;
+                if (File.Exists(pluginPathCandidate))
+                {
+                    Assembly? alreadyLoaded =
+                        context.Assemblies.FirstOrDefault(
+                            a => string.Equals(
+                                a.GetName().Name,
+                                assemblyName.Name,
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                        );
+
+                    if (alreadyLoaded != null)
+                    {
+                        Log(
+                            $"Using already loaded plugin dependency: {alreadyLoaded.FullName}"
+                        );
+
+                        return alreadyLoaded;
+                    }
+
+                    Assembly loaded =
+                        context.LoadFromAssemblyPath(
+                            pluginPathCandidate
+                        );
+
+                    Log(
+                        $"Loaded plugin dependency: {loaded.FullName}"
+                    );
+
+                    return loaded;
+                }
+
+                Log(
+                    $"Assembly not found: {assemblyName.FullName}"
+                );
+
+                return null;
             }
         }
         catch (Exception ex)
         {
-            Log($"ERROR:{Environment.NewLine}{ex}");
+            Log(
+                $"ERROR:{Environment.NewLine}{ex}"
+            );
+
             throw;
         }
     }
