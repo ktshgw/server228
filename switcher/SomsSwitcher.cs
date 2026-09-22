@@ -300,11 +300,12 @@ namespace SomsSwitcher
             Dictionary<string, object> versionEntry = AsDict(compatibility[osuVersion], "compatibility." + osuVersion);
             string enhancedAuthPath = DownloadModule(Dict(versionEntry, "enhanced_auth"));
             string startupHookPath = DownloadModule(Dict(versionEntry, "startup_hook"));
-            string harmonyPath = DownloadModule(Dict(versionEntry, "harmony"),true);
-
             if (versionEntry.ContainsKey("harmony"))
             {
-                DownloadModule(Dict(versionEntry, "harmony"));
+                DownloadModule(
+                    Dict(versionEntry, "harmony"),
+                    true
+                );
             }
 
             string healthUrl = RequiredString(manifest, "health_url");
