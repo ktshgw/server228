@@ -398,51 +398,105 @@ namespace SomsSwitcher
                     "Не удалось определить папку osu!lazer."
                 );
 
-            string runtimeConfig =
-                Path.Combine(
-                    directory,
-                    "osu!.runtimeconfig.json"
-                );
+            string runtimeConfig = Path.Combine(
+                directory,
+                "osu!.runtimeconfig.json"
+            );
 
             if (!File.Exists(runtimeConfig))
                 throw new InvalidDataException(
                     "Не найден osu!.runtimeconfig.json."
                 );
 
-            string text =
-                File.ReadAllText(
-                    runtimeConfig,
-                    Encoding.UTF8
-                );
-
-            Match match = Regex.Match(
-                text,
-                "\"System\\.StartupHookProvider\\.IsSupported\"\\s*:\\s*(true|false)",
-                RegexOptions.IgnoreCase
+            string text = File.ReadAllText(
+                runtimeConfig,
+                Encoding.UTF8
             );
 
-            if (!match.Success)
+            JavaScriptSerializer serializer = new JavaScriptSerializer();
+            serializer.MaxJsonLength = 1024 * 1024;
+
+            Dictionary<string, object> root;
+
+            try
+            {
+                root = serializer.Deserialize<Dictionary<string, object>>(text);
+            }
+            catch (Exception ex)
+            {
                 throw new InvalidDataException(
-                    "В osu!.runtimeconfig.json не найден параметр System.StartupHookProvider.IsSupported."
+                    "Не удалось прочитать osu!.runtimeconfig.json.",
+                    ex
+                );
+            }
+
+            if (root == null)
+                throw new InvalidDataException(
+                    "Не удалось прочитать osu!.runtimeconfig.json."
                 );
 
-            if (string.Equals(
-                    match.Groups[1].Value,
-                    "true",
-                    StringComparison.OrdinalIgnoreCase))
-                return;
-
-            text =
-                text.Substring(0, match.Groups[1].Index)
-                + "true"
-                + text.Substring(
-                    match.Groups[1].Index +
-                    match.Groups[1].Length
+            object runtimeOptionsValue;
+            if (!root.TryGetValue("runtimeOptions", out runtimeOptionsValue))
+                throw new InvalidDataException(
+                    "В osu!.runtimeconfig.json отсутствует runtimeOptions."
                 );
+
+            Dictionary<string, object> runtimeOptions =
+                runtimeOptionsValue as Dictionary<string, object>;
+
+            if (runtimeOptions == null)
+                throw new InvalidDataException(
+                    "runtimeOptions имеет неправильный формат."
+                );
+
+            object configPropertiesValue;
+            Dictionary<string, object> configProperties;
+
+            if (runtimeOptions.TryGetValue(
+                    "configProperties",
+                    out configPropertiesValue))
+            {
+                configProperties =
+                    configPropertiesValue as Dictionary<string, object>;
+
+                if (configProperties == null)
+                    throw new InvalidDataException(
+                        "runtimeOptions.configProperties имеет неправильный формат."
+                    );
+            }
+            else
+            {
+                configProperties =
+                    new Dictionary<string, object>();
+
+                runtimeOptions["configProperties"] =
+                    configProperties;
+            }
+
+            const string switchName =
+                "System.StartupHookProvider.IsSupported";
+
+            object existingValue;
+
+            if (configProperties.TryGetValue(
+                    switchName,
+                    out existingValue))
+            {
+                if (existingValue is bool)
+                {
+                    if ((bool)existingValue)
+                        return;
+                }
+            }
+
+            configProperties[switchName] = true;
+
+            string updatedText =
+                serializer.Serialize(root);
 
             File.WriteAllText(
                 runtimeConfig,
-                text,
+                updatedText,
                 new UTF8Encoding(false)
             );
         }
