@@ -397,22 +397,32 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
 
     private void setCustomRank(double rating)
     {
+        string band;
+        string division;
+
         if (rating >= 3000)
         {
-            customRankBand.Current.Value = "ARCHSOM";
-            customRankDivision.Current.Value = "I";
-            return;
+            band = "ARCHSOM";
+            division = "I";
         }
-        if (rating < 600)
+        else if (rating < 600)
         {
-            customRankBand.Current.Value = "BRONZE";
-            customRankDivision.Current.Value = "I";
-            return;
+            band = "BRONZE";
+            division = "I";
         }
-        int band = Math.Clamp((int)(rating / 500) - 1, 0, 4);
-        int division = Math.Clamp((int)((rating - (500 + band * 500)) / 100), 0, 4);
-        customRankBand.Current.Value = new[] { "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND" }[band];
-        customRankDivision.Current.Value = customRankDivisions[division];
+        else
+        {
+            int bandIndex = Math.Clamp((int)(rating / 500) - 1, 0, 4);
+            int divisionIndex = Math.Clamp((int)((rating - (500 + bandIndex * 500)) / 100), 0, 4);
+
+            band = new[] { "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND" }[bandIndex];
+            division = customRankDivisions[divisionIndex];
+        }
+
+        customRankDivision.Current.Disabled = false;
+        customRankDivision.Current.Value = division;
+        customRankBand.Current.Value = band;
+        updateCustomRankDivision();
     }
 
     private void action(string name, JObject? fields = null, int? revision = null, Action? afterSuccess = null)
