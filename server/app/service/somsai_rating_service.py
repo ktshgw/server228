@@ -15,13 +15,23 @@ from app.models.score import GameMode
 from sqlmodel import col, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+_K_ANCHORS = [(0, 40), (600, 40), (1600, 32), (2300, 24), (2800, 16), (3500, 10), (5000, 10)]
+
+def k_factor(rating: float, games: int) -> float:
+    if games < 10:
+        return 64.0
+    r = max(0.0, min(5000.0, rating))
+    for (r0, k0), (r1, k1) in zip(_K_ANCHORS, _K_ANCHORS[1:]):
+        if r0 <= r <= r1:
+            t = (r - r0) / (r1 - r0) if r1 != r0 else 0
+            return k0 + t * (k1 - k0)
+    return _K_ANCHORS[-1][1]
 
 def initial_rating(rank: int | None, population: int) -> float:
-    """Seed once from SOMS!'s PP ranking percentile; new unranked users get 1000."""
     if rank is None or population < 1:
         return 1000.0
     percentile = 1 - math.log(max(1, rank)) / math.log(max(2, population))
-    return round(1000 + 1000 * max(0, min(1, percentile)), 2)
+    return round(1000 + 1000 * max(0, min(1, percentile))) 
 
 
 async def ensure_rating(
@@ -90,7 +100,7 @@ async def rating_payload(session: AsyncSession, rating: SomsaiRating) -> dict:
         )
     ).one()
     return {
-        "rating": round(rating.rating, 2),
+        "rating": round(rating.rating),
         "rank": higher + 1,
         "wins": rating.wins,
         "losses": rating.losses,
@@ -124,9 +134,9 @@ def performance_impacts(teams: list[list[int]], rounds: list[dict], winning_team
 
 
 async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], winner: int | None) -> list[dict]:
-    from app.service.somsai_rank_pool import rank_from_rating, rank_position
+    from app.service.somsai_rank_pool import rank_from_rating, rank_midpoint_rating
 
-    impacts = performance_impacts(teams, match.state.get("history", []), winner)
+    impacts = performance_impacts(teams, match.state.get("history", []), winner)  # только для UI
     rows = {
         uid: await ensure_rating(session, uid, match.ruleset_id, match.variant_id, match.format)
         for team in teams
@@ -138,28 +148,22 @@ async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], w
     for team_id, members in enumerate(teams):
         actual = 0.5 if winner is None else float(winner == team_id)
         expectation = expected if team_id == 0 else 1 - expected
-        weights = {uid: 0.8 + 0.4 * impacts[uid] / 100 for uid in members}
-        # Equal total team impact; a strong performance softens a loss and
-        # improves a win, with bounded influence on the Elo calculation.
-        if actual < expectation:
-            weights = {uid: 2 - weight for uid, weight in weights.items()}
-        mean_weight = sum(weights.values()) / len(members)
         for uid in members:
             row = rows[uid]
-            k = 64 if row.games < 10 else 32
             before = row.rating
-            adjustment = k * (actual - expectation) * weights[uid] / mean_weight
+            k = k_factor(before, row.games)
+            adjustment = k * (actual - expectation)
+
             pool_rank = match.state.get("pool_rank")
-            rank_gap = 0
+            rank_gap = 0.0
             if pool_rank:
-                rank_gap = rank_position(pool_rank) - rank_position(rank_from_rating(before))
-                if abs(rank_gap) >= 2:
-                    # A harder pool rewards a win and softens a loss; an easier
-                    # pool does the inverse. One-rank noise does not affect Elo.
-                    direction = rank_gap if actual > expectation else -rank_gap
-                    adjustment *= max(0.6, min(1.5, 1 + 0.08 * direction))
-            row.rating = round(max(0, min(5000, before + adjustment)), 2)
-            row.last_delta = round(row.rating - before, 2)
+                rank_gap = (rank_midpoint_rating(pool_rank) - before) / 100
+                direction = rank_gap if actual > expectation else -rank_gap
+                adjustment *= max(0.6, min(1.5, 1 + 0.08 * direction))
+
+            after = max(0, min(5000, before + adjustment))
+            row.rating = round(after)              # Elo хранится целым числом
+            row.last_delta = row.rating - round(before)
             row.games += 1
             row.wins += winner == team_id
             row.losses += winner is not None and winner != team_id
@@ -168,8 +172,8 @@ async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], w
             session.add(row)
             changes.append(
                 {
-                    "user_id": uid, "before": before, "after": row.rating, "delta": row.last_delta,
-                    "impact": impacts[uid], "pool_rank_gap": rank_gap,
+                    "user_id": uid, "before": round(before), "after": row.rating, "delta": row.last_delta,
+                    "impact": impacts[uid], "pool_rank_gap": round(rank_gap, 2),
                 }
             )
     return changes
