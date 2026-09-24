@@ -9,7 +9,6 @@ ROMANS = ("I", "II", "III", "IV", "V")
 BANDS = ("BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND")
 RANKS = (*tuple(f"{band} {roman}" for band in BANDS for roman in ROMANS), "ARCHSOM")
 
-
 def rank_midpoint_rating(rank: str) -> float:
     """Representative rating for a rank — midpoint of its 100pt band, used for
     continuous pool-mismatch comparisons instead of discrete division gaps."""
@@ -18,7 +17,6 @@ def rank_midpoint_rating(rank: str) -> float:
         return 3500.0
     band, roman = rank.split()
     return 500 + BANDS.index(band) * 500 + ROMANS.index(roman) * 100 + 50
-
 
 @dataclass(frozen=True)
 class RankPoolRule:
