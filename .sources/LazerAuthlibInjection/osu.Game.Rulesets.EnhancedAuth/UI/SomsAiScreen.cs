@@ -391,10 +391,10 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
 
     private void updateCustomRankDivision()
     {
-        customRankDivision.Current.Disabled = creatingRoom || customRankBand.Current.Value == "ARCHSOM";
-        if (customRankBand.Current.Value == "ARCHSOM") customRankDivision.Current.Value = "I";
+        bool archsom = customRankBand.Current.Value == "ARCHSOM";
+        if (archsom) customRankDivision.Current.Value = "I";
+        customRankDivision.Current.Disabled = creatingRoom || archsom;
     }
-
     private void setCustomRank(double rating)
     {
         string band;
