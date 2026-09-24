@@ -17,6 +17,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 _K_ANCHORS = [(0, 40), (600, 40), (1600, 32), (2300, 24), (2800, 16), (3500, 10), (5000, 10)]
 
+
 def k_factor(rating: float, games: int) -> float:
     if games < 10:
         return 64.0
@@ -26,6 +27,7 @@ def k_factor(rating: float, games: int) -> float:
             t = (r - r0) / (r1 - r0) if r1 != r0 else 0
             return k0 + t * (k1 - k0)
     return _K_ANCHORS[-1][1]
+
 
 def initial_rating(rank: int | None, population: int) -> float:
     if rank is None or population < 1:
@@ -134,7 +136,7 @@ def performance_impacts(teams: list[list[int]], rounds: list[dict], winning_team
 
 
 async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], winner: int | None) -> list[dict]:
-    from app.service.somsai_rank_pool import rank_from_rating, rank_midpoint_rating
+    from app.service.somsai_rank_pool import rank_midpoint_rating
 
     impacts = performance_impacts(teams, match.state.get("history", []), winner)  # только для UI
     rows = {
