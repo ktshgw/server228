@@ -39,6 +39,28 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 
+SEARCH_RADIUS_BASE = 150.0
+SEARCH_RADIUS_CAP = 500.0
+SEARCH_RADIUS_HOLD_SECONDS = 5 * 60.0
+SEARCH_RADIUS_RAMP_SECONDS = 5 * 60.0
+
+
+def search_radius(waited_seconds: float) -> float:
+    """Keep close matches preferred and only reach the 500 MMR limit after ten minutes."""
+    waited = max(0.0, waited_seconds)
+    if waited <= SEARCH_RADIUS_HOLD_SECONDS:
+        return SEARCH_RADIUS_BASE
+    progress = min(1.0, (waited - SEARCH_RADIUS_HOLD_SECONDS) / SEARCH_RADIUS_RAMP_SECONDS)
+    return SEARCH_RADIUS_BASE + progress * (SEARCH_RADIUS_CAP - SEARCH_RADIUS_BASE)
+
+
+def queue_entries_compatible(left: SomsaiQueue, right: SomsaiQueue, now) -> bool:
+    difference = abs(left.rating - right.rating)
+    left_wait = (now - aware(left.joined_at)).total_seconds()
+    right_wait = (now - aware(right.joined_at)).total_seconds()
+    return difference <= min(search_radius(left_wait), search_radius(right_wait))
+
+
 def validate_mode(ruleset_id: int, variant_id: int) -> None:
     if ruleset_id not in range(4) or variant_id not in ({4, 7} if ruleset_id == 3 else {0}):
         reject("Неизвестный режим или вариант игры.", 422)
@@ -135,14 +157,18 @@ async def match_queues(session: AsyncSession) -> None:
         size = int(format[0])
         while entries:
             anchor = entries[0]
-            elapsed = (utcnow() - aware(anchor.joined_at)).total_seconds()
-            radius = min(5000, 150 + elapsed * 5)
-            nearby = [e for e in entries[1:33] if abs(e.rating - anchor.rating) <= radius]
+            now = utcnow()
+            nearby = [e for e in entries[1:33] if queue_entries_compatible(anchor, e, now)]
             selected = None
             teams = None
             for count in range(1, size * 2):
                 for others in combinations(nearby, count):
                     candidate = [anchor, *others]
+                    if any(
+                        not queue_entries_compatible(left, right, now)
+                        for left, right in combinations(candidate, 2)
+                    ):
+                        continue
                     balanced = balance_units(candidate, size)
                     if balanced:
                         selected, teams = candidate, balanced
