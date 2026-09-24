@@ -1,0 +1,122 @@
+services:
+  app:
+    # or use
+    # image: mingxuangame/soms-server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: osu_api_server_osurx
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - REDIS_URL=redis://redis:6379
+      - ENABLE_OSU_RX=true
+      - ENABLE_OSU_AP=true
+      - ENABLE_ALL_MODS_PP=true
+      - ENABLE_SUPPORTER_FOR_ALL_USERS=true
+      - ENABLE_ALL_BEATMAP_LEADERBOARD=true
+    env_file:
+      - .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./replays:/app/replays
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+      - ./newrelic.ini:/app/newrelic.ini:ro
+      - ./config:/app/config
+      - ./plugins:/app/plugins
+    restart: unless-stopped
+    networks:
+      - osu-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: osu_api_mysql_osurx
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    env_file:
+      - .env
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - osu-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: osu_api_redis_osurx
+    env_file:
+      - .env
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      retries: 5
+      interval: 10s
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - osu-network
+    command: redis-server --appendonly yes
+
+  spectator:
+    image: soms-spectator:local
+    build:
+      context: ./vendor/osu-server-spectator/osu.Server.Spectator
+      dockerfile: Dockerfile.soms
+    environment:
+      # This spectator version parses bool values; "1" disables replay storage.
+      - SAVE_REPLAYS=${SAVE_REPLAYS:-true}
+      - REPLAY_UPLOAD_THREADS=${REPLAY_UPLOAD_THREADS:-1}
+      - TRACK_BUILD_USER_COUNTS=${TRACK_BUILD_USER_COUNTS:-}
+      - SERVER_PORT=${SERVER_PORT:-80}
+      - REDIS_HOST=redis
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SHARED_INTEROP_DOMAIN=http://app:8000
+      - SHARED_INTEROP_SECRET=${SHARED_INTEROP_SECRET:-}
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+    env_file:
+      - .env
+    depends_on:
+      - app
+      - mysql
+      - redis
+    restart: unless-stopped
+    volumes:
+      - ./rulesets:/data/rulesets
+    networks:
+      - osu-network
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "127.0.0.1:8000:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    networks:
+      - osu-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  osu-network:
+    driver: bridge

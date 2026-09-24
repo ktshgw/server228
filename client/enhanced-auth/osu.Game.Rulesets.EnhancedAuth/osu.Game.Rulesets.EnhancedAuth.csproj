@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup Label="Project">
+        <TargetFramework>net10.0</TargetFramework>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <AssemblyTitle>osu.Game.Rulesets.EnhancedAuth</AssemblyTitle>
+        <OutputType>Library</OutputType>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <RootNamespace>osu.Game.Rulesets.EnhancedAuth</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\**" Exclude="Resources\SomsAi\ocean-background.png;Resources\SomsAi\ocean-background-clear.png" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="../../../vendor/osu-server-spectator/osu.Server.Spectator/SomsAiShared/*.cs" Link="UI/Shared/%(Filename)%(Extension)" />
+        <PackageReference Include="Lib.Harmony" Version="2.4.2" />
+        <!-- Newest public package available for the installed 2026.804.2 client. -->
+        <PackageReference Include="ppy.osu.Game" Version="2026.916.0" />
+    </ItemGroup>
+</Project>

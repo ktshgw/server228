@@ -1,0 +1,11 @@
+{
+  "folders": [
+    { "name": "server", "path": "." },
+    { "name": "enhanced-auth", "path": "client/enhanced-auth" },
+    { "name": "spectator", "path": "vendor/osu-server-spectator" }
+  ],
+  "settings": {
+    "python.languageServer": "None",
+    "python.analysis.typeCheckingMode": "off"
+  }
+}

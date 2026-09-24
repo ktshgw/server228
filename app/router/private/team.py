@@ -1,0 +1,453 @@
+"""Team management endpoints.
+
+Provides APIs for creating, updating, managing teams and handling team membership requests.
+"""
+
+import hashlib
+from typing import Annotated
+
+from app.database.team import Team, TeamMember, TeamRequest, TeamResp
+from app.database.user import User, UserModel
+from app.dependencies.database import Database, Redis
+from app.dependencies.storage import StorageService
+from app.dependencies.user import ClientUser
+from app.helpers import api_doc, check_image, utcnow
+from app.log import log
+from app.models.error import ErrorType, RequestError
+from app.models.events.team import (
+    TeamCreatedEvent,
+    TeamDeletedEvent,
+    TeamJoinRequestedEvent,
+    TeamJoinRequestHandledEvent,
+    TeamMemberRemovedEvent,
+    TeamUpdatedEvent,
+)
+from app.models.notification import (
+    TeamApplicationAccept,
+    TeamApplicationReject,
+    TeamApplicationStore,
+)
+from app.models.score import GameMode
+from app.plugins import hub
+from app.router.notification import server
+from app.service.ranking_cache_service import get_ranking_cache_service
+
+from .router import router
+
+from fastapi import File, Form, Path, Query, Request
+from sqlmodel import col, exists, select
+
+logger = log("Team")
+
+
+@router.post(
+    "/team",
+    name="Create team",
+    response_model=Team,
+    tags=["Team", "SOMS API"],
+    description="Create a new team.",
+)
+async def create_team(
+    session: Database,
+    storage: StorageService,
+    current_user: ClientUser,
+    flag: Annotated[bytes, File(..., description="Team flag file")],
+    cover: Annotated[bytes, File(..., description="Team cover file")],
+    name: Annotated[str, Form(max_length=100, description="Team name")],
+    short_name: Annotated[str, Form(max_length=10, description="Team short name")],
+    redis: Redis,
+    playmode: Annotated[GameMode, Form(description="Team game mode")] = GameMode.OSU,
+    description: Annotated[str | None, Form(description="Team description")] = None,
+    website: Annotated[str | None, Form(description="Team website")] = None,
+):
+    if await current_user.is_restricted(session):
+        raise RequestError(ErrorType.ACCOUNT_RESTRICTED)
+
+    user_id = current_user.id
+    if (await current_user.awaitable_attrs.team_membership) is not None:
+        raise RequestError(ErrorType.ALREADY_IN_TEAM)
+
+    is_existed = (await session.exec(select(exists()).where(Team.name == name))).first()
+    if is_existed:
+        raise RequestError(ErrorType.NAME_ALREADY_EXISTS)
+    is_existed = (await session.exec(select(exists()).where(Team.short_name == short_name))).first()
+    if is_existed:
+        raise RequestError(ErrorType.SHORT_NAME_ALREADY_EXISTS)
+
+    flag_format = check_image(flag, 2 * 1024 * 1024, 240, 120)
+    cover_format = check_image(cover, 10 * 1024 * 1024, 3000, 2000)
+
+    if website and not (website.startswith("http://") or website.startswith("https://")):
+        website = "https://" + website
+
+    now = utcnow()
+    team = Team(
+        name=name,
+        short_name=short_name,
+        leader_id=user_id,
+        created_at=now,
+        playmode=playmode,
+        description=description,
+        website=website,
+    )
+    session.add(team)
+    await session.commit()
+    await session.refresh(team)
+
+    filehash = hashlib.sha256(flag).hexdigest()
+    storage_path = f"team_flag/{team.id}_{filehash}.png"
+    if not await storage.is_exists(storage_path):
+        await storage.write_file(storage_path, flag, f"image/{flag_format}")
+    team.flag_url = await storage.get_file_url(storage_path)
+
+    filehash = hashlib.sha256(cover).hexdigest()
+    storage_path = f"team_cover/{team.id}_{filehash}.png"
+    if not await storage.is_exists(storage_path):
+        await storage.write_file(storage_path, cover, f"image/{cover_format}")
+    team.cover_url = await storage.get_file_url(storage_path)
+
+    team_member = TeamMember(user_id=user_id, team_id=team.id, joined_at=now)
+    session.add(team_member)
+
+    await session.commit()
+    await session.refresh(team)
+
+    cache_service = get_ranking_cache_service(redis)
+    await cache_service.invalidate_team_cache()
+    hub.emit(
+        TeamCreatedEvent(
+            team_id=team.id,
+            leader_id=user_id,
+            name=team.name,
+            short_name=team.short_name,
+            playmode=team.playmode,
+        )
+    )
+    logger.info(f"User {user_id} created team {team.id} ({team.name})")
+    return team
+
+
+@router.patch(
+    "/team/{team_id}",
+    name="Update team",
+    response_model=Team,
+    tags=["Team", "SOMS API"],
+    description="Update team information.",
+)
+async def update_team(
+    team_id: int,
+    session: Database,
+    storage: StorageService,
+    current_user: ClientUser,
+    flag: Annotated[bytes | None, File(description="Team flag file")] = None,
+    cover: Annotated[bytes | None, File(description="Team cover file")] = None,
+    name: Annotated[str | None, Form(max_length=100, description="Team name")] = None,
+    short_name: Annotated[str | None, Form(max_length=10, description="Team short name")] = None,
+    leader_id: Annotated[int | None, Form(description="Team leader ID")] = None,
+    playmode: Annotated[GameMode, Form(description="Team game mode")] = GameMode.OSU,
+    description: Annotated[str | None, Form(description="Team description")] = None,
+    website: Annotated[str | None, Form(description="Team website")] = None,
+):
+    if await current_user.is_restricted(session):
+        raise RequestError(ErrorType.ACCOUNT_RESTRICTED)
+
+    team = await session.get(Team, team_id)
+    user_id = current_user.id
+    if not team:
+        raise RequestError(ErrorType.TEAM_NOT_FOUND)
+    if team.leader_id != user_id:
+        raise RequestError(ErrorType.NOT_TEAM_LEADER)
+
+    updated_fields = []
+    if name is not None:
+        if (await session.exec(select(exists()).where(Team.name == name))).first():
+            raise RequestError(ErrorType.NAME_ALREADY_EXISTS)
+        else:
+            team.name = name
+            updated_fields.append("name")
+    if short_name is not None:
+        if (await session.exec(select(exists()).where(Team.short_name == short_name))).first():
+            raise RequestError(ErrorType.SHORT_NAME_ALREADY_EXISTS)
+        else:
+            team.short_name = short_name
+            updated_fields.append("short_name")
+
+    if playmode and team.playmode != playmode:
+        team.playmode = playmode
+        updated_fields.append("playmode")
+    if team.description != description:
+        team.description = description
+        updated_fields.append("description")
+    if website is not None:
+        if website and not (website.startswith("http://") or website.startswith("https://")):
+            website = "https://" + website
+        if team.website != website:
+            team.website = website
+            updated_fields.append("website")
+
+    if flag:
+        format_ = check_image(flag, 2 * 1024 * 1024, 240, 120)
+
+        if old_flag := team.flag_url:
+            path = storage.get_file_name_by_url(old_flag)
+            if path:
+                await storage.delete_file(path)
+        filehash = hashlib.sha256(flag).hexdigest()
+        storage_path = f"team_flag/{team.id}_{filehash}.png"
+        if not await storage.is_exists(storage_path):
+            await storage.write_file(storage_path, flag, f"image/{format_}")
+        team.flag_url = await storage.get_file_url(storage_path)
+        updated_fields.append("flag_url")
+    if cover:
+        format_ = check_image(cover, 10 * 1024 * 1024, 3000, 2000)
+
+        if old_cover := team.cover_url:
+            path = storage.get_file_name_by_url(old_cover)
+            if path:
+                await storage.delete_file(path)
+        filehash = hashlib.sha256(cover).hexdigest()
+        storage_path = f"team_cover/{team.id}_{filehash}.png"
+        if not await storage.is_exists(storage_path):
+            await storage.write_file(storage_path, cover, f"image/{format_}")
+        team.cover_url = await storage.get_file_url(storage_path)
+        updated_fields.append("cover_url")
+
+    if leader_id is not None:
+        if not (await session.exec(select(exists()).where(User.id == leader_id))).first():
+            raise RequestError(ErrorType.LEADER_NOT_FOUND)
+        if not (
+            await session.exec(select(TeamMember).where(TeamMember.user_id == leader_id, TeamMember.team_id == team.id))
+        ).first():
+            raise RequestError(ErrorType.LEADER_NOT_TEAM_MEMBER)
+        team.leader_id = leader_id
+        updated_fields.append("leader_id")
+
+    current_user_id = current_user.id
+    await session.commit()
+    await session.refresh(team)
+    hub.emit(TeamUpdatedEvent(team_id=team.id, actor_user_id=current_user_id, updated_fields=updated_fields))
+    logger.info(f"User {current_user_id} updated team {team.id} ({team.name})")
+    return team
+
+
+@router.delete(
+    "/team/{team_id}",
+    name="Delete team",
+    status_code=204,
+    tags=["Team", "SOMS API"],
+    description="Delete a team.",
+)
+async def delete_team(
+    session: Database,
+    team_id: Annotated[int, Path(..., description="Team ID")],
+    current_user: ClientUser,
+    redis: Redis,
+):
+    if await current_user.is_restricted(session):
+        raise RequestError(ErrorType.ACCOUNT_RESTRICTED)
+
+    team = await session.get(Team, team_id)
+    if not team:
+        raise RequestError(ErrorType.TEAM_NOT_FOUND)
+
+    if team.leader_id != current_user.id:
+        raise RequestError(ErrorType.NOT_TEAM_LEADER)
+
+    team_name = team.name
+    team_short_name = team.short_name
+    current_user_id = current_user.id
+    team_members = await session.exec(select(TeamMember).where(TeamMember.team_id == team_id))
+    for member in team_members:
+        await session.delete(member)
+
+    await session.delete(team)
+    await session.commit()
+
+    cache_service = get_ranking_cache_service(redis)
+    await cache_service.invalidate_team_cache()
+    hub.emit(
+        TeamDeletedEvent(team_id=team_id, actor_user_id=current_user_id, name=team_name, short_name=team_short_name)
+    )
+    logger.info(f"User {current_user_id} deleted team {team_id}")
+
+
+@router.get(
+    "/team/{team_id}",
+    name="Get team",
+    tags=["Team", "SOMS API"],
+    responses={
+        200: api_doc(
+            "Team information",
+            {
+                "team": TeamResp,
+                "members": list[UserModel],
+            },
+            ["statistics", "country"],
+            name="TeamQueryResp",
+        )
+    },
+    description="Get team information.\n\n**Depreated**: It's suggested to switch to v2 API.",
+    deprecated=True,
+)
+async def get_team(
+    session: Database,
+    team_id: Annotated[int, Path(..., description="Team ID")],
+    gamemode: Annotated[GameMode | None, Query(description="Game mode")] = None,
+):
+    members = (
+        await session.exec(
+            select(TeamMember).where(
+                TeamMember.team_id == team_id,
+                ~User.is_restricted_query(col(TeamMember.user_id)),
+            )
+        )
+    ).all()
+    return {
+        "team": await TeamResp.from_db(members[0].team, session, gamemode),
+        "members": await UserModel.transform_many([m.user for m in members], includes=["statistics", "country"]),
+    }
+
+
+@router.post(
+    "/team/{team_id}/request",
+    name="Request to join team",
+    status_code=204,
+    tags=["Team", "SOMS API"],
+    description="Request to join a team.",
+)
+async def request_join_team(
+    session: Database,
+    team_id: Annotated[int, Path(..., description="Team ID")],
+    current_user: ClientUser,
+):
+    if await current_user.is_restricted(session):
+        raise RequestError(ErrorType.ACCOUNT_RESTRICTED)
+
+    team = await session.get(Team, team_id)
+    if not team:
+        raise RequestError(ErrorType.TEAM_NOT_FOUND)
+
+    if (await current_user.awaitable_attrs.team_membership) is not None:
+        raise RequestError(ErrorType.ALREADY_IN_TEAM)
+
+    if (
+        await session.exec(
+            select(exists()).where(TeamRequest.team_id == team_id, TeamRequest.user_id == current_user.id)
+        )
+    ).first():
+        raise RequestError(ErrorType.JOIN_REQUEST_ALREADY_EXISTS)
+    current_user_id = current_user.id
+    team_request = TeamRequest(user_id=current_user_id, team_id=team_id, requested_at=utcnow())
+    session.add(team_request)
+    await session.commit()
+    await session.refresh(team_request)
+    await server.new_private_notification(TeamApplicationStore.init(team_request))
+    hub.emit(TeamJoinRequestedEvent(team_id=team_id, user_id=current_user_id))
+    logger.info(f"User {current_user_id} requested to join team {team_id}")
+
+
+@router.post(
+    "/team/{team_id}/{user_id}/request",
+    name="Accept join request",
+    status_code=204,
+    tags=["Team", "SOMS API"],
+    description="Handle team join request (accept or reject).",
+)
+@router.delete(
+    "/team/{team_id}/{user_id}/request",
+    name="Reject join request",
+    status_code=204,
+    tags=["Team", "SOMS API"],
+    description="Handle team join request (accept or reject).",
+)
+async def handle_request(
+    req: Request,
+    session: Database,
+    team_id: Annotated[int, Path(..., description="Team ID")],
+    user_id: Annotated[int, Path(..., description="User ID")],
+    current_user: ClientUser,
+    redis: Redis,
+):
+    if await current_user.is_restricted(session):
+        raise RequestError(ErrorType.ACCOUNT_RESTRICTED)
+
+    team = await session.get(Team, team_id)
+    if not team:
+        raise RequestError(ErrorType.TEAM_NOT_FOUND)
+
+    if team.leader_id != current_user.id:
+        raise RequestError(ErrorType.NOT_TEAM_LEADER)
+
+    team_request = (
+        await session.exec(select(TeamRequest).where(TeamRequest.team_id == team_id, TeamRequest.user_id == user_id))
+    ).first()
+    if not team_request:
+        raise RequestError(ErrorType.JOIN_REQUEST_NOT_FOUND)
+
+    user = await session.get(User, user_id)
+    if not user:
+        raise RequestError(ErrorType.USER_NOT_FOUND)
+
+    if req.method == "POST":
+        if (await session.exec(select(exists()).where(TeamMember.user_id == user_id))).first():
+            raise RequestError(ErrorType.USER_ALREADY_TEAM_MEMBER)
+
+        session.add(TeamMember(user_id=user_id, team_id=team_id, joined_at=utcnow()))
+
+        await server.new_private_notification(TeamApplicationAccept.init(team_request))
+
+        cache_service = get_ranking_cache_service(redis)
+        await cache_service.invalidate_team_cache()
+    else:
+        await server.new_private_notification(TeamApplicationReject.init(team_request))
+    await session.delete(team_request)
+    current_user_id = current_user.id
+    action = "accepted" if req.method == "POST" else "rejected"
+    await session.commit()
+    hub.emit(
+        TeamJoinRequestHandledEvent(team_id=team_id, user_id=user_id, actor_user_id=current_user_id, action=action)
+    )
+    logger.info(f"Team {team_id} join request from user {user_id} {action} by leader {current_user_id}")
+
+
+@router.delete(
+    "/team/{team_id}/{user_id}",
+    name="Kick member / Leave team",
+    status_code=204,
+    tags=["Team", "SOMS API"],
+    description="Kick a member from team or leave the team.",
+)
+async def kick_member(
+    session: Database,
+    team_id: Annotated[int, Path(..., description="Team ID")],
+    user_id: Annotated[int, Path(..., description="User ID")],
+    current_user: ClientUser,
+    redis: Redis,
+):
+    if await current_user.is_restricted(session):
+        raise RequestError(ErrorType.ACCOUNT_RESTRICTED)
+
+    team = await session.get(Team, team_id)
+    if not team:
+        raise RequestError(ErrorType.TEAM_NOT_FOUND)
+
+    if team.leader_id != current_user.id and user_id != current_user.id:
+        raise RequestError(ErrorType.NOT_TEAM_LEADER)
+
+    team_member = (
+        await session.exec(select(TeamMember).where(TeamMember.team_id == team_id, TeamMember.user_id == user_id))
+    ).first()
+    if not team_member:
+        raise RequestError(ErrorType.USER_NOT_TEAM_MEMBER)
+
+    if team.leader_id == current_user.id:
+        raise RequestError(ErrorType.CANNOT_LEAVE_AS_TEAM_LEADER)
+
+    current_user_id = current_user.id
+    await session.delete(team_member)
+    await session.commit()
+
+    cache_service = get_ranking_cache_service(redis)
+    await cache_service.invalidate_team_cache()
+    hub.emit(TeamMemberRemovedEvent(team_id=team_id, user_id=user_id, actor_user_id=current_user_id))
+    logger.info(f"User {user_id} removed from team {team_id} by user {current_user_id}")

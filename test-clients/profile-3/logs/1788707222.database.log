@@ -1,8 +1,0 @@
-----------------------------------------------------------
-database Log (LogLevel: Verbose)
-Running soms-test-5EE617829DA6E1DC64155A5E 2026.804.2.0 on .NET 8.0.16
-Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
-----------------------------------------------------------
-2026-09-06 15:07:49 [verbose]: [?????] Beginning import from tmpk2p505.osz...
-2026-09-06 15:07:50 [verbose]: [f420c] [APIBeatmapMetadataSource] Online retrieval mapped wowaka - Unhappy Refrain (BarkingMadDog) [EX Extreme] to 1075607 / 2250670.
-2026-09-06 15:07:50 [verbose]: [f420c] Import successfully completed!

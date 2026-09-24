@@ -1,6 +1,0 @@
-----------------------------------------------------------
-database Log (LogLevel: Verbose)
-Running somsai-load-de042646c4874ab0b197a97c67ea2467 1.0.0.0 on .NET 8.0.20
-Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
-----------------------------------------------------------
-2026-09-06 15:11:16 [verbose]: [LocalCachedBeatmapMetadataSource] Fetching local cache because it does not exist.

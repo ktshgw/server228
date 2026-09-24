@@ -1,7 +1,0 @@
-----------------------------------------------------------
-performance Log (LogLevel: Verbose)
-Running legacy-interface-d6d1a3f4b08b44738150c7db5aeeb712 1.0.0.0 on .NET 8.0.20
-Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
-----------------------------------------------------------
-2026-09-07 21:57:01 [verbose]: TextureAtlas initialised (1024x1024)
-2026-09-07 21:57:01 [verbose]: TextureAtlas initialised (1024x1024)

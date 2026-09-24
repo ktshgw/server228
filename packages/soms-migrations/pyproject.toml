@@ -1,0 +1,15 @@
+[project]
+name = "soms-migrations"
+version = "0.1.0"
+description = "Migration tools for soms-server and plugins."
+requires-python = ">=3.12"
+dependencies = [
+    "aiomysql>=0.3.2",
+    "alembic>=1.19.1",
+    "click>=8.4.2",
+    "pydantic>=2.11.9",
+    "pydantic-settings>=2.12.0",
+]
+
+[project.scripts]
+soms-migrate = "soms_migrations.__main__:soms_migrate"

@@ -1,7 +1,0 @@
-----------------------------------------------------------
-network Log (LogLevel: Verbose)
-Running somsai-load-c14795b8fb944929862515a1fda45bc1 1.0.0.0 on .NET 8.0.20
-Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
-----------------------------------------------------------
-2026-09-06 03:03:49 [verbose]: Failing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest (System.OperationCanceledException: Request cancelled)
-2026-09-06 03:03:49 [verbose]: Failing request osu.Game.Rulesets.EnhancedAuth.Online.GetSomsAiStateRequest (System.OperationCanceledException: Request cancelled)

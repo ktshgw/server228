@@ -1,5 +1,5 @@
-# Замените домен на тот же HTTPS origin, который указан в server/.env и
-# launcher/launcher.json. Здесь Caddy работает на host, а compose nginx
+# Замените домен на тот же HTTPS origin, который указан в .env и
+# client/launcher/launcher.json. Здесь Caddy работает на host, а compose nginx
 # привязан к 127.0.0.1:8000.
 lazer.example.net {
 	# /_lio нужен только spectator-контейнеру во внутренней Docker network.
@@ -9,7 +9,7 @@ lazer.example.net {
 
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:8000 {
-		# g0v0 recognises these provider-specific headers. This example does
+		# soms recognises these provider-specific headers. This example does
 		# not run behind those providers, so never trust values sent by a client.
 		header_up -CF-Connecting-IP
 		header_up -True-Client-IP

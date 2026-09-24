@@ -1,5 +1,0 @@
-2026/09/05-00:29:56.268 9258 Creating DB E:\333\pythonEPTA\SERVAK\server\.visual-check\profile-round-3\Default\EdgeCoupons/coupons_data.db since it was missing.
-2026/09/05-00:29:56.440 9258 Reusing MANIFEST E:\333\pythonEPTA\SERVAK\server\.visual-check\profile-round-3\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
-2026/09/05-00:29:58.434 81b8 Level-0 table #5: started
-2026/09/05-00:29:58.465 81b8 Level-0 table #5: 683273 bytes OK
-2026/09/05-00:29:58.483 81b8 Delete type=0 #3

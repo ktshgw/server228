@@ -1,10 +1,88 @@
-.test-tmp/
-.uv-cache/
-.tooling/
+# Local configuration and secrets
+.env
+.env.*.tmp
+.envrc
+*.local
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[codz]
+.pytest_cache/
 .ruff_cache/
+.mypy_cache/
+.pyright/
+.coverage*
+htmlcov/
+
+# Local tools, downloads and disposable runs
+.test-tmp/
+.tooling/
 .tools/
+.uv-cache/
 .uv-chache/
 tmp/
+.runtime/
+headless/
 test-clients/
-.sources/LegacyInterface.Check/bin/Release/net8.0/osu.Game.Resources.dll
-.sources/SomsAi.Load.Check/out/osu.Game.Resources.dll
+.visual-check/
+
+# Build output
+**/bin/
+**/obj/
+**/out/
+**/test-profiles/
+build/
+dist/
+*.egg-info/
+
+# Server runtime data
+backups/
+storage/
+replays/
+logs/
+rulesets/
+plugins/
+!app/plugins/
+config/*
+!config/.gitkeep
+
+# Local IDE state
+.idea/
+.vscode/settings.json
+
+# Downloaded service trees
+bancho.py-master/
+osu-master/
+osu-web-master/
+osu-server-spectator-master/
+spectator-server/
+performance-server/
+soms-plugins/
+
+# Generated documentation
+site/
+docs/_build/
+
+# .NET and IDE output for all client/vendor projects
+.vs/
+**/.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+TestResult.xml
+TestResults/
+artifacts/
+publish/
+*.nupkg
+*.pdb
+*.tmp
+
+# Local launcher state and copied runtime assemblies
+/client/launcher/launcher.json
+/client/launcher/launcher.json.*.tmp
+/client/launcher/launcher.json.invalid-*.bak
+/client/launcher/*.dll

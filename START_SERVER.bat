@@ -6,7 +6,7 @@ set "SCRIPT_DIR=%~dp0"
 set "ACTION=%~1"
 if "%ACTION%"=="" set "ACTION=Start"
 
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%scripts\easy-server.ps1" -Action "%ACTION%" -Username "%~2"
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%scripts\server\easy-server.ps1" -Action "%ACTION%" -Username "%~2"
 set "EXIT_CODE=%ERRORLEVEL%"
 
 echo.

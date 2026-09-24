@@ -1,9 +1,0 @@
-----------------------------------------------------------
-database Log (LogLevel: Verbose)
-Running soms-test-117EA1AAC104085014FE0AE0 2026.804.2.0 on .NET 8.0.16
-Environment: Windows (Microsoft Windows NT 10.0.19045.0), 12 cores 
-----------------------------------------------------------
-2026-09-06 15:37:00 [verbose]: [LocalCachedBeatmapMetadataSource] Fetching local cache because it does not exist.
-2026-09-06 15:37:06 [verbose]: [?????] Beginning import from triangles.osz...
-2026-09-06 15:37:07 [verbose]: [a1556] Import successfully completed!
-2026-09-06 15:37:13 [verbose]: [LocalCachedBeatmapMetadataSource] Local cache fetch completed successfully.

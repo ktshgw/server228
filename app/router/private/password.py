@@ -1,0 +1,101 @@
+"""Password change endpoint.
+
+Provides API for users to change their account password with TOTP or password verification.
+"""
+
+from typing import Annotated
+
+from app.auth import (
+    authenticate_user,
+    check_totp_backup_code,
+    get_password_hash,
+    validate_password,
+    verify_totp_key_with_replay_protection,
+)
+from app.const import BACKUP_CODE_LENGTH
+from app.database.auth import OAuthToken, TotpKeys
+from app.database.verification import LoginSession, TrustedDevice
+from app.dependencies.database import Database, Redis
+from app.dependencies.rate_limit import create_rate_limiter
+from app.dependencies.user import ClientUser
+from app.log import log
+from app.models.error import ErrorType, FieldMissingError, RequestError
+from app.service.web_session_service import invalidate_web_sessions
+
+from .router import router
+
+from fastapi import Depends, Form
+from pyrate_limiter import Duration, Rate
+from sqlmodel import col, delete
+
+logger = log("Auth")
+
+
+@router.post(
+    "/password/change",
+    name="Change password",
+    tags=["Authentication", "SOMS API"],
+    status_code=204,
+    dependencies=[
+        Depends(create_rate_limiter(Rate(3, Duration.MINUTE * 5), bucket_key="rate-limit:private:password-change")),
+    ],
+    description="Change user password.",
+)
+async def change_password(
+    current_user: ClientUser,
+    session: Database,
+    redis: Redis,
+    new_password: Annotated[str, Form(description="New password")],
+    current_password: Annotated[str | None, Form(description="Current password (required if TOTP not enabled)")] = None,
+    totp_code: Annotated[str | None, Form(description="TOTP code or backup code (required if TOTP enabled)")] = None,
+):
+    # Validate new password format
+    if errors := validate_password(new_password):
+        raise RequestError(ErrorType.INVALID_PASSWORD, {"errors": errors}, status_code=400)
+
+    # Check if user has TOTP enabled
+    totp_key = await session.get(TotpKeys, current_user.id)
+
+    if totp_key:
+        # User has TOTP enabled, must verify TOTP
+        if not totp_code:
+            raise RequestError(ErrorType.TOTP_CODE_REQUIRED)
+
+        is_verified = False
+        if len(totp_code) == 6 and totp_code.isdigit():
+            is_verified = await verify_totp_key_with_replay_protection(
+                current_user.id, totp_key.secret, totp_code, redis
+            )
+        elif len(totp_code) == BACKUP_CODE_LENGTH:
+            is_verified = check_totp_backup_code(totp_key, totp_code)
+            if is_verified:
+                session.add(totp_key)
+        else:
+            raise RequestError(ErrorType.INVALID_TOTP_FORMAT, {"args": BACKUP_CODE_LENGTH})
+
+        if not is_verified:
+            raise RequestError(ErrorType.INVALID_TOTP_OR_BACKUP_CODE)
+
+        logger.info(f"User {current_user.id} verified identity with TOTP for password change")
+
+    else:
+        # User does not have TOTP enabled, must verify current password
+        if not current_password:
+            raise FieldMissingError(["current_password"])
+
+        if not await authenticate_user(session, current_user.username, current_password):
+            raise RequestError(ErrorType.PASSWORD_INCORRECT)
+
+        logger.info(f"User {current_user.id} verified identity with password for password change")
+
+    user_id = current_user.id
+
+    current_user.pw_bcrypt = get_password_hash(new_password)
+
+    await session.execute(delete(TrustedDevice).where(col(TrustedDevice.user_id) == user_id))
+    await session.execute(delete(LoginSession).where(col(LoginSession.user_id) == user_id))
+    await session.execute(delete(OAuthToken).where(col(OAuthToken.user_id) == user_id))
+
+    await session.commit()
+    await invalidate_web_sessions(redis, user_id)
+    logger.info(f"User {user_id} successfully changed password, all sessions revoked")
