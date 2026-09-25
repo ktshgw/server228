@@ -334,7 +334,7 @@ class Beatmap(AsyncAttrs, BeatmapModel, table=True):
         )
         if "owners" not in resp:
             # A partial upstream payload must not erase attribution on merge.
-            beatmap.__dict__.pop("owners_known", None)
+            vars(beatmap).pop("owners_known", None)
         if "owners" in resp:
             owners = [BeatmapOwner.model_validate(owner) for owner in resp["owners"]]
             credits = {owner.id: owner.username for owner in owners}

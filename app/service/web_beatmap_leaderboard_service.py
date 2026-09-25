@@ -41,14 +41,14 @@ def first_place_score_ids(user_id: int, mode: GameMode):
             col(TotalScoreBestScore.user_id).label("user_id"),
             func.row_number()
             .over(
-                partition_by=TotalScoreBestScore.beatmap_id,
+                partition_by=col(TotalScoreBestScore.beatmap_id),
                 order_by=(col(TotalScoreBestScore.total_score).desc(), col(TotalScoreBestScore.score_id).desc()),
             )
             .label("position"),
         )
         .join(Score, col(Score.id) == col(TotalScoreBestScore.score_id))
         .join(User, col(User.id) == col(TotalScoreBestScore.user_id))
-        .where(TotalScoreBestScore.gamemode == mode, *visible_score_conditions())
+        .where(col(TotalScoreBestScore.gamemode) == mode, *visible_score_conditions())
         .subquery()
     )
     return select(ranked.c.score_id).where(ranked.c.position == 1, ranked.c.user_id == user_id)
@@ -66,8 +66,8 @@ async def leaderboard_page(session, beatmap_id, mode, page, page_size, viewer, s
     if selected_mods is not None and game_mode in {GameMode.OSURX, GameMode.OSUAP}:
         selected_mods = sorted(set(selected_mods) | {"RX" if game_mode == GameMode.OSURX else "AP"})
     conditions = [
-        TotalScoreBestScore.beatmap_id == beatmap_id,
-        TotalScoreBestScore.gamemode == game_mode,
+        col(TotalScoreBestScore.beatmap_id) == beatmap_id,
+        col(TotalScoreBestScore.gamemode) == game_mode,
         *visible_score_conditions(),
     ]
     if scope == "country":
@@ -94,7 +94,7 @@ async def leaderboard_page(session, beatmap_id, mode, page, page_size, viewer, s
             col(TotalScoreBestScore.total_score).label("total_score"),
             func.row_number()
             .over(
-                partition_by=TotalScoreBestScore.user_id,
+                partition_by=col(TotalScoreBestScore.user_id),
                 order_by=(col(TotalScoreBestScore.total_score).desc(), col(TotalScoreBestScore.score_id).desc()),
             )
             .label("user_row"),

@@ -13,10 +13,14 @@ from app.log import logger
 logger.remove()
 
 from app.database import Playlist, Room, Score, User
-from app.features.somsai.database.somsai import SomsaiActivity, SomsaiMatch, SomsaiNativeRoom, SomsaiRating, SomsaiReservation
 from app.dependencies.database import engine, with_db
-from app.helpers import utcnow
-from app.models.score import GameMode, Rank
+from app.features.somsai.database.somsai import (
+    SomsaiActivity,
+    SomsaiMatch,
+    SomsaiNativeRoom,
+    SomsaiRating,
+    SomsaiReservation,
+)
 from app.features.somsai.services.somsai_match_service import (
     create_match,
     draft_action,
@@ -28,6 +32,8 @@ from app.features.somsai.services.somsai_match_service import (
 )
 from app.features.somsai.services.somsai_party_service import active_user, aware, lock_somsai, reserve_members
 from app.features.somsai.services.somsai_service import public_state
+from app.helpers import utcnow
+from app.models.score import GameMode, Rank
 
 from fastapi import HTTPException
 from sqlalchemy.orm import lazyload
@@ -73,7 +79,8 @@ async def check() -> None:
             await match_action(session, match, uid, "ready")
         assert match.stage == "banning"
         assert match.state["selection_kind"] == "mixed"
-        assert match.state["pool_selected"] and not match.state["pool_candidates"]
+        assert match.state["pool_selected"]
+        assert not match.state["pool_candidates"]
         assert len({slot["beatmap_id"] for slot in match.state["slots"]}) == len(match.state["slots"])
         assert all(slot["source_pool_id"] and slot["source_revision"] for slot in match.state["slots"])
         wins_needed = match.state["best_of"] // 2 + 1

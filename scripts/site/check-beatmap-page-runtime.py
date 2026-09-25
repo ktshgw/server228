@@ -21,10 +21,11 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 async def main():
     init_mods()
     async with AsyncSession(engine) as session:
-        version = (await session.exec(text("SELECT version_num FROM alembic_version"))).one()[0]
+        version = (await session.execute(text("SELECT version_num FROM alembic_version"))).one()[0]
         sample = (await session.exec(select(TotalScoreBestScore).limit(1))).first()
         assert sample is not None
         user = await session.get(User, sample.user_id)
+        assert user is not None
         viewer = SimpleNamespace(id=user.id, country_code=user.country_code, is_supporter=True)
         checks = []
         for scope, mods in [("global", None), ("country", None), ("friends", None), ("global", "NM"), ("global", "DT")]:

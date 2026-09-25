@@ -25,7 +25,7 @@ async def list_marathons(
     rows = (
         await session.exec(
             select(Marathon, User)
-            .join(User, User.id == Marathon.owner_id)
+            .join(User, col(User.id) == col(Marathon.owner_id))
             .where(
                 Marathon.ruleset_id == ruleset_id,
                 col(Marathon.deleted).is_(False),

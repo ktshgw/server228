@@ -203,9 +203,9 @@ def has_ranked_pp():
         col(UserStatistics.pp) > 0,
         exists()
         .where(
-            BestScore.user_id == UserStatistics.user_id,
-            BestScore.gamemode == UserStatistics.mode,
-            BestScore.pp > 0,
+            col(BestScore.user_id) == col(UserStatistics.user_id),
+            col(BestScore.gamemode) == col(UserStatistics.mode),
+            col(BestScore.pp) > 0,
         )
         .correlate(UserStatistics),
     )

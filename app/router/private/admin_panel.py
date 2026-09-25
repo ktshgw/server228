@@ -45,6 +45,7 @@ from app.database.user import COUNTRIES
 from app.dependencies.database import Database, Redis, with_db
 from app.dependencies.fetcher import Fetcher
 from app.dependencies.storage import StorageService
+from app.features.somsai.services.somsai_mmr_service import MAX_ADMIN_MMR, change_somsai_mmr, list_somsai_mmr
 from app.fetcher._base import TokenAuthError
 from app.helpers import utcnow
 from app.log import log
@@ -83,7 +84,6 @@ from app.service.score_import_service import (
     verify_official_score_revision,
     verify_uploaded_score_revision,
 )
-from app.features.somsai.services.somsai_mmr_service import MAX_ADMIN_MMR, change_somsai_mmr, list_somsai_mmr
 from app.service.user_cache_service import get_user_cache_service
 from app.service.user_identity_service import resolve_human_user
 from app.service.web_session_service import invalidate_web_sessions

@@ -7,11 +7,17 @@ import secrets
 import time
 
 from app.database import User, UserStatistics
+from app.features.somsai.services.somsai_bot_skill import (
+    history_candidates,
+    mod_names,
+    normalize_level,
+    score_sample,
+    skill_profile,
+)
+from app.features.somsai.services.somsai_bot_tech import technical_features
 from app.log import log
 from app.models.score import GameMode
 from app.models.user import Page
-from app.features.somsai.services.somsai_bot_skill import history_candidates, mod_names, normalize_level, score_sample, skill_profile
-from app.features.somsai.services.somsai_bot_tech import technical_features
 
 LEVELS = ("easy", "medium", "hard", "top1000", "mrekk")
 NAMES = ("Bubble Rookie", "Coral Swimmer", "Reef Hunter", "Deep Sea Ace", "mrekk")

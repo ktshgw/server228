@@ -5,10 +5,10 @@ import json
 
 from app.database import User
 from app.features.somsai.database.somsai import SomsaiActivity, SomsaiMatch, SomsaiRating
-from app.helpers import utcnow
-from app.models.score import GameMode
 from app.features.somsai.services.somsai_party_service import lock_somsai, reject
 from app.features.somsai.services.somsai_rating_service import ensure_rating
+from app.helpers import utcnow
+from app.models.score import GameMode
 
 from sqlmodel import col, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession

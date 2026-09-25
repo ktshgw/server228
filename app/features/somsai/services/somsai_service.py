@@ -6,7 +6,6 @@ from itertools import combinations
 
 from app.database import SomsaiPool, User
 from app.features.somsai.database.somsai import SomsaiMatch, SomsaiQueue, SomsaiReservation
-from app.helpers import utcnow
 from app.features.somsai.services.somsai_match_service import (
     FINAL_STAGES,
     create_match,
@@ -33,11 +32,11 @@ from app.features.somsai.services.somsai_party_service import (
 from app.features.somsai.services.somsai_pool_service import pool_payload
 from app.features.somsai.services.somsai_rank_pool import RANKS
 from app.features.somsai.services.somsai_rating_service import ensure_rating, rating_payload
+from app.helpers import utcnow
 
 from fastapi import HTTPException
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 
 SEARCH_RADIUS_BASE = 150.0
 SEARCH_RADIUS_CAP = 500.0

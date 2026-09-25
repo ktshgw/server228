@@ -7,6 +7,7 @@ from typing import NoReturn
 from uuid import uuid4
 
 from app.database import MatchmakingPool, Relationship, RelationshipType, User
+from app.dependencies.database import with_db
 from app.features.somsai.database.somsai import (
     SomsaiActivity,
     SomsaiLock,
@@ -16,7 +17,6 @@ from app.features.somsai.database.somsai import (
     SomsaiPartyInvite,
     SomsaiReservation,
 )
-from app.dependencies.database import with_db
 from app.helpers import utcnow
 
 from fastapi import HTTPException

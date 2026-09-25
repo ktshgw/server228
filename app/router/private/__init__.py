@@ -5,6 +5,7 @@ based on application settings (e.g., TOTP verification).
 """
 
 from app.config import settings
+from app.features.somsai.routers import somsai, somsai_admin  # noqa: F401
 
 from . import (  # noqa: F401
     admin,
@@ -31,8 +32,6 @@ from . import (  # noqa: F401
     web_notifications,
     web_site,
 )
-from app.features.somsai.routers import somsai, somsai_admin  # noqa: F401
-
 from .router import router as private_router
 
 if settings.enable_totp_verification:

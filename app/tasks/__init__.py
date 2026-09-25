@@ -7,6 +7,8 @@ rank calculation, and various data synchronization jobs.
 
 # ruff: noqa: F401
 
+from app.features.somsai.tasks import soms_announcements, somsai
+
 from . import (
     beatmapset_update,
     database_cleanup,
@@ -15,7 +17,6 @@ from . import (
     recalculate_failed_score,
     update_client_version,
 )
-from app.features.somsai.tasks import soms_announcements, somsai  # noqa: F401
 from .cache import start_cache_tasks, stop_cache_tasks
 from .calculate_all_user_rank import calculate_user_rank
 from .create_banchobot import create_banchobot

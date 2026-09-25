@@ -1,6 +1,6 @@
 """Administrator/owner-only, audited management of negative PP rules."""
 
-from app.database import Beatmap, Beatmapset, NegativePPRule, User, UserStatistics
+from app.database import Beatmap, Beatmapset, NegativePPRule, UserStatistics
 from app.dependencies.database import Database
 from app.dependencies.fetcher import get_fetcher
 from app.models.negative_pp import NegativePPDelete, NegativePPTarget, NegativePPWrite
@@ -46,12 +46,14 @@ async def _lock_targets(session, kind, target_id):
     # Submissions and upstream updates lock the parent before PP aggregates.
     set_ids = select(Beatmap.beatmapset_id).where(col(Beatmap.id).in_(target_maps(kind, target_id)))
     condition = Beatmapset.id == target_id if kind == "beatmapset" else col(Beatmapset.id).in_(set_ids)
-    await session.exec(select(Beatmapset.id).where(condition).order_by(Beatmapset.id).with_for_update())
+    await session.exec(select(Beatmapset.id).where(condition).order_by(col(Beatmapset.id)).with_for_update())
     # A rule can affect any member's weighted best list, including while they
     # submit another map. Serialize policy writes behind aggregate writers,
     # before inserting/deleting rules (whose current reads take shared locks).
     await session.exec(
-        select(UserStatistics.user_id).order_by(UserStatistics.user_id, UserStatistics.mode).with_for_update()
+        select(UserStatistics.user_id)
+        .order_by(col(UserStatistics.user_id), col(UserStatistics.mode))
+        .with_for_update()
     )
     return list((await session.exec(target_maps(kind, target_id).with_for_update())).all())
 
@@ -76,7 +78,7 @@ async def add_negative_pp(payload: NegativePPWrite, request: Request, context: A
         await _audit(
             session,
             request,
-            await session.get(User, actor_id),
+            context.user,
             action="negative_pp.add",
             target_type=payload.kind,
             target_id=target_id,

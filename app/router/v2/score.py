@@ -50,6 +50,10 @@ from app.dependencies.fetcher import Fetcher, get_fetcher
 from app.dependencies.rate_limit import create_rate_limiter
 from app.dependencies.storage import StorageService
 from app.dependencies.user import ClientUser, get_optional_user
+from app.features.somsai.services.somsai_score_service import (
+    validate_somsai_score_submission,
+    validate_somsai_score_token,
+)
 from app.helpers import api_doc, utcnow
 from app.log import log
 from app.models.error import ErrorType, RequestError
@@ -74,7 +78,6 @@ from app.service.beatmap_cache_service import get_beatmap_cache_service
 from app.service.beatmap_ranking_service import get_effective_beatmap_policy
 from app.service.score_import_service import ServerReplayScoreMetadata, rewrite_osr_server_score_metadata
 from app.service.score_pin_service import lock_score_pin_state, reordered_score_pin_ids
-from app.features.somsai.services.somsai_score_service import validate_somsai_score_submission, validate_somsai_score_token
 from app.service.user_cache_service import refresh_user_cache_background
 from app.v2_ipc import get_ipc_client
 

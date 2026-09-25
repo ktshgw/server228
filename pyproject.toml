@@ -130,6 +130,7 @@ soms-migrations = { workspace = true }
 [dependency-groups]
 dev = [
     "datamodel-code-generator>=0.72.4",
+    "fonttools>=4.66.0",
     "pre-commit>=4.6.2",
     "pyright>=1.1.411",
     "ruff>=0.16.2",

@@ -13,7 +13,12 @@ from app.dependencies.database import engine, with_db
 from app.dependencies.fetcher import get_fetcher
 from app.features.somsai.models.somsai_admin import SomsaiImportRequest, SomsaiPoolSpec
 from app.features.somsai.services.somsai_collector_service import preview_collector
-from app.features.somsai.services.somsai_pool_service import pool_payload, prepare_missing_metadata, preview_pool, save_pool
+from app.features.somsai.services.somsai_pool_service import (
+    pool_payload,
+    prepare_missing_metadata,
+    preview_pool,
+    save_pool,
+)
 
 from sqlmodel import select
 

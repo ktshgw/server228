@@ -109,7 +109,10 @@ async def main() -> None:
     try:
         storage_root = None
         if settings.storage_service == StorageServiceType.LOCAL:
-            storage_root = await asyncio.to_thread(Path(settings.storage_settings.local_storage_path).resolve)
+            local_storage_path = getattr(settings.storage_settings, "local_storage_path", None)
+            if local_storage_path is None:
+                raise RuntimeError("Local storage path is not configured")
+            storage_root = await asyncio.to_thread(Path(local_storage_path).resolve)
         async with engine.begin() as connection:
             for table, fields in URL_FIELDS.items():
                 for field, is_json in fields.items():
@@ -151,6 +154,8 @@ async def main() -> None:
                     if await redis_client.type(key) != "string":
                         continue
                     value = await redis_client.get(key)
+                    if isinstance(value, bytes):
+                        value = value.decode("utf-8", errors="replace")
                     if value and old in value:
                         invalidated += await redis_client.unlink(key)
         print(

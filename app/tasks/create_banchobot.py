@@ -42,6 +42,8 @@ async def create_banchobot() -> None:
             await session.commit()
             logger.success("BanchoBot user created")
         bot = await session.get(User, BANCHOBOT_ID)
+        if bot is None:
+            raise RuntimeError("SOMSBot was not created")
         bot.username = "SOMSBot"
         from app.config import settings
 

@@ -1,15 +1,14 @@
 """Native SOMSAI API. OAuth identity is authoritative for every action."""
 
-from app.features.somsai.database.somsai import SomsaiMatch
 from app.dependencies.database import Redis
 from app.dependencies.fetcher import Fetcher
 from app.dependencies.user import ClientUser
+from app.features.somsai.database.somsai import SomsaiMatch
 from app.features.somsai.models.somsai import SomsaiAction
 from app.features.somsai.services.somsai_bot_service import bot_personas, prepare_draft_features
 from app.features.somsai.services.somsai_match_service import match_payload, members_of
 from app.features.somsai.services.somsai_party_service import reject, somsai_transaction
 from app.features.somsai.services.somsai_service import handle_action, public_state
-
 from app.router.private.router import router
 
 from fastapi import BackgroundTasks

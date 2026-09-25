@@ -64,7 +64,10 @@ def technical_features(raw: str) -> dict:
             cursor += 1
         if int(parts[3]) & 2 and len(parts) >= 8:
             path = [(float(parts[0]), float(parts[1]))]
-            path.extend(tuple(map(float, p.split(":"))) for p in parts[5].split("|")[1:] if ":" in p)
+            for point in parts[5].split("|")[1:]:
+                coordinates = point.split(":")
+                if len(coordinates) >= 2:
+                    path.append((float(coordinates[0]), float(coordinates[1])))
             shapes.append(_mean(_turns(path)) / math.pi)
             speeds.append(multiplier * 100 * sv / beat_length)
             repeats.append(min(1, max(0, int(parts[6]) - 1) / 3))

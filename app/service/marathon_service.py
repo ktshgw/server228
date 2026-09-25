@@ -146,25 +146,31 @@ async def marathon_leaderboard(session, marathon_id: int) -> dict:
             MarathonScore.id,
             func.row_number()
             .over(
-                partition_by=MarathonScore.user_id,
-                order_by=(col(MarathonScore.total_score).desc(), col(MarathonScore.accuracy).desc(), MarathonScore.id),
+                partition_by=col(MarathonScore.user_id),
+                order_by=(
+                    col(MarathonScore.total_score).desc(),
+                    col(MarathonScore.accuracy).desc(),
+                    col(MarathonScore.id),
+                ),
             )
             .label("position"),
         )
-        .where(MarathonScore.marathon_id == marathon_id)
+        .where(col(MarathonScore.marathon_id) == marathon_id)
         .subquery()
     )
     rows = (
         await session.exec(
             select(MarathonScore, User)
-            .join(User, User.id == MarathonScore.user_id)
+            .join(User, col(User.id) == col(MarathonScore.user_id))
             .where(
                 col(MarathonScore.id).in_(select(ranked.c.id).where(ranked.c.position == 1)),
                 col(User.is_active).is_(True),
                 col(User.is_bot).is_(False),
                 ~User.is_restricted_query(col(User.id)),
             )
-            .order_by(col(MarathonScore.total_score).desc(), col(MarathonScore.accuracy).desc(), MarathonScore.id)
+            .order_by(
+                col(MarathonScore.total_score).desc(), col(MarathonScore.accuracy).desc(), col(MarathonScore.id)
+            )
             .limit(100)
         )
     ).all()

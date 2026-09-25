@@ -88,7 +88,7 @@ async def get_no_context_db():
 
 
 @asynccontextmanager
-async def with_db():
+async def with_db() -> AsyncIterator[AsyncSession]:
     async with AsyncSession(engine) as session:
         try:
             yield session

@@ -2,8 +2,8 @@
 
 from app.config import settings
 from app.const import BANCHOBOT_ID
-from app.features.somsai.database.soms_activity import SomsActivity
 from app.database.user_preference import UserPreference
+from app.features.somsai.database.soms_activity import SomsActivity
 from app.helpers import utcnow
 
 from sqlmodel import col, select
@@ -253,7 +253,7 @@ async def deliver_announcements():
                     .where(
                         col(SomsActivity.delivered).is_(False),
                         col(SomsActivity.announcement).is_not(None),
-                        SomsActivity.id > last_seen,
+                        col(SomsActivity.id) > last_seen,
                     )
                     .order_by(col(SomsActivity.id))
                     .limit(1)

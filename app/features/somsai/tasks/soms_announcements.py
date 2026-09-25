@@ -2,9 +2,9 @@
 
 from datetime import UTC, datetime, timedelta
 
-from app.features.somsai.database.soms_activity import SomsActivity
 from app.dependencies.database import with_db
 from app.dependencies.scheduler import get_scheduler
+from app.features.somsai.database.soms_activity import SomsActivity
 from app.features.somsai.services.soms_activity_service import chat_link, deliver_announcements
 
 from sqlmodel import select

@@ -3,9 +3,9 @@
 from datetime import UTC, datetime, timedelta
 
 from app.dependencies.scheduler import get_scheduler
-from app.log import task_logger
 from app.features.somsai.services.somsai_party_service import somsai_transaction
 from app.features.somsai.services.somsai_service import tick
+from app.log import task_logger
 
 
 @get_scheduler().scheduled_job(

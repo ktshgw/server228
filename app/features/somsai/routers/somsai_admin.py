@@ -15,8 +15,18 @@ from app.features.somsai.models.somsai_admin import (
     SomsaiPoolWrite,
     SomsaiWarehouseImport,
 )
-from app.features.somsai.services.somsai_collector_service import collector_preview, fetch_collector_source, preview_collector
-from app.features.somsai.services.somsai_pool_service import delete_pool, pool_payload, prepare_missing_metadata, preview_pool, save_pool
+from app.features.somsai.services.somsai_collector_service import (
+    collector_preview,
+    fetch_collector_source,
+    preview_collector,
+)
+from app.features.somsai.services.somsai_pool_service import (
+    delete_pool,
+    pool_payload,
+    prepare_missing_metadata,
+    preview_pool,
+    save_pool,
+)
 from app.features.somsai.services.somsai_warehouse_service import (
     REFRESH_STATE,
     map_payload,
@@ -24,7 +34,6 @@ from app.features.somsai.services.somsai_warehouse_service import (
     refresh_all_maps,
     save_map,
 )
-
 from app.router.private.admin_panel import AdminSession, _audit, _require_capability, _require_csrf
 from app.router.private.router import router
 

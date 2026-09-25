@@ -5,8 +5,8 @@ import math
 from typing import Any
 
 from app.database import Beatmap, Beatmapset, SomsaiPool
-from app.fetcher import Fetcher
 from app.features.somsai.models.somsai_admin import CATEGORY_MODS, SomsaiPoolSpec, SomsaiSlotSpec
+from app.fetcher import Fetcher
 
 from fastapi import HTTPException
 from sqlalchemy.orm import lazyload

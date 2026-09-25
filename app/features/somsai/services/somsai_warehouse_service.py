@@ -11,10 +11,10 @@ from urllib.parse import urlsplit
 from app.database import Beatmap, Beatmapset, SomsaiMap
 from app.dependencies.database import with_db
 from app.dependencies.fetcher import get_fetcher
-from app.helpers import utcnow
 from app.features.somsai.models.somsai_admin import CATEGORY_MODS
 from app.features.somsai.services.somsai_map_stats import display_stats
 from app.features.somsai.services.somsai_rank_pool import eligibility_label, eligible_ranks
+from app.helpers import utcnow
 
 from fastapi import HTTPException
 from sqlalchemy import func
@@ -212,7 +212,7 @@ async def refresh_all_maps() -> None:
                                 before = {
                                     key: value
                                     for key, value in map_payload(row).items()
-                                    if key not in {"refreshed_at"}
+                                    if key != "refreshed_at"
                                 }
                                 data = await canonical_map(
                                     row.slot, row.beatmap_id, row.ruleset_id, row.variant_id, session=session
@@ -224,7 +224,7 @@ async def refresh_all_maps() -> None:
                                 after = {
                                     key: value
                                     for key, value in map_payload(row).items()
-                                    if key not in {"refreshed_at"}
+                                    if key != "refreshed_at"
                                 }
                                 await session.commit()
                                 REFRESH_STATE["changed" if before != after else "unchanged"] += 1

@@ -54,7 +54,6 @@ from app.database import (
     UserRecoveryWord,
     UserStatistics,
 )
-from app.features.somsai.database.somsai import SomsaiRating
 from app.database.statistics import get_rank, has_ranked_pp
 from app.database.user import COUNTRIES
 from app.database.user_preference import DEFAULT_ORDER, UserPreference
@@ -64,6 +63,8 @@ from app.dependencies.database import Database, Redis, with_db
 from app.dependencies.fetcher import Fetcher
 from app.dependencies.geoip import get_geoip_helper
 from app.dependencies.storage import StorageService
+from app.features.somsai.database.somsai import SomsaiRating
+from app.features.somsai.services.somsai_mmr_service import somsai_profile_payload
 from app.helpers import utcnow
 from app.log import log
 from app.models.achievement_catalog import (
@@ -97,7 +98,6 @@ from app.service.home_activity_service import local_releases, online_history, re
 from app.service.online_presence_service import get_online_user_ids
 from app.service.ranking_cache_service import get_ranking_cache_service
 from app.service.score_pin_service import lock_score_pin_state, reordered_score_pin_ids
-from app.features.somsai.services.somsai_mmr_service import somsai_profile_payload
 from app.service.user_identity_service import assign_server_id, resolve_human_user
 from app.service.web_session_service import (
     WEB_SESSION_COOKIE,
@@ -825,7 +825,7 @@ async def _recent_scores(session: Database, mode: GameMode, limit: int = 8) -> l
             Score.gamemode == mode,
             col(Score.processed).is_(True),
             col(Score.passed).is_(True),
-            or_(Score.pp > 0, col(Score.leaderboard_eligible).is_(True)),
+            or_(col(Score.pp) > 0, col(Score.leaderboard_eligible).is_(True)),
             col(User.is_active).is_(True),
             col(User.is_bot).is_(False),
             ~User.is_restricted_query(col(User.id)),
@@ -840,7 +840,12 @@ async def _recent_scores(session: Database, mode: GameMode, limit: int = 8) -> l
         query = base
         if cursor is not None:
             ended_at, score_id = cursor
-            query = query.where(or_(Score.ended_at < ended_at, and_(Score.ended_at == ended_at, Score.id < score_id)))
+            query = query.where(
+                or_(
+                    col(Score.ended_at) < ended_at,
+                    and_(col(Score.ended_at) == ended_at, col(Score.id) < score_id),
+                )
+            )
         candidates = list((await session.exec(query.limit(batch_size))).all())
         eligible = [score for score in candidates if mods_can_get_pp(int(mode), score.mods)]
         zero_pp_maps = {score.beatmap_id: score.beatmap for score in eligible if round(score.pp, 2) <= 0}
@@ -1864,6 +1869,8 @@ async def update_web_friendship(
                     )
                 )
             ).first()
+            if saved_relationship is None:
+                raise HTTPException(500, "Не удалось сохранить подписку")
             await stage_friend_notification(session, context.user, target_user_id, saved_relationship.id)
         elif not following:
             from app.features.somsai.services.soms_activity_service import stage_friend_notification
@@ -2804,7 +2811,8 @@ async def get_web_beatmapset(
     result["tags"] = payload.get("tags")
     for key in ("user_id", "genre", "language", "ratings", "current_nominations", "availability"):
         value = payload.get(key)
-        result[key] = value.model_dump() if hasattr(value, "model_dump") else value
+        model_dump = getattr(value, "model_dump", None)
+        result[key] = model_dump() if callable(model_dump) else value
     upstream_maps = {item["id"]: item for item in payload.get("beatmaps", [])}
     for item in result["beatmaps"]:
         source = upstream_maps.get(item["id"], {})

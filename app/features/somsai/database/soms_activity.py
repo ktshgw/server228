@@ -1,7 +1,7 @@
 """Durable SOMS announcements and supporter inbox; written with the source transaction."""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from app.helpers import utcnow
 
@@ -10,7 +10,7 @@ from sqlmodel import Field, SQLModel
 
 
 class SomsActivity(SQLModel, table=True):
-    __tablename__ = "soms_activity"
+    __tablename__: ClassVar[str] = "soms_activity"
     __table_args__ = (
         Index("ix_soms_activity_recipient_read_id", "recipient_id", "is_read", "id"),
         Index("ix_soms_activity_delivered_id", "delivered", "id"),

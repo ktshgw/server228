@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+from typing import Any, cast
 
 from app.log import logger
 
@@ -28,19 +29,24 @@ async def run():
             scored_sets = (
                 await session.exec(
                     select(func.count(func.distinct(Beatmap.beatmapset_id))).join(
-                        BestScore, BestScore.beatmap_id == Beatmap.id
+                        BestScore, col(BestScore.beatmap_id) == col(Beatmap.id)
                     )
                 )
             ).one()
             set_id = (
                 await session.exec(
-                    select(Beatmap.beatmapset_id).join(BestScore, BestScore.beatmap_id == Beatmap.id).limit(1)
+                    select(Beatmap.beatmapset_id)
+                    .join(BestScore, col(BestScore.beatmap_id) == col(Beatmap.id))
+                    .limit(1)
                 )
             ).one()
             data = await (await get_fetcher()).request_api(f"https://osu.ppy.sh/api/v2/beatmapsets/{set_id}")
+            beatmaps = data.get("beatmaps") if isinstance(data, dict) else None
+            if not isinstance(beatmaps, list):
+                raise RuntimeError("osu! API returned an invalid beatmapset payload")
             from app.fetcher.beatmapset import adapter
 
-            parsed = adapter.validate_python(data)
+            parsed = cast(dict[str, Any], adapter.validate_python(data))
             sample = await Beatmap.from_resp_no_save(session, parsed["beatmaps"][0])
             assert sample.owners_known
             assert sample.mapper_credits
@@ -48,8 +54,8 @@ async def run():
                 {
                     "scored_sets": scored_sets,
                     "sample_set": set_id,
-                    "owners_present": all("owners" in bm for bm in data["beatmaps"]),
-                    "difficulties": len(data["beatmaps"]),
+                    "owners_present": all(isinstance(bm, dict) and "owners" in bm for bm in beatmaps),
+                    "difficulties": len(beatmaps),
                 }
             )
             return

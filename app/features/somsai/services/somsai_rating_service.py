@@ -4,11 +4,12 @@ RomAI publishes its tournament workflow, but not its rating coefficients. The
 following is SOMSAI's policy, not a claim to reproduce RomAI's private formula.
 """
 
+from itertools import pairwise
 import math
 
 from app.database import User, UserStatistics
-from app.features.somsai.database.somsai import SomsaiRating
 from app.database.statistics import public_ranking_conditions
+from app.features.somsai.database.somsai import SomsaiRating
 from app.helpers import utcnow
 from app.models.score import GameMode
 
@@ -17,21 +18,23 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 _K_ANCHORS = [(0, 40), (600, 40), (1600, 32), (2300, 24), (2800, 16), (3500, 10), (5000, 10)]
 
+
 def k_factor(rating: float, games: int) -> float:
     if games < 10:
         return 64.0
     r = max(0.0, min(5000.0, rating))
-    for (r0, k0), (r1, k1) in zip(_K_ANCHORS, _K_ANCHORS[1:]):
+    for (r0, k0), (r1, k1) in pairwise(_K_ANCHORS):
         if r0 <= r <= r1:
             t = (r - r0) / (r1 - r0) if r1 != r0 else 0
             return k0 + t * (k1 - k0)
     return _K_ANCHORS[-1][1]
 
+
 def initial_rating(rank: int | None, population: int) -> float:
     if rank is None or population < 1:
         return 1000.0
     percentile = 1 - math.log(max(1, rank)) / math.log(max(2, population))
-    return round(1000 + 1000 * max(0, min(1, percentile))) 
+    return round(1000 + 1000 * max(0, min(1, percentile)))
 
 
 async def ensure_rating(
@@ -134,7 +137,7 @@ def performance_impacts(teams: list[list[int]], rounds: list[dict], winning_team
 
 
 async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], winner: int | None) -> list[dict]:
-    from app.features.somsai.services.somsai_rank_pool import rank_from_rating, rank_midpoint_rating
+    from app.features.somsai.services.somsai_rank_pool import rank_midpoint_rating
 
     impacts = performance_impacts(teams, match.state.get("history", []), winner)  # только для UI
     rows = {
@@ -162,7 +165,7 @@ async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], w
                 adjustment *= max(0.6, min(1.5, 1 + 0.08 * direction))
 
             after = max(0, min(5000, before + adjustment))
-            row.rating = round(after)              # Elo хранится целым числом
+            row.rating = round(after)  # Elo хранится целым числом
             row.last_delta = row.rating - round(before)
             row.games += 1
             row.wins += winner == team_id
@@ -172,8 +175,12 @@ async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], w
             session.add(row)
             changes.append(
                 {
-                    "user_id": uid, "before": round(before), "after": row.rating, "delta": row.last_delta,
-                    "impact": impacts[uid], "pool_rank_gap": round(rank_gap, 2),
+                    "user_id": uid,
+                    "before": round(before),
+                    "after": row.rating,
+                    "delta": row.last_delta,
+                    "impact": impacts[uid],
+                    "pool_rank_gap": round(rank_gap, 2),
                 }
             )
     return changes

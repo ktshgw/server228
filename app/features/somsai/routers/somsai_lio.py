@@ -2,9 +2,9 @@
 
 from copy import deepcopy
 
-from app.features.somsai.database.somsai import SomsaiMatch
 from app.dependencies.database import Database
 from app.dependencies.fetcher import Fetcher
+from app.features.somsai.database.somsai import SomsaiMatch
 from app.features.somsai.dependencies import require_somsai_interop
 from app.features.somsai.models.somsai import PartyReserveRequest, SomsaiBotResults, SomsaiRoomEvent
 from app.features.somsai.services.somsai_match_service import FINAL_STAGES, match_action, match_payload, room_event

@@ -3,9 +3,9 @@
 from datetime import UTC
 
 from app.database.beatmap import Beatmap
-from app.features.somsai.database.soms_activity import SomsActivity
 from app.database.user_preference import UserPreference
 from app.dependencies.database import Database
+from app.features.somsai.database.soms_activity import SomsActivity
 from app.features.somsai.services.soms_activity_service import notification_preferences
 
 from .router import router
@@ -28,7 +28,7 @@ async def inbox(context: WebSession, session: Database, response: Response, befo
     preferences = await notification_preferences(session, context.user.id)
     if not context.user.is_supporter:
         return {"supporter": False, "items": [], "unread": 0, "preferences": preferences}
-    conditions = [SomsActivity.recipient_id == context.user.id]
+    conditions = [col(SomsActivity.recipient_id) == context.user.id]
     unread = (
         await session.exec(
             select(func.count()).select_from(SomsActivity).where(*conditions, col(SomsActivity.is_read).is_(False))
@@ -101,7 +101,7 @@ async def mark_read(request: Request, context: WebSession, session: Database, th
     await session.exec(
         update(SomsActivity)
         .where(
-            SomsActivity.recipient_id == context.user.id,
+            col(SomsActivity.recipient_id) == context.user.id,
             col(SomsActivity.id) <= through,
             col(SomsActivity.is_read).is_(False),
         )

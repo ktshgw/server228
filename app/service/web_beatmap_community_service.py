@@ -13,11 +13,11 @@ def can_delete_comment(comment, viewer):
 async def comment_page(session, beatmapset_id, viewer, page=1, sort="new"):
     votes = (
         select(BeatmapCommentVote.comment_id, func.count().label("votes"))
-        .group_by(BeatmapCommentVote.comment_id)
+        .group_by(col(BeatmapCommentVote.comment_id))
         .subquery()
     )
     visible = [
-        BeatmapComment.beatmapset_id == beatmapset_id,
+        col(BeatmapComment.beatmapset_id) == beatmapset_id,
         col(User.is_active).is_(True),
         ~User.is_restricted_query(col(User.id)),
     ]

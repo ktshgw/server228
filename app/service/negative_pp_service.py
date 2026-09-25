@@ -14,12 +14,13 @@ from sqlmodel import col, exists, func, select
 
 def target_maps(kind: str, target_id: int):
     if kind == "beatmap":
-        condition = Beatmap.id == target_id
+        condition = col(Beatmap.id) == target_id
     elif kind == "beatmapset":
-        condition = Beatmap.beatmapset_id == target_id
+        condition = col(Beatmap.beatmapset_id) == target_id
     elif kind == "mapper":
         condition = exists().where(
-            BeatmapMapperCredit.beatmap_id == Beatmap.id, BeatmapMapperCredit.mapper_id == target_id
+            col(BeatmapMapperCredit.beatmap_id) == col(Beatmap.id),
+            col(BeatmapMapperCredit.mapper_id) == target_id,
         )
     else:
         raise ValueError("Unknown negative PP rule kind")
@@ -29,12 +30,21 @@ def target_maps(kind: str, target_id: int):
 def penalized_maps():
     mapper_rule = select(BeatmapMapperCredit.beatmap_id).join(
         NegativePPRule,
-        and_(NegativePPRule.kind == "mapper", NegativePPRule.target_id == BeatmapMapperCredit.mapper_id),
+        and_(
+            col(NegativePPRule.kind) == "mapper",
+            col(NegativePPRule.target_id) == col(BeatmapMapperCredit.mapper_id),
+        ),
     )
     return select(Beatmap.id).where(
         or_(
-            exists().where(NegativePPRule.kind == "beatmap", NegativePPRule.target_id == Beatmap.id),
-            exists().where(NegativePPRule.kind == "beatmapset", NegativePPRule.target_id == Beatmap.beatmapset_id),
+            exists().where(
+                col(NegativePPRule.kind) == "beatmap",
+                col(NegativePPRule.target_id) == col(Beatmap.id),
+            ),
+            exists().where(
+                col(NegativePPRule.kind) == "beatmapset",
+                col(NegativePPRule.target_id) == col(Beatmap.beatmapset_id),
+            ),
             col(Beatmap.id).in_(mapper_rule),
         )
     )
@@ -81,15 +91,15 @@ async def negative_score_counts(session) -> dict[int, int]:
         session.info[cache_key] = dict(
             (
                 await session.exec(
-                    select(Score.user_id, func.count(Score.id))
+                    select(Score.user_id, func.count(col(Score.id)))
                     .where(
                         col(Score.beatmap_id).in_(penalized_maps()),
-                        Score.pp > 0,
+                        col(Score.pp) > 0,
                         col(Score.ranked).is_(True),
                         col(Score.passed).is_(True),
                         col(Score.processed).is_(True),
                     )
-                    .group_by(Score.user_id)
+                    .group_by(col(Score.user_id))
                 )
             ).all()
         )
