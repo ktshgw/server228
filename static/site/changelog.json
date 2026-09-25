@@ -1,0 +1,57 @@
+{
+  "releases": [
+    {
+      "version": "25.9.26b1",
+      "date": "2026-09-25",
+      "channel": "BETA HOTFIX",
+      "type": "hotfix",
+      "groups": [
+        {
+          "kind": "added",
+          "title": "New",
+          "items": [
+            "Added a release history page and a changelog menu to the SOMS! website.",
+            "A fallback mechanism has been added, allowing ARCHSOM players with an MMR above 3500 to find matches in situations that were previously impossible."
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixes",
+          "items": [
+            "Fixed Double Time BPM being multiplied twice for maps selected from the SOMSAI mappools.",
+            "Fixed unprocessed multiplayer scores being displayed as 0pp for other players."
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Website",
+          "items": [
+            "The website home page now shows the latest server update instead of the Local Ranked promotion card."
+          ]
+        },
+        {
+          "kind": "removed",
+          "title": "Removed",
+          "items": [
+            "Removed the recent results section from the website home page."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "25.9.26b",
+      "date": "2026-09-25",
+      "channel": "BETA RELEASE",
+      "type": "release",
+      "groups": [
+        {
+          "kind": "added",
+          "title": "Release",
+          "items": [
+            "Initial SOMS! beta release after the end of the alpha testing period."
+          ]
+        }
+      ]
+    }
+  ]
+}

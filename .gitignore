@@ -1,87 +1,110 @@
-# Local configuration and secrets
-.env
-.env.*.tmp
-.envrc
+# This repository must contain everything required to develop SOMS! and deploy
+# a fresh server. Only secrets, machine-local state, generated output, caches,
+# downloads and live server data belong here.
+
+# Deployment secrets and per-machine overrides.
+# A fresh clone creates .env from the tracked .env.example/Setup workflow.
+# Secrets must stay out of Git history even while the repository is private.
+/.env
+/.env.*
+!/.env.example
+/.envrc
 *.local
 
-# Python environments and caches
-.venv/
-venv/
-__pycache__/
+# Python environments and caches.
+# `uv sync` recreates the environment from pyproject.toml and uv.lock; Python,
+# Ruff, pytest, mypy and Pyright recreate every cache below automatically.
+**/.venv/
+**/venv/
+**/__pycache__/
 *.py[codz]
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-.pyright/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.pyright/
 .coverage*
 htmlcov/
 
-# Local tools, downloads and disposable runs
-.test-tmp/
-.tooling/
-.tools/
-.uv-cache/
-.uv-chache/
-tmp/
-.runtime/
-headless/
-test-clients/
-.visual-check/
+# Machine-local tools and disposable development runs.
+# The tracked scripts download/create these when needed; none is server input.
+/.test-tmp/
+/.tooling/
+/.tools/
+/.uv-cache/
+/.uv-chache/
+/tmp/
+/.runtime/
+/headless/
+/test-clients/
+/.visual-check/
 
-# Build output
+# Compiler, package and test output.
+# Python/.NET builds regenerate these from tracked source and lock/project files.
 **/bin/
 **/obj/
 **/out/
 **/test-profiles/
-build/
-dist/
+/build/
+/dist/
 *.egg-info/
+**/artifacts/
+**/publish/
+*.nupkg
+*.pdb
+*.tmp
+TestResult.xml
+**/TestResults/
 
-# Server runtime data
-backups/
-storage/
-replays/
-logs/
-rulesets/
-plugins/
-!app/plugins/
-config/*
-!config/.gitkeep
+# Live server state.
+# Docker/Compose creates these root directories and named database volumes on a
+# fresh VPS. They contain instance data, not source: uploads, replay files,
+# logs, downloaded rulesets, installed runtime plugins and local backups.
+/backups/
+/storage/
+/replays/
+/logs/
+/rulesets/
+/plugins/
 
-# Local IDE state
-.idea/
-.vscode/settings.json
+# Generated runtime configuration.
+# ranked_mods.json is rebuilt from the tracked mod definitions when absent.
+# client_versions.json is a refreshed cache with a tracked fallback at
+# static/client/client_versions.json. Future config files are intentionally not
+# hidden by a broad /config/* rule.
+/config/client_versions.json
+/config/ranked_mods.json
 
-# Downloaded service trees
-bancho.py-master/
-osu-master/
-osu-web-master/
-osu-server-spectator-master/
-spectator-server/
-performance-server/
-soms-plugins/
-
-# Generated documentation
-site/
-docs/_build/
-
-# .NET and IDE output for all client/vendor projects
-.vs/
+# IDE state belonging to one workstation. Shared workspace/project files remain
+# tracked, while per-user window, index and debugger settings do not.
+**/.idea/
 **/.vs/
+/.vscode/settings.json
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
 *.DotSettings.user
-TestResult.xml
-TestResults/
-artifacts/
-publish/
-*.nupkg
-*.pdb
-*.tmp
 
-# Local launcher state and copied runtime assemblies
+# Legacy upstream checkouts downloaded beside the repository.
+# Current patched sources live in tracked client/ and vendor/ directories, so
+# these duplicate trees are neither build inputs nor VPS deployment inputs.
+/bancho.py-master/
+/osu-master/
+/osu-web-master/
+/osu-server-spectator-master/
+/spectator-server/
+/performance-server/
+/soms-plugins/
+
+# Generated documentation output. Documentation source and the public website
+# under static/site remain tracked; these directories are recreated by builders.
+/site/
+/docs/_build/
+
+# Local launcher configuration and copied runtime assemblies.
+# Setup regenerates launcher.json from launcher.example.json plus the local
+# domain/credentials. DLLs copied into this folder are build/install output;
+# release DLLs served to players remain tracked under static/client/.
 /client/launcher/launcher.json
 /client/launcher/launcher.json.*.tmp
 /client/launcher/launcher.json.invalid-*.bak

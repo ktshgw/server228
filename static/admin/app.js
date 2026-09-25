@@ -155,7 +155,7 @@
             });
         } catch (error) {
             if (error.name === "AbortError") throw error;
-            throw new ApiError(0, "Нет связи с сервером. Проверьте, что он запущен");
+            throw new ApiError(0, "Connection Error");
         }
 
         let payload = null;
@@ -641,9 +641,10 @@
     }
 
     function renderSomsaiRefresh(status) {
+        const compared = `изменено: ${status.changed || 0}, без изменений: ${status.unchanged || 0}`;
         $("#somsai-refresh-status").textContent = status.running
-            ? `Обновление: ${status.done} / ${status.total}, ошибок: ${status.failed}`
-            : status.total ? `Последнее обновление: ${status.done} / ${status.total}, ошибок: ${status.failed}` : "";
+            ? `Полный пересчёт: ${status.done} / ${status.total}, ${compared}, ошибок: ${status.failed}`
+            : status.total ? `Последний полный пересчёт: ${status.done} / ${status.total}, ${compared}, ошибок: ${status.failed}` : "";
     }
 
     function metricCard(label, value, note, icon) {

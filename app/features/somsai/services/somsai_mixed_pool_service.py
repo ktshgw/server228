@@ -22,7 +22,8 @@ def _slot_payload(row: SomsaiMap) -> dict:
         "difficulty_rating": stats.get("stars", 0), "bpm": stats.get("bpm", 0),
         "cs": stats.get("cs", 0), "ar": stats.get("ar", 0), "od": stats.get("od", 0),
         "hp": stats.get("hp", 0), "total_length": stats.get("length", 0),
-        "display_stats": stats, "cover_url": row.cover_url, "warehouse_map_id": row.id,
+        "display_stats": stats, "stats_are_modded": True,
+        "cover_url": row.cover_url, "warehouse_map_id": row.id,
         "eligible_ranks": row.eligible_ranks,
     }
 

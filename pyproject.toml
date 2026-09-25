@@ -1,6 +1,6 @@
 [project]
 name = "soms-server"
-version = "25.9.26b0"
+version = "25.9.26b1"
 description = "An osu!(lazer) private server that is easy to deploy, highly scalable, and fully featured to meet diverse operational needs."
 readme = "README.md"
 requires-python = ">=3.12"

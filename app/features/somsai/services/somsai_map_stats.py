@@ -4,6 +4,18 @@ from contextlib import suppress
 
 
 def display_stats(raw: str, slot: dict, attributes: dict, ruleset_id: int) -> dict:
+    # Warehouse slots already contain clock-rate and difficulty-mod adjusted
+    # values. Re-applying DT here used to turn a correct 255 BPM into 382.5.
+    if slot.get("stats_are_modded"):
+        return {
+            "stars": attributes.get("star_rating", slot.get("difficulty_rating", 0)),
+            "bpm": slot.get("bpm", 0),
+            "cs": slot.get("cs", 0),
+            "ar": slot.get("ar", 0),
+            "od": slot.get("od", 0),
+            "hp": slot.get("hp", 0),
+            "length": slot.get("total_length", slot.get("hit_length", 0)),
+        }
     difficulty = {}
     section = ""
     for line in raw.splitlines():

@@ -27,6 +27,8 @@ REFRESH_STATE: dict[str, Any] = {
     "done": 0,
     "total": 0,
     "failed": 0,
+    "changed": 0,
+    "unchanged": 0,
     "last_id": 0,
     "started_at": None,
     "completed_at": None,
@@ -171,6 +173,8 @@ async def refresh_all_maps() -> None:
         done=0,
         total=0,
         failed=0,
+        changed=0,
+        unchanged=0,
         last_id=0,
         started_at=datetime.now(UTC).isoformat(),
         completed_at=None,
@@ -205,13 +209,25 @@ async def refresh_all_maps() -> None:
                         async with with_db() as session:
                             row = await session.get(SomsaiMap, row_id)
                             if row is not None:
+                                before = {
+                                    key: value
+                                    for key, value in map_payload(row).items()
+                                    if key not in {"refreshed_at"}
+                                }
                                 data = await canonical_map(
                                     row.slot, row.beatmap_id, row.ruleset_id, row.variant_id, session=session
                                 )
                                 for key, value in data.items():
                                     setattr(row, key, value)
                                 session.add(row)
+                                await session.flush()
+                                after = {
+                                    key: value
+                                    for key, value in map_payload(row).items()
+                                    if key not in {"refreshed_at"}
+                                }
                                 await session.commit()
+                                REFRESH_STATE["changed" if before != after else "unchanged"] += 1
                         refreshed = True
                         break
                     except Exception:

@@ -43,6 +43,9 @@ SEARCH_RADIUS_BASE = 150.0
 SEARCH_RADIUS_CAP = 500.0
 SEARCH_RADIUS_HOLD_SECONDS = 5 * 60.0
 SEARCH_RADIUS_RAMP_SECONDS = 5 * 60.0
+EXTREME_ARCHSOM_RATING = 3500.0
+DIAMOND_V_MIN = 2900.0
+ELITE_FALLBACK_SECONDS = SEARCH_RADIUS_HOLD_SECONDS + SEARCH_RADIUS_RAMP_SECONDS
 
 
 def search_radius(waited_seconds: float) -> float:
@@ -58,7 +61,20 @@ def queue_entries_compatible(left: SomsaiQueue, right: SomsaiQueue, now) -> bool
     difference = abs(left.rating - right.rating)
     left_wait = (now - aware(left.joined_at)).total_seconds()
     right_wait = (now - aware(right.joined_at)).total_seconds()
-    return difference <= min(search_radius(left_wait), search_radius(right_wait))
+    if difference <= min(search_radius(left_wait), search_radius(right_wait)):
+        return True
+
+    # Once a 3500+ player has exhausted the normal ten-minute expansion, the
+    # open-ended ARCHSOM division needs its own fallback. They may meet any
+    # other ARCHSOM or the adjacent DIAMOND V division. The candidate does not
+    # have to wait another ten minutes; lower divisions retain the 500-MMR cap.
+    if left.rating >= right.rating:
+        high, high_wait, low = left.rating, left_wait, right.rating
+    else:
+        high, high_wait, low = right.rating, right_wait, left.rating
+    if high < EXTREME_ARCHSOM_RATING or high_wait < ELITE_FALLBACK_SECONDS:
+        return False
+    return low >= DIAMOND_V_MIN
 
 
 def validate_mode(ruleset_id: int, variant_id: int) -> None:

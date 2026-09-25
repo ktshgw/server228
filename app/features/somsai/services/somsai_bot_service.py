@@ -272,7 +272,7 @@ async def prepare_draft_features(fetcher, redis, match_id: int, ruleset_id: int,
     async def load(slot):
         mods = [] if slot.get("category") in {"FM", "TB"} else slot.get("mods") or []
         key = (
-            f"somsai:bot-draft:v3:{ruleset_id}:{slot['beatmap_id']}:{slot.get('checksum')}:"
+            f"somsai:bot-draft:v4:{ruleset_id}:{slot['beatmap_id']}:{slot.get('checksum')}:"
             f"{json.dumps(mods, sort_keys=True)}"
         )
         try:

@@ -98,7 +98,7 @@ class ScoreDict(TypedDict):
     has_replay: bool
     max_combo: int
     passed: bool
-    pp: float
+    pp: float | None
     started_at: datetime
     total_score: int
     maximum_statistics: ScoreStatistics
@@ -142,6 +142,17 @@ class ScoreModel(AsyncAttrs, DatabaseModel[ScoreDict]):
     USER_PROFILE_INCLUDES: ClassVar[list[str]] = ["beatmap", "beatmapset", "user"]
 
     DEFAULT_SCORE_INCLUDES: ClassVar[list[str]] = ["user", "user.country", "user.cover", "user.team"]
+
+    @classmethod
+    async def transform(cls, db_instance, **kwargs):
+        data = await super().transform(db_instance, **kwargs)
+        # A raw multiplayer score is returned before the background finalizer
+        # has calculated PP. `null` tells lazer to calculate the display value
+        # locally; serialising the database default 0 made every other player
+        # appear to have earned 0pp on the results screen.
+        if not db_instance.processed and data.get("pp") == 0:
+            data["pp"] = None
+        return data
 
     # 基本字段
     beatmap_id: int = Field(index=True, foreign_key="beatmaps.id")
