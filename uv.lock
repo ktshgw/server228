@@ -2046,7 +2046,7 @@ requires-dist = [
 
 [[package]]
 name = "soms-server"
-version = "25.9.26b1"
+version = "28.9.26b"
 source = { virtual = "." }
 dependencies = [
     { name = "aioboto3" },
