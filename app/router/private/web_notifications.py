@@ -18,8 +18,6 @@ from sqlmodel import col, func, select
 
 class NotificationPreferences(BaseModel):
     rank_lost: bool = True
-    friend_added: bool = True
-    friend_removed: bool = True
 
 
 @router.get(f"{WEB_API_PREFIX}/notifications")
@@ -28,7 +26,10 @@ async def inbox(context: WebSession, session: Database, response: Response, befo
     preferences = await notification_preferences(session, context.user.id)
     if not context.user.is_supporter:
         return {"supporter": False, "items": [], "unread": 0, "preferences": preferences}
-    conditions = [col(SomsActivity.recipient_id) == context.user.id]
+    conditions = [
+        col(SomsActivity.recipient_id) == context.user.id,
+        col(SomsActivity.kind) == "rank_lost",
+    ]
     unread = (
         await session.exec(
             select(func.count()).select_from(SomsActivity).where(*conditions, col(SomsActivity.is_read).is_(False))
@@ -102,6 +103,7 @@ async def mark_read(request: Request, context: WebSession, session: Database, th
         update(SomsActivity)
         .where(
             col(SomsActivity.recipient_id) == context.user.id,
+            col(SomsActivity.kind) == "rank_lost",
             col(SomsActivity.id) <= through,
             col(SomsActivity.is_read).is_(False),
         )
@@ -115,7 +117,12 @@ async def mark_read(request: Request, context: WebSession, session: Database, th
 async def read_one(notification_id: int, request: Request, context: WebSession, session: Database):
     _require_csrf(request, context)
     row = await session.get(SomsActivity, notification_id)
-    if not context.user.is_supporter or row is None or row.recipient_id != context.user.id:
+    if (
+        not context.user.is_supporter
+        or row is None
+        or row.recipient_id != context.user.id
+        or row.kind != "rank_lost"
+    ):
         raise HTTPException(404, "Уведомление не найдено")
     row.is_read = True
     session.add(row)

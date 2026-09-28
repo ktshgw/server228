@@ -71,10 +71,12 @@
         route: "home",
         session: null,
         csrf: null,
+        downloadMirror: "beatconnect",
         avatar: { file: null, preview: null, revision: 0, request: null },
         busy: 0,
         home: null,
         changelog: { releases: null, announcements: [], selected: null, showHotfixes: true },
+        friends: { items: [], filter: "all", sort: "activity", view: "list", requestId: 0 },
         rankings: {
             page: 1,
             pages: 1,
@@ -95,7 +97,7 @@
             requestId: 0,
             controller: null,
         },
-        beatmapDetail: { id: null, data: null, beatmapId: null, mode: null, scorePage: 1, scorePages: 1, scoreRequestId: 0, detailRequestId: 0, scope: "global", mods: null, commentPage: 1, commentPages: 1, commentSort: "new", commentRequestId: 0 },
+        beatmapDetail: { id: null, data: null, beatmapId: null, mode: null, moderationScope: "difficulty", scorePage: 1, scorePages: 1, scoreRequestId: 0, detailRequestId: 0, scope: "global", mods: null, commentPage: 1, commentPages: 1, commentSort: "new", commentRequestId: 0 },
         beatmapCache: new Map(),
         profile: {
             id: null,
@@ -106,6 +108,8 @@
             pages: 1,
             scoreType: "best",
             scoreLimit: 5,
+            recentScoreLimit: 10,
+            mostPlayedLimit: 5,
             firstScorePage: 1,
             user: null,
             payload: null,
@@ -395,12 +399,13 @@
     function renderAvatar(root, user, cacheBust = false) {
         root.dataset.userId = String(user?.id || "");
         root.replaceChildren();
-        root.append(make("span", "avatar-fallback", initials(user?.username)));
-        const rawUrl = user?.avatar_url || user?.avatarUrl;
-        const url = safeAssetUrl(rawUrl);
-        if (!url) return;
+        const rawUrl = user?.avatar_url || user?.avatarUrl || "/site/soms-default-avatar.png";
+        const url = safeAssetUrl(rawUrl) || new URL("/site/soms-default-avatar.png", location.origin).href;
         const image = make("img");
         image.alt = "";
+        image.addEventListener("error", () => {
+            image.src = "/site/soms-default-avatar.png";
+        }, { once: true });
         if (cacheBust) {
             const parsed = new URL(url);
             parsed.searchParams.set("v", String(Date.now()));
@@ -408,7 +413,6 @@
         } else {
             image.src = url;
         }
-        image.addEventListener("error", () => image.remove(), { once: true });
         root.append(image);
     }
 
@@ -631,7 +635,7 @@
     function parseRoute() {
         const clean = location.hash.replace(/^#/, "");
         const [rawRoute, rawId, rawDifficultyId, rawMode] = clean.split("/");
-        const route = ["home", "changelog", "rankings", "beatmaps", "beatmap", "profile", "settings"].includes(rawRoute) ? rawRoute : "home";
+        const route = ["home", "changelog", "rankings", "beatmaps", "beatmap", "profile", "friends", "settings"].includes(rawRoute) ? rawRoute : "home";
         return {
             route,
             id: /^\d+$/.test(rawId || "") ? Number(rawId) : null,
@@ -653,7 +657,7 @@
             ++state.beatmapDetail.commentRequestId;
         }
         document.body.dataset.route = parsed.route;
-        const routeTitles = { home: "главная", changelog: "обновления", beatmaps: "библиотека карт", beatmap: "информация о карте", rankings: "рейтинг", profile: "информация об игроке", settings: "настройки" };
+        const routeTitles = { home: "главная", changelog: "обновления", beatmaps: "библиотека карт", beatmap: "информация о карте", rankings: "рейтинг", profile: "информация об игроке", friends: "друзья", settings: "настройки" };
         $("#mobile-page-title").textContent = routeTitles[parsed.route];
         $(".site-header").classList.remove("is-menu-open");
         $("#mobile-menu-button").setAttribute("aria-expanded", "false");
@@ -666,10 +670,14 @@
             if (previousRoute !== "profile" || Number(previousProfileId) !== Number(state.profile.id)) {
                 state.profile.page = 1;
                 state.profile.scoreLimit = 5;
+                state.profile.recentScoreLimit = 10;
+                state.profile.mostPlayedLimit = 5;
             }
         } else if (previousRoute === "profile") {
             state.profile.page = 1;
             state.profile.scoreLimit = 5;
+            state.profile.recentScoreLimit = 10;
+            state.profile.mostPlayedLimit = 5;
             closeScoreActionMenu();
         }
         if (parsed.route === "beatmap") {
@@ -714,6 +722,7 @@
             beatmaps: loadBeatmaps,
             beatmap: loadBeatmapDetail,
             profile: loadProfile,
+            friends: loadFriends,
             settings: loadSettings,
         };
         return loaders[name]();
@@ -752,6 +761,8 @@
         resetBeatmapPagination();
         state.profile.page = 1;
         state.profile.scoreLimit = 5;
+        state.profile.recentScoreLimit = 10;
+        state.profile.mostPlayedLimit = 5;
         $("#global-mode").value = mode;
         renderModeTabs();
         if (state.route !== "settings") {
@@ -819,9 +830,96 @@
         renderUserName($("#hero-player-name"), activeUser);
     }
 
+    function friendLastSeenValue(entry) {
+        if (entry.user?.is_online) return Number.MAX_SAFE_INTEGER;
+        const value = new Date(entry.user?.last_visit || 0).getTime();
+        return Number.isFinite(value) ? value : 0;
+    }
+
+    function visibleFriends() {
+        const { filter, sort } = state.friends;
+        const items = state.friends.items.filter((entry) => {
+            if (filter === "online") return Boolean(entry.user?.is_online);
+            if (filter === "offline") return !entry.user?.is_online;
+            return true;
+        });
+        items.sort((left, right) => {
+            if (sort === "name") return userName(left).localeCompare(userName(right), "ru", { sensitivity: "base" });
+            if (sort === "rating") return Number(right.pp || 0) - Number(left.pp || 0) || userName(left).localeCompare(userName(right), "ru");
+            return friendLastSeenValue(right) - friendLastSeenValue(left) || userName(left).localeCompare(userName(right), "ru");
+        });
+        return items;
+    }
+
+    function renderFriendRow(entry) {
+        const user = unwrapUser(entry);
+        const row = make("button", "friend-row");
+        row.type = "button";
+        row.addEventListener("click", () => openProfile(userId(user)));
+
+        const avatar = make("span", "avatar friend-avatar");
+        renderAvatar(avatar, user);
+        const identity = make("span", "friend-identity");
+        const nameLine = make("span", "friend-name-line");
+        const flag = make("span", "friend-flag", flagEmoji(user.country_code));
+        flag.title = user.country_code || "XX";
+        nameLine.append(flag, userNameNode(user));
+        if (entry.mutual) {
+            const mutual = make("span", "friend-mutual", "♥♥");
+            mutual.title = "Взаимные друзья";
+            nameLine.append(mutual);
+        }
+        identity.append(nameLine, make("small", "", `${formatNumber(entry.pp || 0)} pp · ${formatAccuracy(entry.accuracy || 0)}`));
+
+        const presence = make("span", `friend-presence${user.is_online ? " is-online" : ""}`);
+        presence.append(make("i"), make("strong", "", user.is_online ? "В сети" : "Не в сети"));
+        presence.append(make("small", "", user.is_online ? "сейчас играет" : user.last_visit ? `Был в сети ${formatRelativeDate(user.last_visit)}` : "Активность неизвестна"));
+        row.append(avatar, identity, presence, make("span", "friend-chevron", "›"));
+        return row;
+    }
+
+    function renderFriends() {
+        const total = state.friends.items.length;
+        const online = state.friends.items.filter((entry) => entry.user?.is_online).length;
+        $("#friends-count-all").textContent = formatNumber(total);
+        $("#friends-count-online").textContent = formatNumber(online);
+        $("#friends-count-offline").textContent = formatNumber(total - online);
+        $$('[data-friends-filter]').forEach((button) => {
+            const active = button.dataset.friendsFilter === state.friends.filter;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+        $$('[data-friends-sort]').forEach((button) => {
+            const active = button.dataset.friendsSort === state.friends.sort;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+        const list = $("#friends-list");
+        list.classList.toggle("is-grid", state.friends.view === "grid");
+        const items = visibleFriends();
+        list.replaceChildren(...items.map(renderFriendRow));
+        $("#friends-empty").hidden = items.length > 0;
+        $("#friends-view-list").classList.toggle("is-active", state.friends.view === "list");
+        $("#friends-view-list").setAttribute("aria-pressed", String(state.friends.view === "list"));
+        $("#friends-view-grid").classList.toggle("is-active", state.friends.view === "grid");
+        $("#friends-view-grid").setAttribute("aria-pressed", String(state.friends.view === "grid"));
+    }
+
+    async function loadFriends() {
+        const loggedIn = Boolean(state.session?.user);
+        $("#friends-guest").hidden = loggedIn;
+        $("#friends-content").hidden = !loggedIn;
+        if (!loggedIn) return;
+        const requestId = ++state.friends.requestId;
+        const data = await api(`/friends?mode=${encodeURIComponent(state.mode)}`);
+        if (requestId !== state.friends.requestId || state.route !== "friends") return;
+        state.friends.items = getItems(data, "items");
+        renderFriends();
+    }
+
     async function loadChangelogData() {
         if (state.changelog.releases) return;
-        const response = await fetch("./changelog.json?v=5", { credentials: "same-origin" });
+        const response = await fetch("./changelog.json?v=6", { credentials: "same-origin" });
         if (!response.ok) throw new Error("Не удалось загрузить историю обновлений");
         const payload = await response.json();
         state.changelog.releases = Array.isArray(payload.releases) ? payload.releases : [];
@@ -1226,44 +1324,57 @@
         return modes.find((mode) => mode.value === String(value))?.label || String(value || "osu!");
     }
 
-    function renderBeatmapModerationActions(map) {
-        const root = $("#beatmap-moderation-actions");
-        const allowed = hasSitePermission("beatmap_moderation");
-        root.hidden = !allowed;
-        if (!allowed) return;
-
-        const key = statusKey(map.status);
-        const ranked = ["ranked", "approved"].includes(key) && map.pp !== false;
-        const loved = key === "loved" && map.leaderboard !== false;
-        const hasLeaderboard = map.leaderboard === true || ["ranked", "approved", "qualified", "loved"].includes(key);
-        $("#beatmap-rank").hidden = ranked;
-        $("#beatmap-unrank").hidden = !hasLeaderboard;
-        $("#beatmap-love").hidden = loved;
+    function renderBeatmapModerationActions() {
+        $("#beatmap-moderation-actions").hidden = !hasSitePermission("beatmap_moderation");
     }
+
+    function openBeatmapModeration(scope) {
+        if (!hasSitePermission("beatmap_moderation")) return;
+        state.beatmapDetail.moderationScope = scope;
+        const difficulty = scope !== "beatmapset";
+        if (difficulty && !Number(state.beatmapDetail.beatmapId || 0)) {
+            toast("Не удалось определить выбранную сложность", "error");
+            return;
+        }
+        $("#beatmap-moderation-target").textContent = difficulty
+            ? "Действие будет применено только к выбранной сложности."
+            : "Действие будет применено ко всем сложностям мапсета.";
+        const dialog = $("#beatmap-moderation-dialog");
+        if (!dialog.open) dialog.showModal();
+    }
+
 
     async function moderateBeatmapset(action, button) {
         if (!hasSitePermission("beatmap_moderation")) return;
         const beatmapsetId = Number(state.beatmapDetail.id || 0);
-        if (!beatmapsetId) return;
+        const singleDifficulty = state.beatmapDetail.moderationScope !== "beatmapset";
+        const beatmapId = singleDifficulty ? Number(state.beatmapDetail.beatmapId || 0) : null;
+        if (!beatmapsetId || (singleDifficulty && !beatmapId)) {
+            toast("Не удалось определить выбранную сложность", "error");
+            return;
+        }
         const busyLabels = { rank: "Ранкуем…", unrank: "Деранкаем…", love: "Добавляем в Loved…" };
+        const target = singleDifficulty ? "Выбранная сложность" : "Весь мапсет";
         const successLabels = {
-            rank: "Карта получила Ranked на SOMS!",
-            unrank: "Локальный статус снят или карта перенесена в заброшенные",
-            love: "Карта получила Loved: лидерборд включён, PP отключены",
+            rank: `${target} получил Ranked на SOMS!`,
+            unrank: `${target}: локальный статус снят или заменён на Graveyard`,
+            love: `${target} получил Loved: лидерборд включён, PP отключены`,
         };
-        $$("button", $("#beatmap-moderation-actions")).forEach((item) => { item.disabled = true; });
+        $$('[data-beatmap-moderation-action]').forEach((item) => { item.disabled = true; });
         setButtonBusy(button, true, busyLabels[action]);
         try {
-            await api(`/beatmapsets/${beatmapsetId}/moderation`, { method: "POST", data: { action } });
+            await api(`/beatmapsets/${beatmapsetId}/moderation`, { method: "POST", data: { action, beatmap_id: beatmapId } });
             toast(successLabels[action]);
+            $("#beatmap-moderation-dialog").close();
             await loadBeatmapDetail();
         } catch (error) {
             toast(error.message, "error");
         } finally {
             setButtonBusy(button, false, "");
-            $$("button", $("#beatmap-moderation-actions")).forEach((item) => { item.disabled = false; });
+            $$('[data-beatmap-moderation-action]').forEach((item) => { item.disabled = false; });
         }
     }
+
 
     function beatmapMode(value) {
         return ({ 0: "osu", 1: "taiko", 2: "fruits", 3: "mania", catch: "fruits" })[value] || value || "osu";
@@ -1423,7 +1534,16 @@
             toast("Войдите, чтобы скачать карту", "error");
             openAuth("login");
         };
-        $("#beatmap-detail-mirror").href = `https://beatconnect.io/b/${map.id}`;
+        const mirror = {
+            beatconnect: { label: "Beatconnect", href: `https://beatconnect.io/b/${map.id}`, className: "beatconnect-button" },
+            mino: { label: "Mino", href: `https://catboy.best/d/${map.id}`, className: "mino-button" },
+            nerinyan: { label: "Nerinyan", href: `https://api.nerinyan.moe/d/${map.id}`, className: "nerinyan-button" },
+            hinamizawa: { label: "Hinamizawa", href: `https://mirror.hinamizawa.ai/api/v1/hinai/d/${map.id}`, className: "hinamizawa-button" },
+        }[state.downloadMirror] || { label: "Beatconnect", href: `https://beatconnect.io/b/${map.id}`, className: "beatconnect-button" };
+        const mirrorButton = $("#beatmap-detail-mirror");
+        mirrorButton.href = mirror.href;
+        mirrorButton.className = `button ${mirror.className}`;
+        mirrorButton.lastChild.textContent = mirror.label;
         $("#beatmap-detail-official").href = `https://osu.ppy.sh/beatmapsets/${map.id}`;
         const audio = $("#beatmap-preview-audio");
         audio.pause();
@@ -2354,7 +2474,7 @@
         }
         $("#profile-guest").hidden = true;
         $("#profile-content").hidden = false;
-        const scorePageSize = state.profile.scoreType === "best" ? state.profile.scoreLimit : 20;
+        const scorePageSize = state.profile.scoreLimit;
         const sessionUser = state.session?.user;
         const requestedProfileId = Number(id);
         const ownProfile = Boolean(sessionUser) && [Number(sessionUser.id), userId(sessionUser)].includes(requestedProfileId);
@@ -2364,10 +2484,10 @@
             : `/users/${id}/achievements?${achievementParams}`;
         const [profile, scores, pinnedScores, achievements, activityScores, firstScores] = await Promise.all([
             api(`/users/${id}?${new URLSearchParams({ mode: state.mode, somsai_variant: String(state.profile.somsaiVariant), somsai_format: state.profile.somsaiFormat })}`),
-            api(`/users/${id}/scores?${new URLSearchParams({ mode: state.mode, type: state.profile.scoreType, page: String(state.profile.page), page_size: String(scorePageSize) })}`),
+            api(`/users/${id}/scores?${new URLSearchParams({ mode: state.mode, type: "best", page: String(state.profile.page), page_size: String(scorePageSize) })}`),
             api(`/users/${id}/scores?${new URLSearchParams({ mode: state.mode, type: "pinned", page: "1", page_size: "50" })}`).catch((error) => ({ unsupported: [404, 405, 422, 501].includes(error.status), items: [] })),
             api(achievementsPath).catch(() => ({ unavailable: true, total: 0, unlocked_count: 0, catalog_visible: ownProfile, latest: [], groups: [] })),
-            api(`/users/${id}/scores?${new URLSearchParams({ mode: state.mode, type: "recent", page: "1", page_size: "50" })}`).catch(() => ({ items: [] })),
+            api(`/users/${id}/scores?${new URLSearchParams({ mode: state.mode, type: "recent", page: "1", page_size: "200" })}`).catch(() => ({ items: [] })),
             api(`/users/${id}/scores?${new URLSearchParams({ mode: state.mode, type: "first", page: "1", page_size: "5" })}`),
         ]);
         const user = profile.user || profile;
@@ -2944,8 +3064,12 @@
             totals.set(key, { date, count: Math.max(0, Number(previous?.count || 0) + Number(item.count || 0)) });
         });
         const available = [...totals.values()].sort((a, b) => a.date - b.date);
-        const first = available[0].date;
-        const last = available.at(-1).date;
+        const joined = new Date(profile?.user?.join_date || profile?.join_date || "");
+        const joinedMonth = Number.isNaN(joined.getTime()) ? null : new Date(joined.getFullYear(), joined.getMonth(), 1);
+        const current = new Date();
+        const currentMonth = new Date(current.getFullYear(), current.getMonth(), 1);
+        const first = joinedMonth && joinedMonth < available[0].date ? joinedMonth : available[0].date;
+        const last = currentMonth > available.at(-1).date ? currentMonth : available.at(-1).date;
         const filled = [];
         for (const cursor = new Date(first); cursor <= last; cursor.setMonth(cursor.getMonth() + 1)) {
             const date = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
@@ -3004,7 +3128,7 @@
         const max = Math.max(1, ...items.map((item) => item.count));
         const points = items.map((item, index) => ({
             ...item,
-            x: items.length === 1 ? 36 : 12 + (index / (items.length - 1)) * 876,
+            x: items.length === 1 ? 888 : 12 + (index / (items.length - 1)) * 876,
             y: 174 - (item.count / max) * 150,
         }));
         state.playHistoryChart.points = points;
@@ -3044,50 +3168,61 @@
             item.play_count += 1;
             grouped.set(key, item);
         });
-        return [...grouped.values()].sort((a, b) => b.play_count - a.play_count).slice(0, 6);
+        return [...grouped.values()].sort((a, b) => b.play_count - a.play_count).slice(0, 200);
     }
 
     function renderMostPlayed(profile, scores) {
         let items = getItems(profile, "most_played", "mostPlayed");
         if (!items.length) items = fallbackMostPlayed(scores);
-        items = items.slice(0, 6);
+        items = items.slice(0, 200);
+        const visible = items.slice(0, state.profile.mostPlayedLimit);
         const max = Math.max(1, ...items.map((item) => Number(item.play_count || item.count || 0)));
         const root = $("#profile-most-played");
-        root.replaceChildren(...items.map((item) => {
+        root.replaceChildren(...visible.map((item) => {
             const beatmap = item.beatmap || {};
             const beatmapset = item.beatmapset || beatmap.beatmapset || {};
             const id = Number(beatmapset.id || beatmap.beatmapset_id || 0);
+            const difficultyId = Number(beatmap.id || 0);
             const count = Number(item.play_count || item.count || 0);
             const row = make("button", "most-played-item");
             row.type = "button";
             const art = make("span", "most-played-art");
             const cover = safeAssetUrl(beatmapset.cover_url || beatmapset.covers?.list || beatmapset.covers?.card);
             if (cover) {
-                const image = make("img");
-                image.src = cover;
-                image.alt = "";
-                image.loading = "lazy";
-                image.addEventListener("error", () => image.remove(), { once: true });
-                art.append(image);
+                const image = make("img"); image.src = cover; image.alt = ""; image.loading = "lazy";
+                image.addEventListener("error", () => image.remove(), { once: true }); art.append(image);
             }
+            const title = beatmapset.title || "Неизвестная карта";
+            const version = beatmap.version ? ` [${beatmap.version}]` : "";
             const copy = make("span", "most-played-copy");
-            copy.append(make("strong", "", beatmapset.title || "Неизвестная карта"), make("small", "", `${beatmapset.artist || "Неизвестный артист"} · ${beatmap.version || ""}`));
-            const countRoot = make("span", "most-played-count", formatNumber(count));
-            const bar = make("i");
-            bar.style.width = `${Math.max(6, (count / max) * 100)}%`;
+            copy.append(make("strong", "", `${title}${version}`), make("small", "", `от ${beatmapset.creator || "неизвестного маппера"}`));
+            const countRoot = make("span", "most-played-count", `▶ ${formatNumber(count)}`);
+            const bar = make("i"); bar.style.width = `${Math.max(3, (count / max) * 100)}%`;
             row.append(art, copy, countRoot, bar);
             if (id) {
                 state.beatmapCache.set(id, { ...beatmapset, id, beatmaps: [beatmap] });
-                row.addEventListener("click", () => openBeatmap(id));
+                row.addEventListener("click", () => openBeatmap(id, difficultyId));
             } else row.disabled = true;
             return row;
         }));
+        $("#profile-most-played-count").textContent = formatNumber(items.length);
         $("#profile-most-played-empty").hidden = items.length > 0;
+        $("#most-played-more").hidden = visible.length >= items.length || visible.length >= 200;
+    }
+
+    function renderRecentChronology(scores) {
+        const items = scores.slice(0, 200);
+        const visible = items.slice(0, state.profile.recentScoreLimit);
+        $("#profile-recent-scores").replaceChildren(...visible.map((score, index) => createScoreRow(score, index + 1)));
+        $("#profile-recent-count").textContent = formatNumber(items.length);
+        $("#profile-recent-empty").hidden = items.length > 0;
+        $("#recent-scores-more").hidden = visible.length >= items.length || visible.length >= 200;
     }
 
     function renderProfileActivity(profile, scores) {
         renderPlayHistory(profile, scores);
         renderMostPlayed(profile, scores);
+        renderRecentChronology(scores);
     }
 
     const profileBlocks = ["scores", "about", "medals", "historical"];
@@ -3252,13 +3387,12 @@
         $("#profile-scores-empty").hidden = items.length > 0;
         const total = Number(data?.total ?? items.length);
         $("#profile-score-count").textContent = formatNumber(total);
-        $("#profile-score-list-title").textContent = state.profile.scoreType === "best" ? "Лучшие" : "Недавние";
+        $("#profile-score-list-title").textContent = "Лучшие";
         $("#scores-page").textContent = `${pagination.page} / ${pagination.pages}`;
         $("#scores-prev").disabled = pagination.page <= 1;
         $("#scores-next").disabled = pagination.page >= pagination.pages;
-        $("#scores-pagination").hidden = state.profile.scoreType === "best" || pagination.pages <= 1;
-        $("#scores-more").hidden = state.profile.scoreType !== "best"
-            || state.profile.scoreLimit >= Math.min(200, total)
+        $("#scores-pagination").hidden = true;
+        $("#scores-more").hidden = state.profile.scoreLimit >= Math.min(200, total)
             || items.length >= 200;
     }
 
@@ -3823,12 +3957,30 @@
         $("#settings-content").hidden = !loggedIn;
     }
 
+    async function loadDownloadMirrorPreference() {
+        if (!state.session) {
+            state.downloadMirror = "beatconnect";
+            return;
+        }
+        try {
+            const preference = await api("/me/download-mirror");
+            state.downloadMirror = preference.mirror || "beatconnect";
+        } catch {
+            state.downloadMirror = "beatconnect";
+        }
+    }
+
     async function loadSettings() {
         renderSettingsGate();
         if (!state.session?.user) return;
         await refreshNotifications();
         const id = state.session.user.id;
-        const profile = await api(`/users/${id}?mode=${encodeURIComponent(state.mode)}`);
+        const [profile, mirrorPreference] = await Promise.all([
+            api(`/users/${id}?mode=${encodeURIComponent(state.mode)}`),
+            api("/me/download-mirror"),
+        ]);
+        state.downloadMirror = mirrorPreference.mirror || "beatconnect";
+        $("#settings-download-mirror").value = state.downloadMirror;
         const user = profile.user || profile;
         state.settingsProfile = profile;
         state.settingsUser = user;
@@ -4154,6 +4306,7 @@
             });
             state.session = result;
             state.csrf = result.csrf_token;
+            await loadDownloadMirrorPreference();
             $("#login-form").reset();
             $("#login-totp-field").hidden = true;
             $("#auth-dialog").close();
@@ -4195,6 +4348,7 @@
             if (result?.authenticated && result.user) {
                 state.session = result;
                 state.csrf = result.csrf_token;
+                await loadDownloadMirrorPreference();
                 $("#auth-dialog").close();
                 updateAuthUI();
                 toast("Аккаунт создан. Добро пожаловать!");
@@ -4300,6 +4454,10 @@ $("#support-soms").addEventListener("click", () => {
             closeUserMenu();
             openProfile(userId(state.session?.user));
         });
+        $("#user-menu-friends").addEventListener("click", () => {
+            closeUserMenu();
+            go("friends");
+        });
         $("#user-menu-settings").addEventListener("click", () => {
             closeUserMenu();
             go("settings");
@@ -4319,11 +4477,23 @@ $("#support-soms").addEventListener("click", () => {
             go("settings");
         });
         $("#profile-friend-button").addEventListener("click", () => busy(toggleProfileFriendship()));
+        $$('[data-friends-filter]').forEach((button) => button.addEventListener("click", () => {
+            state.friends.filter = button.dataset.friendsFilter;
+            renderFriends();
+        }));
+        $$('[data-friends-sort]').forEach((button) => button.addEventListener("click", () => {
+            state.friends.sort = button.dataset.friendsSort;
+            renderFriends();
+        }));
+        $("#friends-view-list").addEventListener("click", () => { state.friends.view = "list"; renderFriends(); });
+        $("#friends-view-grid").addEventListener("click", () => { state.friends.view = "grid"; renderFriends(); });
         $("#beatmap-detail-back").addEventListener("click", () => go("beatmaps"));
         bindBeatmapPageEvents();
-        $("#beatmap-rank").addEventListener("click", (event) => busy(moderateBeatmapset("rank", event.currentTarget)));
-        $("#beatmap-unrank").addEventListener("click", (event) => busy(moderateBeatmapset("unrank", event.currentTarget)));
-        $("#beatmap-love").addEventListener("click", (event) => busy(moderateBeatmapset("love", event.currentTarget)));
+        $("#beatmap-scope-difficulty").addEventListener("click", () => openBeatmapModeration("difficulty"));
+        $("#beatmap-scope-set").addEventListener("click", () => openBeatmapModeration("beatmapset"));
+        $$('[data-beatmap-moderation-action]').forEach(button => button.addEventListener("click", event => {
+            busy(moderateBeatmapset(event.currentTarget.dataset.beatmapModerationAction, event.currentTarget));
+        }));
         $("#score-delete-confirm").addEventListener("click", () => busy(confirmScoreDeletion()));
         $("#score-delete-dialog").addEventListener("close", () => { state.pendingScoreDelete = null; });
         $("#beatmap-scores-prev").addEventListener("click", () => {
@@ -4410,6 +4580,14 @@ $("#support-soms").addEventListener("click", () => {
             state.profile.scoreLimit = Math.min(200, state.profile.scoreLimit + 50);
             state.profile.page = 1;
             busy(loadProfile()).catch((error) => toast(error.message, "error"));
+        });
+        $("#most-played-more").addEventListener("click", () => {
+            state.profile.mostPlayedLimit = Math.min(200, state.profile.mostPlayedLimit + 50);
+            renderMostPlayed(state.profile.payload || {}, state.profile.activityScores || []);
+        });
+        $("#recent-scores-more").addEventListener("click", () => {
+            state.profile.recentScoreLimit = Math.min(200, state.profile.recentScoreLimit + 20);
+            renderRecentChronology(state.profile.activityScores || []);
         });
         $("#first-scores-more").addEventListener("click", async () => {
             const button = $("#first-scores-more");
@@ -4633,6 +4811,16 @@ $("#support-soms").addEventListener("click", () => {
         $("#login-form").addEventListener("submit", login);
         $("#register-form").addEventListener("submit", register);
         $("#profile-settings-form").addEventListener("submit", saveProfile);
+        $("#download-mirror-form").addEventListener("submit", async event => {
+            event.preventDefault();
+            try {
+                const result = await api("/me/download-mirror", {
+                    method: "PUT", data: { mirror: $("#settings-download-mirror").value },
+                });
+                state.downloadMirror = result.mirror;
+                toast("Зеркало скачивания сохранено");
+            } catch (error) { toast(error.message, "error"); }
+        });
         $("#avatar-choose").addEventListener("click", () => $("#avatar-file").click());
         $("#avatar-file").addEventListener("change", selectAvatar);
         $("#avatar-form").addEventListener("submit", (event) => { event.preventDefault(); changeAvatar(); });
@@ -4652,6 +4840,7 @@ $("#support-soms").addEventListener("click", () => {
             if (result?.authenticated && result.user) {
                 state.session = result;
                 state.csrf = result.csrf_token;
+                await loadDownloadMirrorPreference();
             }
         } catch (error) {
             if (error.status === 0) toast(error.message, "error");
@@ -4708,18 +4897,15 @@ $("#support-soms").addEventListener("click", () => {
             $("#notifications-more").hidden = result.items.length < 30;
             if (!$("#notification-settings-form").contains(document.activeElement)) {
                 $("#notify-rank-lost").checked = result.preferences.rank_lost;
-                $("#notify-friend-added").checked = result.preferences.friend_added;
-                $("#notify-friend-removed").checked = result.preferences.friend_removed !== false;
             }
             const root = $("#notifications-items");
             root.replaceChildren();
-            if (!notificationItems.length) root.append(make("p", "notifications-empty", result.supporter ? "Пока нет уведомлений" : "Уведомления о друзьях и первых местах доступны с supporter."));
+            if (!notificationItems.length) root.append(make("p", "notifications-empty", result.supporter ? "Пока нет уведомлений" : "Уведомления о потерянных первых местах доступны с supporter."));
             for (const item of notificationItems) {
                 const row = make("article", `notification-item${item.is_read ? "" : " is-unread"}`);
                 const player = make("a", "", item.data.username);
                 player.href = `#profile/${Number(item.data.user_id)}`;
-                const action = { friend_added: " добавил вас в друзья.", friend_removed: " удалил вас из друзей.", rank_lost: " забрал ваше первое место на " };
-                row.append(player, document.createTextNode(action[item.kind] || ""));
+                row.append(player, document.createTextNode(" забрал ваше первое место на "));
                 if (item.kind === "rank_lost") {
                     const map = make("a", "", `${item.data.title} (${item.data.mode})`);
                     map.href = beatmapSiteUrl(item.data.beatmapset_id, item.data.beatmap_id);
@@ -4756,8 +4942,7 @@ $("#support-soms").addEventListener("click", () => {
         event.preventDefault();
         try {
             await api("/notifications/preferences", { method: "PUT", data: {
-                rank_lost: $("#notify-rank-lost").checked, friend_added: $("#notify-friend-added").checked,
-                friend_removed: $("#notify-friend-removed").checked,
+                rank_lost: $("#notify-rank-lost").checked,
             } });
             toast("Настройки уведомлений сохранены");
         } catch (error) { toast(error.message, "error"); }

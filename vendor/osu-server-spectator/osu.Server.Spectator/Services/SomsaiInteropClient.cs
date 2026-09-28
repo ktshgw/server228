@@ -79,6 +79,9 @@ namespace osu.Server.Spectator.Services
         [JsonPropertyName("playlist_item_id")]
         public long PlaylistItemId { get; set; }
 
+        [JsonPropertyName("map_slot")]
+        public string? MapSlot { get; set; }
+
         [JsonPropertyName("start_allowed")]
         public bool StartAllowed { get; set; }
 
@@ -95,7 +98,7 @@ namespace osu.Server.Spectator.Services
         [JsonPropertyName("seed")] public int Seed { get; set; }
         [JsonPropertyName("level")] public string Level { get; set; } = "medium";
         [JsonPropertyName("global_rank")] public int? GlobalRank { get; set; }
-        [JsonPropertyName("skill_profile")] public BotSkillProfile? SkillProfile { get; set; }
+        [JsonPropertyName("ai_profile")] public BotSkillProfile? AiProfile { get; set; }
     }
 
     public sealed class SomsaiBotBeatmap

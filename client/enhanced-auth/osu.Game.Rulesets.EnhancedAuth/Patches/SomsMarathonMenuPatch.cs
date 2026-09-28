@@ -23,7 +23,7 @@ public static class SomsMarathonMenuPatch
         int index = ___buttonsPlay.IndexOf(old);
         ___buttonsPlay.Remove(old);
         ___buttonArea.Remove(old, true);
-        var button = new MainMenuButton("Марафон", "button-daily-select", FontAwesome.Solid.Music, new Color4(94, 63, 186, 255), (_, _) =>
+        var button = new MainMenuButton("Compilations", "button-daily-select", FontAwesome.Solid.Music, new Color4(94, 63, 186, 255), (_, _) =>
         {
             if (AccessTools.Property(typeof(ButtonSystem), "game").GetValue(__instance) is OsuGame game)
                 game.PerformFromScreen(screen => screen.Push(new SomsMarathonScreen()));

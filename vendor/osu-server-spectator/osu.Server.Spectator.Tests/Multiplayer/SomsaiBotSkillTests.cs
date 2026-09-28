@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,9 @@ using osu.Game.Beatmaps;
 using osu.Game.IO;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Scoring;
+using osu.Game.Scoring;
+using osu.Server.Spectator.Hubs.Multiplayer.Standard;
 using osu.Server.Spectator.Services;
 using SomsAi.Shared;
 using Xunit;
@@ -15,83 +19,96 @@ namespace osu.Server.Spectator.Tests.Multiplayer;
 public class SomsaiBotSkillTests
 {
     [Fact]
-    public void TechnicalChartDescriptorsMatchServerAndApplyAcrossMods()
+    public void AttemptUsesFormSlotModifierAndDivisionBounds()
     {
-        var assembly = typeof(SomsaiBotSkillTests).Assembly;
-        using var reader = new StreamReader(assembly.GetManifestResourceStream(assembly.GetManifestResourceNames().Single(n => n.EndsWith("bot-tech.osu")))!);
-        var features = BotTechnicalFeatures.Parse(reader.ReadToEnd());
-        Assert.Equal(1, features.Rhythm, 8);
-        Assert.Equal(.7141577458747999, features.Angles, 8);
-        Assert.Equal(.6692406440674795, features.SliderTech, 8);
-        foreach (var mods in new[] { Array.Empty<string>(), new[] { "HD" }, new[] { "HR" }, new[] { "HD", "HR" }, new[] { "DT" } })
+        var profile = new BotSkillProfile
         {
-            var plain = new BotMapSample { Mods = mods, Length = 180, Ability = 7, Rhythm = 0, Angles = 0, SliderTech = 0 };
-            var tech = new BotMapSample { Mods = mods, Length = 180, Ability = 7, Rhythm = features.Rhythm, Angles = features.Angles, SliderTech = features.SliderTech };
-            var specialist = new BotSkillProfile { Rank = 3500, Samples = Enumerable.Repeat(tech, 6).ToArray() };
-            var farmer = new BotSkillProfile { Rank = 3500, Samples = Enumerable.Repeat(plain, 6).ToArray() };
-            Assert.True(BotSkillModel.ComfortFor(specialist, tech, "hard") > BotSkillModel.ComfortFor(farmer, tech, "hard") + .3);
-        }
+            MinimumScore = 750_000, MinimumAccuracy = 93.5, MatchForm = .80, Consistency = 0,
+            SlotModifiers = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase) { ["DT1"] = .18, ["DT2"] = -.18 },
+        };
+        var aim = BotSkillModel.Plan(profile, "dt1", 1);
+        var tapping = BotSkillModel.Plan(profile, "DT2", 1);
+        Assert.True(aim.Performance > tapping.Performance + .3);
+        Assert.InRange(aim.TargetScore, 750_000, 1_000_000);
+        Assert.InRange(tapping.TargetAccuracy, .935, 1);
     }
 
     [Fact]
-    public void RankContinuityAndMapOverload()
+    public void MatchFormStaysStableWhileMapVarianceChanges()
     {
-        Assert.True(BotSkillModel.RankSkill(1200, "hard") > BotSkillModel.RankSkill(8500, "hard") + 1);
-        Assert.InRange(Math.Abs(BotSkillModel.RankSkill(9999, "hard") - BotSkillModel.RankSkill(10000, "medium")), 0, .001);
-        double skill = BotSkillModel.RankSkill(8500, "hard");
-        Assert.True(BotSkillModel.ErrorRates(9, skill).Miss > BotSkillModel.ErrorRates(4, skill).Miss * 100);
+        var profile = new BotSkillProfile { MinimumScore = 700_000, MinimumAccuracy = 90, MatchForm = .8, Consistency = .04 };
+        var attempts = Enumerable.Range(0, 100).Select(seed => BotSkillModel.Plan(profile, "NM1", seed)).ToArray();
+        Assert.All(attempts, attempt => Assert.InRange(attempt.Performance, .76, .84));
+        Assert.True(attempts.Select(a => a.Performance).Distinct().Count() > 90);
     }
 
     [Fact]
-    public void AimDtAndStreamDtAreDifferentSkills()
+    public void FreemodRequirementsMatchSoloAndTeamRules()
     {
-        var aim = new BotMapSample { Mods = new[] { "DT" }, AimRatio = .85, Stamina = .15, Length = 100, Ability = 7, Quality = 1 };
-        var stream = new BotMapSample { Mods = new[] { "DT" }, AimRatio = .25, Stamina = .75, Length = 100, Ability = 7, Quality = 1 };
-        var specialist = new BotSkillProfile { Rank = 3500, Samples = Enumerable.Repeat(aim, 6).ToArray() };
-        Assert.True(BotSkillModel.ComfortFor(specialist, aim, "hard") > BotSkillModel.ComfortFor(specialist, stream, "hard") + .3);
-        var both = new BotSkillProfile { Rank = 3500, Samples = new[] { aim, stream, aim, stream, aim, stream } };
-        Assert.InRange(Math.Abs(BotSkillModel.ComfortFor(both, aim, "hard") - BotSkillModel.ComfortFor(both, stream, "hard")), 0, .01);
+        Assert.False(SomsaiMatchController.MeetsFreemodRequirement(new[] { Array.Empty<string>() }));
+        Assert.False(SomsaiMatchController.MeetsFreemodRequirement(new[] { new[] { "EZ" } }));
+        Assert.True(SomsaiMatchController.MeetsFreemodRequirement(new[] { new[] { "HD" } }));
+        Assert.True(SomsaiMatchController.MeetsFreemodRequirement(new[] { new[] { "HR" } }));
+        Assert.True(SomsaiMatchController.MeetsFreemodRequirement(new[] { new[] { "EZ", "HD" }, new[] { "HD", "HR" } }));
+        Assert.False(SomsaiMatchController.MeetsFreemodRequirement(new[] { new[] { "HD", "HR" }, new[] { "HR" } }));
+        Assert.False(SomsaiMatchController.MeetsFreemodRequirement(new[] { new[] { "HD" }, Array.Empty<string>() }));
     }
 
     [Fact]
-    public void NativeScoresFollowRankAndComfortRangeAndRewindExactly()
+    public void NativeScoreTracksPlanProducesRealisticJudgementsAndRewinds()
+    {
+        var (ruleset, map) = createMap(1000);
+        var profile = new BotSkillProfile
+        {
+            Division = "DIAMOND III", MinimumScore = 750_000, MinimumAccuracy = 93.5,
+            MatchForm = .78, Consistency = 0, Archetype = "tapping",
+            SlotModifiers = new Dictionary<string, double> { ["NM5"] = .1 },
+        };
+        var sim = new SomsAiBotSimulation(ruleset, map, Array.Empty<Mod>(), SomsAiBotLevel.Hard, 7, 123, profile, mapSlot: "NM5");
+        sim.Advance(double.PositiveInfinity);
+        long score = sim.Processor.TotalScore.Value;
+        Assert.InRange(Math.Abs(score - sim.Attempt.TargetScore), 0, 70_000);
+        Assert.InRange(sim.Processor.Accuracy.Value, profile.MinimumAccuracy / 100, 1);
+        var info = new ScoreInfo();
+        sim.Processor.PopulateScore(info);
+        int miss = info.Statistics.GetValueOrDefault(HitResult.Miss);
+        int meh = info.Statistics.GetValueOrDefault(HitResult.Meh);
+        int ok = info.Statistics.GetValueOrDefault(HitResult.Ok);
+        Assert.InRange(miss, 0, 60);
+        Assert.InRange(meh, 0, 40);
+        Assert.InRange(ok, 0, 140);
+        Assert.True(ok >= meh);
+        long before = sim.Processor.TotalScore.Value;
+        sim.Advance(-10_000);
+        Assert.Equal(0, sim.Processor.TotalScore.Value);
+        sim.Advance(double.PositiveInfinity);
+        Assert.Equal(before, sim.Processor.TotalScore.Value);
+        sim.Processor.Dispose();
+    }
+
+    [Fact]
+    public void NinetyNinePlusPlansNeverCreateMehsOrMisses()
+    {
+        var (ruleset, map) = createMap(500);
+        var profile = new BotSkillProfile { MinimumScore = 800_000, MinimumAccuracy = 99.2, MatchForm = 1, Consistency = 0 };
+        var sim = new SomsAiBotSimulation(ruleset, map, Array.Empty<Mod>(), SomsAiBotLevel.Expert, 8, 7, profile, mapSlot: "NM1");
+        sim.Advance(double.PositiveInfinity);
+        var info = new ScoreInfo();
+        sim.Processor.PopulateScore(info);
+        Assert.Equal(0, info.Statistics.GetValueOrDefault(HitResult.Miss));
+        Assert.Equal(0, info.Statistics.GetValueOrDefault(HitResult.Meh));
+        Assert.Equal(sim.Processor.MaximumCombo, sim.Processor.HighestCombo.Value);
+        sim.Processor.Dispose();
+    }
+
+    private static (OsuRuleset Ruleset, IBeatmap Map) createMap(int count)
     {
         var ruleset = new OsuRuleset();
         string header = "osu file format v14\n[General]\nMode:0\n[Difficulty]\nHPDrainRate:5\nCircleSize:4\nOverallDifficulty:8\nApproachRate:9\nSliderMultiplier:1.4\nSliderTickRate:1\n[TimingPoints]\n0,300,4,2,1,50,1,0\n[HitObjects]\n";
-        string raw = header + string.Join("\n", Enumerable.Range(0, 400).Select(i => $"256,192,{1000 + i * 150},1,0,0:0:0:0:"));
+        string raw = header + string.Join("\n", Enumerable.Range(0, count).Select(i => $"256,192,{1000 + i * 150},1,0,0:0:0:0:"));
         using var bytes = new MemoryStream(Encoding.UTF8.GetBytes(raw));
         using var reader = new LineBufferedReader(bytes);
         var source = osu.Game.Beatmaps.Formats.Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
-        var map = new FlatWorkingBeatmap(source).GetPlayableBeatmap(ruleset.RulesetInfo, Array.Empty<Mod>());
-        (double Score, double Acc) average(int rank, double stars)
-        {
-            double score = 0, accuracy = 0;
-            for (int seed = 0; seed < 60; seed++)
-            {
-                var sim = new SomsAiBotSimulation(ruleset, map, Array.Empty<Mod>(), SomsAiBotLevel.Hard, stars, seed, new BotSkillProfile { Rank = rank });
-                sim.Advance(double.PositiveInfinity);
-                score += sim.Processor.TotalScore.Value;
-                accuracy += sim.Processor.Accuracy.Value;
-                long before = sim.Processor.TotalScore.Value;
-                sim.Advance(-10000);
-                Assert.Equal(0, sim.Processor.TotalScore.Value);
-                sim.Advance(double.PositiveInfinity);
-                Assert.Equal(before, sim.Processor.TotalScore.Value);
-                sim.Processor.Dispose();
-            }
-            return (score / 60, accuracy / 60);
-        }
-        var strong = average(1200, 7);
-        var weak = average(8500, 7);
-        var easy = average(8500, 4);
-        var overload = average(8500, 9);
-        Assert.True(strong.Score > weak.Score && strong.Acc > weak.Acc);
-        Assert.True(easy.Score > overload.Score * 2);
-        Assert.InRange(easy.Acc, .993, 1);
-        Assert.True(overload.Acc < .9);
-        var mrekk = new SomsAiBotSimulation(ruleset, map, Array.Empty<Mod>(), SomsAiBotLevel.Mrekk, 15, 21);
-        mrekk.Advance(double.PositiveInfinity);
-        Assert.Equal(mrekk.Processor.MaximumCombo, mrekk.Processor.HighestCombo.Value);
-        mrekk.Processor.Dispose();
+        return (ruleset, new FlatWorkingBeatmap(source).GetPlayableBeatmap(ruleset.RulesetInfo, Array.Empty<Mod>()));
     }
 }

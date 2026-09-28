@@ -571,6 +571,58 @@ body[data-route="settings"] .site-brand .brand-disc {
 .empty-state.compact { padding: 12px; }
 .empty-state.tall { min-height: 220px; display: grid; place-content: center; }
 
+/* friends */
+.friends-page { background:#24202a; }
+.friends-icon { color:#ff6fb0; }
+.friends-mode-tabs { margin-left:auto; }
+.friends-page-tabs { background:#352b40; }
+.friends-summary {
+    min-height:94px;padding:24px var(--gutter);display:flex;align-items:flex-start;gap:10px;background:#211e27;
+}
+.friends-summary button {
+    width:120px;padding:8px 0 10px;display:grid;gap:3px;border-top:3px solid #4b4254;color:#a99caf;background:transparent;text-align:left;cursor:pointer;
+}
+.friends-summary button:nth-child(2) { border-color:#628f43; }
+.friends-summary button:nth-child(3) { border-color:#37323e; }
+.friends-summary button.is-active { border-color:#fff;color:#fff; }
+.friends-summary span { font-size:13px;font-weight:900; }
+.friends-summary strong { font-size:15px;font-weight:500; }
+.friends-surface { min-height:510px;padding:19px var(--gutter) 32px;background:#302c37; }
+.friends-toolbar { min-height:37px;display:flex;align-items:center;justify-content:flex-end;gap:12px;color:#d7cadc;font-size:12px; }
+.friends-sort { display:flex;align-items:center;gap:4px; }
+.friends-sort button,.friends-view button {
+    min-height:28px;padding:0 10px;border-radius:5px;color:#c18ce4;background:transparent;cursor:pointer;
+}
+.friends-sort button:hover,.friends-view button:hover { color:#fff; }
+.friends-sort button.is-active,.friends-view button.is-active { color:#fff;background:#4b4053; }
+.friends-view { display:flex;align-items:center;gap:2px;margin-left:4px; }
+.friends-view button { width:30px;padding:0;font-size:17px; }
+.friends-list { display:grid;gap:3px; }
+.friend-row {
+    width:100%;min-height:58px;padding:5px 12px;display:grid;grid-template-columns:48px minmax(0,1fr) minmax(210px,auto) 18px;align-items:center;gap:10px;
+    border-radius:6px;color:#fff;background:#25212b;text-align:left;cursor:pointer;transition:background .12s ease,transform .12s ease;
+}
+.friend-row:hover { background:#3b3342;transform:translateX(2px); }
+.friend-avatar { width:46px;height:46px;border-radius:7px; }
+.friend-identity { min-width:0;display:grid;gap:3px; }
+.friend-name-line { min-width:0;display:flex;align-items:center;gap:8px; }
+.friend-name-line strong { min-width:0;overflow:hidden;color:#fff;font-size:16px;text-overflow:ellipsis;white-space:nowrap; }
+.friend-flag { font-size:22px;line-height:1; }
+.friend-mutual { padding:2px 7px;border-radius:12px;color:#fff;background:#ec5fa2;font-size:11px;font-weight:900; }
+.friend-identity > small { color:#bcaec3;font-size:11px; }
+.friend-presence { display:grid;grid-template-columns:10px auto;justify-content:end;align-items:center;column-gap:7px;text-align:right; }
+.friend-presence i { grid-row:1 / span 2;width:10px;height:10px;border:2px solid #635b69;border-radius:50%; }
+.friend-presence strong { font-size:13px; }
+.friend-presence small { color:#b4a8ba;font-size:10px; }
+.friend-presence.is-online strong { color:#8fdc5b; }
+.friend-presence.is-online i { border:0;background:#83d64f;box-shadow:0 0 9px rgba(131,214,79,.65); }
+.friend-chevron { color:#8e7d98;font-size:24px;text-align:right; }
+.friends-list.is-grid { grid-template-columns:repeat(3,minmax(0,1fr));gap:8px; }
+.friends-list.is-grid .friend-row { min-height:126px;padding:14px;grid-template-columns:52px minmax(0,1fr);grid-template-rows:auto auto;align-items:center; }
+.friends-list.is-grid .friend-avatar { width:52px;height:52px;border-radius:12px; }
+.friends-list.is-grid .friend-presence { grid-column:1 / -1;justify-content:start;text-align:left; }
+.friends-list.is-grid .friend-chevron { display:none; }
+
 /* dashboard */
 .dashboard-page { background: #25212b; }
 
@@ -1974,6 +2026,7 @@ body[data-route="settings"] .site-brand .brand-disc {
     .global-search-head { padding:0 22px; }
     .global-search-body { padding:28px 22px; }
     .settings-grid { grid-template-columns:1fr; }
+    .friends-list.is-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
 @media (max-width: 560px) {
@@ -2008,6 +2061,19 @@ body[data-route="settings"] .site-brand .brand-disc {
     .rankings-surface { padding-inline:15px; }
     .table-scroll { overflow-x:auto; }
     .ranking-table { min-width:850px; }
+    .friends-summary { padding-inline:15px;overflow-x:auto; }
+    .friends-summary button { min-width:94px; }
+    .friends-surface { padding-inline:12px; }
+    .friends-toolbar { align-items:flex-start;flex-wrap:wrap;justify-content:flex-start; }
+    .friends-toolbar > span { width:100%; }
+    .friends-sort { max-width:100%;overflow-x:auto; }
+    .friends-sort button { white-space:nowrap; }
+    .friends-view { margin-left:auto; }
+    .friend-row { grid-template-columns:42px minmax(0,1fr) 12px;padding-inline:8px; }
+    .friend-avatar { width:40px;height:40px; }
+    .friend-presence { grid-column:2;justify-content:start;text-align:left; }
+    .friend-chevron { grid-column:3;grid-row:1 / span 2; }
+    .friends-list.is-grid { grid-template-columns:1fr; }
     .profile-top-tabs { overflow-x:auto;gap:19px; }
     .profile-cover-art { height:180px; }
     .profile-identity-bar { height:84px;padding-left:128px; }
@@ -2143,6 +2209,13 @@ body[data-route="beatmap"] .page-backdrop {
 .detail-actions .button-quiet { background: #1c2c35b3; }
 .detail-actions .beatconnect-button { gap: 7px; background: #398daf; }
 .beatconnect-button svg { width: 24px; height: 24px; color: #f3e9ff; filter: drop-shadow(0 0 2px #8427f2); }
+.detail-actions .mino-button { gap: 7px; background: #d05a8d; }
+.detail-actions .nerinyan-button { gap: 7px; background: #6958b7; }
+.detail-actions .hinamizawa-button { gap: 7px; background: #327a72; }
+.mino-button svg, .nerinyan-button svg, .hinamizawa-button svg { width: 24px; height: 24px; }
+.account-download-settings { margin: 18px 0; padding: 18px; border-radius: 8px; background: #ffffff08; }
+.account-download-settings h3, .account-download-settings p { margin: 0; }
+.account-download-settings p { margin-top: 5px; color: var(--muted); }
 .beatmap-hero-sidebar .map-status { position: static; display: block; width: max-content; min-width: 170px; margin: 0 0 12px auto; padding: 10px 22px; border-radius: 24px; background: #283338e6; color: #fff; text-align: center; font-size: 13px; font-weight: 900; text-transform: uppercase; }
 .beatmap-attributes { background: #293338d9; }
 #beatmap-preview-toggle { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 42px; background: #ffffff06; color: #fff; font-size: 17px; cursor: pointer; border-bottom: 1px solid #18222780; }
@@ -2167,8 +2240,13 @@ body[data-route="beatmap"] .page-backdrop {
 .beatmap-rating-bars { display: flex; align-items: flex-end; gap: 3px; height: 36px; margin-top: 10px; }
 .beatmap-rating-bars span { flex: 1; min-height: 1px; background: #45add1; }
 .detail-notice { margin: 0; padding: 12px var(--gutter); border-left: 3px solid #74d1f5; color: #d9f5ff; background: #213d49; }
-.map-moderation-actions { margin-top: 12px; display: flex; gap: 6px; }
+.map-moderation-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
 .map-moderation-actions .button { min-height: 30px; padding: 6px 10px; color: #fff; font-size: 11px; }
+.map-scope-difficulty { background: #287b9d; }
+.map-scope-set { background: #65439d; }
+.beatmap-moderation-dialog { width: min(430px, calc(100vw - 30px)); }
+.beatmap-moderation-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.beatmap-moderation-dialog-actions .button { min-height: 38px; padding: 8px 14px; color: #fff; }
 .map-rank-action { background: #78a80f; }
 .map-unrank-action { color: #ffb2c0!important; background: #dd405e2e; }
 .map-love-action { background: #cf578e; }
@@ -2779,3 +2857,39 @@ body[data-route="settings"] .site-brand .brand-disc { width: 66px; height: 66px;
 .local-release-kind.is-ranked { color: #b1f477; }
 .local-release-kind.is-loved { color: #ff8dcd; }
 .local-release-date { color: #d1c3dd; font-size: 10px; white-space: nowrap; }
+
+
+/* Profile chronology */
+.profile-activity-section { padding: 22px 18px 28px; }
+.profile-activity-section .profile-section-title { margin: -4px 0 22px; }
+.profile-section-caption { color: #b8a8bf; font-size: 11px; font-weight: 700; }
+.profile-activity-grid { gap: 22px; }
+.play-history-wrap,.most-played-wrap,.recent-history-wrap { padding: 0 10px; border-radius: 0; background: transparent; }
+.play-history-wrap::before,.chronology-subheading::before { content:""; width:3px; height:10px; border-radius:2px; background:#e85bcc; }
+.play-history-wrap::before { display:block; margin:0 0 14px -10px; }
+.play-history-chart { min-height: 286px; padding: 6px 20px 0; }
+.play-history-chart svg { height: 244px; }
+.play-history-labels { inset: 242px 20px auto; }
+.chronology-subheading { min-height:28px; margin-bottom:10px; display:flex; align-items:center; gap:9px; }
+.chronology-subheading h3 { margin:0; font-size:14px; }
+.chronology-subheading > span { padding:3px 9px; border-radius:12px; background:#211b25; color:#c7b8cd; font-size:10px; font-weight:900; }
+.chronology-subheading small { margin-left:auto; color:#a898ae; font-size:10px; }
+.most-played-list { gap:3px; }
+.most-played-item { min-height:72px; grid-template-columns:92px minmax(0,1fr) 80px; gap:12px; padding:3px 14px 3px 3px; border-radius:7px; background:#433949; }
+.most-played-art { width:92px; height:66px; border-radius:5px; }
+.most-played-copy strong { font-size:14px; }
+.most-played-copy small { margin-top:4px; color:#b2a2b8; font-size:10px; }
+.most-played-count { color:#ffc51c; font-size:17px; }
+.chronology-more { min-width:170px; min-height:28px; margin:9px auto 0; padding:0 20px; display:block; border-radius:16px; color:#e7dce9; background:#514657; font-size:10px; font-weight:800; cursor:pointer; }
+.chronology-more:hover { background:#625368; }
+.recent-history-wrap { margin-top:2px; }
+.chronology-score-list { gap:3px; }
+.recent-history-wrap .empty-state { min-height:70px; padding:16px; }
+@media (max-width:700px) {
+  .profile-activity-section { padding-inline:8px; }
+  .play-history-chart { min-height:238px; padding-inline:0; }
+  .play-history-chart svg { height:200px; }
+  .play-history-labels { inset:198px 0 auto; }
+  .most-played-item { grid-template-columns:72px minmax(0,1fr) 58px; }
+  .most-played-art { width:72px; height:58px; }
+}

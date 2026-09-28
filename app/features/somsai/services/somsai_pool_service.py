@@ -137,22 +137,25 @@ async def prepare_missing_metadata(
     existing = set((await session.exec(select(Beatmap.id).where(col(Beatmap.id).in_(ids)))).all()) if ids else set()
     pending_maps = []
     pending_sets: dict[int, Any] = {}
+    failed_ids: list[int] = []
     for beatmap_id in sorted(ids - existing):
         try:
             response = await fetcher.get_beatmap(beatmap_id)
             if response.get("id") != beatmap_id:
                 raise ValueError("beatmap identity mismatch")
             beatmap = await Beatmap.from_resp_no_save(session, response)
-            pending_maps.append(beatmap)
             set_id = beatmap.beatmapset_id
             if set_id not in pending_sets and await session.get(Beatmapset, set_id) is None:
                 set_response = await fetcher.get_beatmapset(set_id)
                 if set_response.get("id") != set_id:
                     raise ValueError("beatmapset identity mismatch")
                 pending_sets[set_id] = await Beatmapset.from_resp_no_save(set_response)
-        except Exception as exc:
-            raise HTTPException(422, f"Не удалось получить метаданные карты {beatmap_id}; пул не изменён") from exc
-    return {"beatmaps": pending_maps, "beatmapsets": list(pending_sets.values())}
+            pending_maps.append(beatmap)
+        except Exception:
+            # Imports are best-effort per beatmap. A broken or unavailable map
+            # must not discard the other maps from the selected stage.
+            failed_ids.append(beatmap_id)
+    return {"beatmaps": pending_maps, "beatmapsets": list(pending_sets.values()), "failed_ids": failed_ids}
 
 
 async def save_pool(

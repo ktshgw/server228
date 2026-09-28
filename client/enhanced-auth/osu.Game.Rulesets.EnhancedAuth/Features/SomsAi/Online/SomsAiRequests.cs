@@ -15,6 +15,7 @@ public sealed class SomsAiState
     [JsonProperty("party")] public SomsParty? Party { get; set; }
     [JsonProperty("invites")] public List<SomsPartyInvite> Invites { get; set; } = new();
     [JsonProperty("queue")] public SomsAiQueue? Queue { get; set; }
+    [JsonProperty("queue_ban")] public SomsAiQueueBan? QueueBan { get; set; }
     [JsonProperty("match")] public SomsAiMatch? Match { get; set; }
     [JsonProperty("customs")] public List<SomsAiCustom> Customs { get; set; } = new();
     [JsonProperty("pools")] public List<SomsAiPool> Pools { get; set; } = new();
@@ -63,8 +64,10 @@ public sealed class SomsPlayer
     [JsonProperty("official_id")] public int? OfficialId { get; set; }
     [JsonProperty("official_username")] public string? OfficialUsername { get; set; }
     [JsonProperty("bot_level")] public string? BotLevel { get; set; }
+    [JsonProperty("bot_skillset")] public string? BotSkillset { get; set; }
     [JsonProperty("rating")] public double Rating { get; set; }
     [JsonProperty("ready")] public bool Ready { get; set; }
+    [JsonProperty("accepted")] public bool Accepted { get; set; }
 }
 
 public sealed class SomsAiDataRequest : APIRequest<JObject>
@@ -104,11 +107,29 @@ public sealed class SomsPartyInvite
     [JsonProperty("target")] public SomsPlayer? Target { get; set; }
 }
 
+public sealed class SomsAiDirectInvite
+{
+    [JsonProperty("id")] public int Id { get; set; }
+    [JsonProperty("kind")] public string Kind { get; set; } = "";
+    [JsonProperty("match_id")] public int? MatchId { get; set; }
+    [JsonProperty("inviter")] public SomsPlayer? Inviter { get; set; }
+}
+
+public sealed class SomsAiQueueBan
+{
+    [JsonProperty("level")] public int Level { get; set; }
+    [JsonProperty("expires_at")] public DateTimeOffset? ExpiresAt { get; set; }
+    [JsonProperty("account_banned")] public bool AccountBanned { get; set; }
+}
+
 public sealed class SomsAiQueue
 {
     [JsonProperty("format")] public string Format { get; set; } = "";
     [JsonProperty("joined_at")] public DateTimeOffset? JoinedAt { get; set; }
     [JsonProperty("state")] public string State { get; set; } = "";
+    [JsonProperty("members")] public List<int> Members { get; set; } = new();
+    [JsonProperty("ruleset_id")] public int RulesetId { get; set; }
+    [JsonProperty("variant_id")] public int VariantId { get; set; }
 }
 
 public sealed class SomsAiTeam
@@ -161,7 +182,6 @@ public sealed class SomsAiMatch
     [JsonProperty("ranked")] public bool Ranked { get; set; }
     [JsonProperty("stage")] public string Stage { get; set; } = "waiting";
     [JsonProperty("room_id")] public long? RoomId { get; set; }
-    [JsonProperty("password")] public string? Password { get; set; }
     [JsonProperty("teams")] public List<SomsAiTeam> Teams { get; set; } = new();
     [JsonProperty("wins")] public int[] Wins { get; set; } = new int[2];
     [JsonProperty("best_of")] public int BestOf { get; set; } = 7;
@@ -180,6 +200,9 @@ public sealed class SomsAiMatch
     [JsonProperty("reason")] public string Reason { get; set; } = "";
     [JsonProperty("winner_team_id")] public int? WinnerTeamId { get; set; }
     [JsonProperty("rating_changes")] public List<SomsAiRatingChange> RatingChanges { get; set; } = new();
+    [JsonProperty("accepted")] public List<int> Accepted { get; set; } = new();
+    [JsonProperty("private")] public bool Private { get; set; }
+    [JsonProperty("arbitrary")] public bool Arbitrary { get; set; }
     public bool IsFinished => Stage is "ended" or "cancelled";
 }
 

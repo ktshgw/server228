@@ -54,13 +54,13 @@ public partial class SomsSeekOverlay : CompositeDrawable, IProvideCursor
                 Child = seekCursor = new MenuCursorContainer { Depth = float.MinValue, HideCursorOnNonMouseInput = false },
             },
             practice = new OsuSpriteText { Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre, Y = 15,
-                Text = "Тренировка · результат не сохраняется и не отправляется", Font = OsuFont.GetFont(size: 15), Colour = Color4.Yellow, Alpha = 0 },
+                Text = "Practice · result is not saved or submitted", Font = OsuFont.GetFont(size: 15), Colour = Color4.Yellow, Alpha = 0 },
             timeline = new Container { Anchor = Anchor.BottomCentre, Origin = Anchor.BottomCentre, RelativeSizeAxes = Axes.X,
                 Width = .85f, Height = 92, Y = -70, Masking = true, CornerRadius = 10, Alpha = 0,
                 Children = new Drawable[]
                 {
                     new Box { RelativeSizeAxes = Axes.Both, Colour = new Color4(10, 10, 20, 235) },
-                    new OsuSpriteText { Position = new Vector2(16, 10), Text = "Перемотка · нажмите или проведите по шкале", Font = OsuFont.GetFont(size: 17) },
+                    new OsuSpriteText { Position = new Vector2(16, 10), Text = "Rewind · click or drag along the timeline", Font = OsuFont.GetFont(size: 17) },
                     time = new OsuSpriteText { Anchor = Anchor.TopRight, Origin = Anchor.TopRight, Position = new Vector2(-16, 10), Font = OsuFont.GetFont(size: 17) },
                     new Container { RelativeSizeAxes = Axes.X, Height = 22, Y = 47, Padding = new MarginPadding { Horizontal = 16 }, Children = new Drawable[]
                     {

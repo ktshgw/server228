@@ -88,12 +88,12 @@ public partial class BeatmapModerationControls : CompositeDrawable
             Children = new Drawable[]
             {
                 singleDifficultyButton = createButton(
-                    "Одна сложность",
-                    "Изменить статус только выбранной сложности",
+                    "Difficulty",
+                    "Change status for selected difficulty only",
                     () => chooseScope(allDifficulties: false)),
                 allDifficultiesButton = createButton(
-                    "Все сложности",
-                    "Изменить статус всех сложностей этой карты",
+                    "Beatmapset",
+                    "Change status for all difficulties of this map",
                     () => chooseScope(allDifficulties: true)),
             },
         };
@@ -158,7 +158,7 @@ public partial class BeatmapModerationControls : CompositeDrawable
         string target;
         if (allDifficulties)
         {
-            target = $"всеми сложностями «{set.Title}»";
+            target = $"all difficulties in “{set.Title}”";
         }
         else
         {
@@ -167,13 +167,13 @@ public partial class BeatmapModerationControls : CompositeDrawable
             {
                 notifications.Post(new SimpleErrorNotification
                 {
-                    Text = "Не удалось определить выбранную сложность.",
+                    Text = "Could not determine the selected difficulty.",
                 });
                 return;
             }
 
             beatmapId = selected.OnlineID;
-            target = $"сложностью «{selected.DifficultyName}»";
+            target = $"difficulty “{selected.DifficultyName}”";
         }
 
         dialogs.Push(new BeatmapModerationActionDialog(target, action => perform(action, beatmapId)));
@@ -217,7 +217,7 @@ public partial class BeatmapModerationControls : CompositeDrawable
                 applyState(currentState);
             notifications.Post(new SimpleErrorNotification
             {
-                Text = $"Не удалось изменить статус карты: {exception.Message}",
+                Text = $"Could not change beatmap status: {exception.Message}",
             });
         };
         api.Queue(request);
@@ -250,13 +250,13 @@ public partial class BeatmapModerationControls : CompositeDrawable
 
     private void postSuccess(string action, int? beatmapId)
     {
-        string target = beatmapId == null ? "Все сложности" : "Выбранная сложность";
+        string target = beatmapId == null ? "All difficulties" : "Selected difficulty";
         string text = action switch
         {
-            "rank" => $"{target} получила Ranked-статус на сервере.",
-            "unrank" => $"{target} деранкнута на сервере.",
-            "love" => $"{target} получила Loved-статус: лидерборд включён, PP отключены.",
-            _ => "Статус карты обновлён.",
+            "rank" => $"{target} was ranked on this server.",
+            "unrank" => $"{target} was unranked on this server.",
+            "love" => $"{target} received Loved status: leaderboard enabled, PP disabled.",
+            _ => "Beatmap status updated.",
         };
         notifications.Post(new SimpleNotification
         {
@@ -292,29 +292,29 @@ public partial class BeatmapModerationActionDialog : PopupDialog
 
     public BeatmapModerationActionDialog(string target, Action<string> action)
     {
-        HeaderText = $"Что сделать с {target}?";
-        BodyText = "Выберите новый статус. Изменение применяется только на этом сервере.";
+        HeaderText = $"What should happen to {target}?";
+        BodyText = "Select a new status. This change applies only to this server.";
         Icon = FontAwesome.Solid.ExclamationTriangle;
         Buttons = new PopupDialogButton[]
         {
             rankButton = new PopupDialogButton
             {
-                Text = "Ранкнуть",
+                Text = "Ranked",
                 Action = () => action("rank"),
             },
             unrankButton = new PopupDialogButton
             {
-                Text = "Деранкнуть",
+                Text = "Graveyard",
                 Action = () => action("unrank"),
             },
             loveButton = new PopupDialogButton
             {
-                Text = "Ловнуть",
+                Text = "Loved",
                 Action = () => action("love"),
             },
             new PopupDialogCancelButton
             {
-                Text = "Отмена",
+                Text = "Cancel",
             },
         };
     }

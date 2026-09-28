@@ -1,4 +1,4 @@
-﻿using osu.Game.Beatmaps;
+using osu.Game.Beatmaps;
 using osu.Game.Rulesets.EnhancedAuth.Objects;
 
 namespace osu.Game.Rulesets.EnhancedAuth.Beatmaps

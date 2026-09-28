@@ -67,7 +67,6 @@ class WebFriendshipTests(unittest.IsolatedAsyncioTestCase):
                 side_effect=[
                     SimpleNamespace(first=lambda: 7),
                     SimpleNamespace(all=lambda: []),
-                    SimpleNamespace(first=lambda: SimpleNamespace(id=17)),
                 ]
             ),
             add=Mock(),
@@ -91,7 +90,6 @@ class WebFriendshipTests(unittest.IsolatedAsyncioTestCase):
             ),
             patch("app.router.private.web_site._web_friendship_payload", new=AsyncMock(return_value=expected)),
             patch("app.router.private.web_site._emit_profile_event") as emit,
-            patch("app.features.somsai.services.soms_activity_service.stage_friend_notification", new=AsyncMock()) as notify,
         ):
             result = await update_web_friendship(
                 "9",
@@ -102,7 +100,6 @@ class WebFriendshipTests(unittest.IsolatedAsyncioTestCase):
             )
 
         require_csrf.assert_called_once()
-        notify.assert_awaited_once()
         added = session.add.call_args.args[0]
         assert isinstance(added, Relationship)
         assert added.user_id == 7
@@ -146,7 +143,6 @@ class WebFriendshipTests(unittest.IsolatedAsyncioTestCase):
             ),
             patch("app.router.private.web_site._web_friendship_payload", new=AsyncMock(return_value=expected)),
             patch("app.router.private.web_site._emit_profile_event") as emit,
-            patch("app.features.somsai.services.soms_activity_service.stage_friend_notification", new=AsyncMock()) as notify,
         ):
             result = await update_web_friendship(
                 "9",
@@ -157,8 +153,6 @@ class WebFriendshipTests(unittest.IsolatedAsyncioTestCase):
             )
 
         session.delete.assert_awaited_once_with(follow)
-        notify.assert_awaited_once()
-        assert notify.call_args.kwargs == {"removed": True}
         session.commit.assert_awaited_once()
         assert emit.call_args.args[0].action == "delete"
         assert result == expected

@@ -1,4 +1,4 @@
-﻿using osu.Framework.Input.Bindings;
+using osu.Framework.Input.Bindings;
 using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.EnhancedAuth

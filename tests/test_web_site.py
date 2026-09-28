@@ -211,6 +211,9 @@ class WebSiteRequestModelTests(unittest.TestCase):
         assert WebBeatmapModerationRequest.model_validate({"action": "rank"}).action == "rank"
         assert WebBeatmapModerationRequest.model_validate({"action": "unrank"}).action == "unrank"
         assert WebBeatmapModerationRequest.model_validate({"action": "love"}).action == "love"
+        scoped = WebBeatmapModerationRequest.model_validate({"action": "rank", "beatmap_id": 123})
+        assert scoped.beatmap_id == 123
+        assert_validation_error(lambda: WebBeatmapModerationRequest.model_validate({"action": "rank", "beatmap_id": 0}))
         assert_validation_error(lambda: WebBeatmapModerationRequest.model_validate({"action": "inherit"}))
         assert_validation_error(lambda: WebBeatmapModerationRequest.model_validate({"action": "rank", "admin": True}))
 

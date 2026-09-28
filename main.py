@@ -370,6 +370,7 @@ async def health_check():
 
 
 _CLIENT_VERSION_PATTERN = re.compile(r"^\d{4}\.\d+\.\d+$")
+_SUPPORTED_CLIENT_VERSIONS = frozenset({"2026.921.0"})
 _CLIENT_MODULES = {
     "enhanced_auth": "osu.Game.Rulesets.EnhancedAuth.dll",
     "startup_hook": "PrivateOsu.StartupHook.dll",
@@ -396,6 +397,8 @@ def _switcher_compatibility_payload() -> dict[str, dict[str, dict[str, str | int
 
     for directory in sorted(root.iterdir(), reverse=True):
         if not directory.is_dir() or not _CLIENT_VERSION_PATTERN.fullmatch(directory.name):
+            continue
+        if directory.name not in _SUPPORTED_CLIENT_VERSIONS:
             continue
 
         if not all(
@@ -461,7 +464,7 @@ async def private_client_manifest():
     if switcher_path.is_file():
         switcher_content = switcher_path.read_bytes()
         content["launcher"] = {
-            "version": "1.1.4",
+            "version": "1.1.7",
             "url": "/client/SOMS-switcher.exe",
             "sha256": hashlib.sha256(switcher_content).hexdigest(),
             "size": len(switcher_content),

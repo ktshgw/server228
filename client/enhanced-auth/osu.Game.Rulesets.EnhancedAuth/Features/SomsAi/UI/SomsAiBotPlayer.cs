@@ -69,7 +69,7 @@ public sealed partial class SomsAiBotPlayer : Player
         if (bot == null || finished || !this.IsCurrentScreen()) return;
         bot.Advance(GameplayClockContainer.CurrentTime);
         var p = bot.Processor;
-        live.Text = $"{SomsAiBotSimulation.NameFor(level)} · BOT\n{p.TotalScore.Value:N0}  ·  {p.Accuracy.Value:P2}\n{p.Combo.Value}x  |  Вы: {ScoreProcessor.TotalScore.Value:N0}";
+        live.Text = $"{SomsAiBotSimulation.NameFor(level)} · BOT\n{p.TotalScore.Value:N0}  ·  {p.Accuracy.Value:P2}\n{p.Combo.Value}x  |  You: {ScoreProcessor.TotalScore.Value:N0}";
         if (!GameplayState.HasPassed) return;
         finished = true;
         bot.Advance(double.PositiveInfinity);

@@ -11,10 +11,10 @@ class SwitcherManifestTests(unittest.TestCase):
         with patch.object(main, "STATIC_DIR", static_root):
             payload = main._switcher_compatibility_payload()
 
-        assert "2026.804.2" in payload
-        assert int(payload["2026.804.2"]["enhanced_auth"]["size"]) > 1_000_000
-        assert int(payload["2026.804.2"]["startup_hook"]["size"]) > 0
-        assert len(str(payload["2026.804.2"]["startup_hook"]["sha256"])) == 64
+        assert set(payload) == {"2026.921.0"}
+        assert int(payload["2026.921.0"]["enhanced_auth"]["size"]) > 1_000_000
+        assert int(payload["2026.921.0"]["startup_hook"]["size"]) > 0
+        assert len(str(payload["2026.921.0"]["startup_hook"]["sha256"])) == 64
 
 
 if __name__ == "__main__":

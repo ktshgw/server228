@@ -7,6 +7,7 @@ used throughout the application for database operations and API responses.
 from app.features.somsai.database.soms_activity import SomsActivity
 from app.features.somsai.database.somsai import (
     SomsaiActivity,
+    SomsaiDirectInvite,
     SomsaiLock,
     SomsaiMatch,
     SomsaiNativeRoom,
@@ -217,6 +218,7 @@ __all__ = [
     "SearchBeatmapsetsResp",
     "SomsActivity",
     "SomsaiActivity",
+    "SomsaiDirectInvite",
     "SomsaiLock",
     "SomsaiMap",
     "SomsaiMatch",

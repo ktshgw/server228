@@ -86,11 +86,11 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
             scaler.Add(scene);
             AddInternal(scaler);
         }
-        scene.Add(new ResultButton(skin, "menu-back", "Назад", back)
+        scene.Add(new ResultButton(skin, "menu-back", "Back", back)
         {
             Name = "soms-legacy-results-back", Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, Size = new Vector2(104, 38),
         });
-        scene.Add(new ResultButton(skin, null, details ? "Классический результат" : "Подробная статистика", () =>
+        scene.Add(new ResultButton(skin, null, details ? "Classic results" : "Detailed statistics", () =>
         {
             details = !details;
             RequestRefresh();
@@ -111,7 +111,7 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
         scene.Add(label("soms-result-player", $"{score.User.Username} · {score.Date.ToLocalTime():dd.MM.yyyy HH:mm}", 11, 10, 43, 442));
         if (!naturalArt(scene, skin, "ranking-title", -15, 12, Anchor.TopRight, Anchor.TopRight))
         {
-            var title = label("soms-result-title", "Результат", 25, -10, 18, 169);
+            var title = label("soms-result-title", "Results", 25, -10, 18, 169);
             title.Anchor = title.Origin = Anchor.TopRight;
             scene.Add(title);
         }
@@ -130,7 +130,7 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
                     new Box { RelativeSizeAxes = Axes.X, Height = 3, Colour = accent },
                 },
             });
-            scene.Add(label("soms-result-score-label", "Общий счёт", 10, 17, 77, 105));
+            scene.Add(label("soms-result-score-label", "Total score", 10, 17, 77, 105));
         }
         // Numeric origins and row spacing are measured against the installed stable screenshot008
         // and its authored ranking-panel, not recovered from stable's obfuscated implementation.
@@ -169,13 +169,13 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
             string extra = score.Ruleset.OnlineID == 0
                 ? sliderSummary(score)
                 : score.Ruleset.OnlineID == 1 && score.Statistics.TryGetValue(HitResult.LargeBonus, out int strong)
-                    ? $"Усиленные ноты: {strong:N0}" : "";
+                    ? $"Strong notes: {strong:N0}" : "";
             if (extra.Length > 0) scene.Add(label("soms-result-extra", extra, 9, 17, 407, 355));
         }
         if (!naturalArt(scene, skin, "ranking-maxcombo", 8 * skin_scale, 480 * skin_scale, Anchor.TopLeft))
-            scene.Add(label("soms-result-combo-label", "Макс. комбо", 12, 17, 300, 163));
+            scene.Add(label("soms-result-combo-label", "Max combo", 12, 17, 300, 163));
         if (!naturalArt(scene, skin, "ranking-accuracy", 291 * skin_scale, 480 * skin_scale, Anchor.TopLeft))
-            scene.Add(label("soms-result-accuracy-label", "Точность", 12, 199, 300, 169));
+            scene.Add(label("soms-result-accuracy-label", "Accuracy", 12, 199, 300, 169));
         number(scene, skin, "soms-result-combo", score.MaxCombo.ToString(CultureInfo.InvariantCulture) + "x", 16, 325, 165, 33);
         number(scene, skin, "soms-result-accuracy", (score.Accuracy * 100).ToString("0.00", CultureInfo.InvariantCulture) + "%", 198, 325, 171, 33);
         if (score.PP.HasValue)
@@ -224,7 +224,7 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
 
         var retry = findNative<RetryButton>(owner);
         if (retry != null)
-            scene.Add(new ResultButton(skin, firstAsset(skin, "pause-retry", "ranking-retry"), "Ещё раз", () => retry.TriggerClick())
+            scene.Add(new ResultButton(skin, firstAsset(skin, "pause-retry", "ranking-retry"), "Retry", () => retry.TriggerClick())
             {
                 Name = "soms-result-retry", Anchor = Anchor.TopRight, Origin = Anchor.TopRight,
                 Position = new Vector2(0, 343), Size = new Vector2(206, 43),
@@ -233,7 +233,7 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
         if (replay != null)
         {
             nativeReplayButton = SomsLegacyInterfacePatch.Member<ClickableContainer>(replay, "button");
-            scene.Add(replayButton = new ResultButton(skin, firstAsset(skin, "pause-replay", "ranking-replay"), "Смотреть повтор", () => nativeReplayButton?.TriggerClick())
+            scene.Add(replayButton = new ResultButton(skin, firstAsset(skin, "pause-replay", "ranking-replay"), "Watch replay", () => nativeReplayButton?.TriggerClick())
             {
                 Name = "soms-result-replay", Anchor = Anchor.TopRight, Origin = Anchor.TopRight,
                 Position = new Vector2(0, retry != null ? 394 : 343), Size = new Vector2(206, 43),
@@ -255,13 +255,13 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
         {
             replayButton.Enabled.Value = nativeReplayButton.Enabled.Value;
             replayButton.Alpha = nativeReplayButton.Enabled.Value ? 1 : .45f;
-            string caption = !nativeReplayButton.Enabled.Value ? "Повтор недоступен" : nativeReplayButton is DownloadButton download ? download.State.Value switch
+            string caption = !nativeReplayButton.Enabled.Value ? "Replay unavailable" : nativeReplayButton is DownloadButton download ? download.State.Value switch
             {
-                DownloadState.NotDownloaded => "Скачать повтор",
-                DownloadState.Downloading => "Загрузка повтора…",
-                DownloadState.Importing => "Импорт повтора…",
-                _ => "Смотреть повтор",
-            } : "Смотреть повтор";
+                DownloadState.NotDownloaded => "Download replay",
+                DownloadState.Downloading => "Downloading replay…",
+                DownloadState.Importing => "Importing replay…",
+                _ => "Watch replay",
+            } : "Watch replay";
             replayButton.SetText(caption);
         }
     }
@@ -303,10 +303,10 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
             },
             2 => new[]
             {
-                stat(HitResult.Great, "fruit-apple", "Фрукты", blue),
-                stat(HitResult.LargeTickHit, "fruit-drop", "Капли", green),
-                stat(HitResult.SmallTickHit, "fruit-drop", "Капельки", yellow),
-                stat(HitResult.SmallTickMiss, "", "Мимо капель", yellow),
+                stat(HitResult.Great, "fruit-apple", "Fruits", blue),
+                stat(HitResult.LargeTickHit, "fruit-drop", "Droplets", green),
+                stat(HitResult.SmallTickHit, "fruit-drop", "Tiny droplets", yellow),
+                stat(HitResult.SmallTickMiss, "", "Missed droplets", yellow),
                 stat(HitResult.Miss, "hit0", "MISS", red),
             },
             3 => new[]
@@ -332,9 +332,9 @@ public sealed partial class SomsLegacyResults : SomsLegacyComponent
     {
         var parts = new List<string>();
         if (score.MaximumStatistics.TryGetValue(HitResult.LargeTickHit, out int ticks) && ticks > 0)
-            parts.Add($"Тики: {score.Statistics.GetValueOrDefault(HitResult.LargeTickHit)}/{ticks}");
+            parts.Add($"Ticks: {score.Statistics.GetValueOrDefault(HitResult.LargeTickHit)}/{ticks}");
         if (score.MaximumStatistics.TryGetValue(HitResult.SliderTailHit, out int tails) && tails > 0)
-            parts.Add($"Концы слайдеров: {score.Statistics.GetValueOrDefault(HitResult.SliderTailHit)}/{tails}");
+            parts.Add($"Slider tails: {score.Statistics.GetValueOrDefault(HitResult.SliderTailHit)}/{tails}");
         return string.Join(" · ", parts);
     }
 

@@ -90,7 +90,7 @@ public sealed partial class SomsOfficialProfileOverlay : UserProfileOverlay
     protected override ProfileHeader CreateHeader()
     {
         var header = base.CreateHeader();
-        AccessTools.PropertySetter(typeof(OverlayTitle), nameof(OverlayTitle.Title)).Invoke(header.Title, [(LocalisableString)"Профиль · osu!"]);
+        AccessTools.PropertySetter(typeof(OverlayTitle), nameof(OverlayTitle.Title)).Invoke(header.Title, [(LocalisableString)"Profile · osu!"]);
         return header;
     }
 
@@ -139,7 +139,7 @@ public sealed partial class SomsOfficialProfileOverlay : UserProfileOverlay
             if (retry == null)
                 AddInternal(retry = new FormButton
                 {
-                    Caption = "Не удалось загрузить официальный профиль", ButtonText = "Повторить",
+                    Caption = "Could not load the official profile", ButtonText = "Retry",
                     RelativeSizeAxes = Axes.X, Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre,
                     Y = 15, Depth = float.MinValue, Name = "soms-official-profile-retry", Action = Fetch
                 });
@@ -226,7 +226,7 @@ internal sealed partial class SomsOfficialProfileAPI : DummyAPIAccess
             or GetUserMostPlayedBeatmapsRequest or GetUserKudosuHistoryRequest))
         {
             request.AttachAPI(transport);
-            request.Fail(new InvalidOperationException("Откройте osu.ppy.sh для этого действия."));
+            request.Fail(new InvalidOperationException("Open osu.ppy.sh to perform this action."));
             return;
         }
         Routes.GetValue(request, _ => new Route(transport.Endpoints.APIUrl.TrimEnd('/')));

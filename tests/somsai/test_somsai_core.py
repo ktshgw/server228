@@ -20,15 +20,19 @@ from app.database import (
     ChatChannel,
     MatchmakingPool,
     Playlist,
+    RankedDodgePenalty,
     Relationship,
     RelationshipType,
     Room,
     Score,
+    SomsaiMap,
     User,
     UserStatistics,
 )
 from app.database.room_participated_user import RoomParticipatedUser
+from app.database.user_account_history import UserAccountHistory
 from app.features.somsai.database.somsai import (
+    SomsaiDirectInvite,
     SomsaiLock,
     SomsaiMatch,
     SomsaiNativeRoom,
@@ -37,12 +41,8 @@ from app.features.somsai.database.somsai import (
     SomsaiRating,
     SomsaiReservation,
 )
-from app.database.user_account_history import UserAccountHistory
-from app.helpers import utcnow
-from app.models.beatmap import BeatmapRankStatus
-from app.models.score import GameMode, Rank
 from app.features.somsai.models.somsai_admin import SomsaiPoolSpec
-from app.router import lio, somsai_lio
+from app.features.somsai.routers import somsai_lio
 from app.features.somsai.routers.somsai_lio import router as interop_router
 from app.features.somsai.services.somsai_match_service import (
     finish_match,
@@ -65,8 +65,22 @@ from app.features.somsai.services.somsai_party_service import (
     renew_reservation,
 )
 from app.features.somsai.services.somsai_pool_service import save_pool
+from app.features.somsai.services.somsai_rank_pool import RANKS, RULES_BY_BAND
 from app.features.somsai.services.somsai_rating_service import ensure_rating, initial_rating
-from app.features.somsai.services.somsai_service import create_custom, join_custom, join_queue, leave_queue, public_state
+from app.features.somsai.services.somsai_service import (
+    create_custom,
+    direct_invite,
+    direct_invite_action,
+    global_presence,
+    join_custom,
+    join_queue,
+    leave_queue,
+    public_state,
+)
+from app.helpers import utcnow
+from app.models.beatmap import BeatmapRankStatus
+from app.models.score import GameMode, Rank
+from app.router import lio
 
 from fastapi import FastAPI, HTTPException
 import httpx
@@ -144,6 +158,7 @@ class SomsaiCoreTests(unittest.IsolatedAsyncioTestCase):
                 RoomParticipatedUser,
                 ChatChannel,
                 Playlist,
+                RankedDodgePenalty,
                 Score,
                 Relationship,
                 MatchmakingPool,
@@ -232,6 +247,47 @@ class SomsaiCoreTests(unittest.IsolatedAsyncioTestCase):
         _, self.pool = await save_pool(
             self.session, SomsaiPoolSpec(name="Fixture pool", slots=slots, active=True), None, None
         )
+        # The mixed-pool service consumes the reusable warehouse. Keep legacy
+        # fixture IDs for NM1..NM12/TB so revision and round tests remain stable.
+        existing = {slot["id"]: slot["beatmap_id"] for slot in slots}
+        all_slots = sorted({slot for rule in RULES_BY_BAND.values() for slot in rule.slots})
+        next_id = 200
+        for slot in all_slots:
+            beatmap_id = existing.get(slot)
+            if beatmap_id is None:
+                next_id += 1
+                beatmap_id = next_id
+                self.db.add(
+                    Beatmap(
+                        id=beatmap_id,
+                        beatmapset_id=100,
+                        user_id=2,
+                        mode=GameMode.OSU,
+                        version=slot,
+                        difficulty_rating=7,
+                        url=f"https://osu.ppy.sh/beatmaps/{beatmap_id}",
+                        total_length=120,
+                        hit_length=100,
+                        checksum=f"{beatmap_id:032x}",
+                        beatmap_status=BeatmapRankStatus.GRAVEYARD,
+                        last_updated=utcnow(),
+                        cs=4,
+                    )
+                )
+            self.db.add(
+                SomsaiMap(
+                    slot=slot,
+                    category=slot[:2],
+                    beatmap_id=beatmap_id,
+                    beatmapset_id=100,
+                    checksum=f"{beatmap_id:032x}",
+                    artist="Test",
+                    title="Tournament",
+                    version=slot,
+                    stats={"stars": 7, "bpm": 180, "cs": 4, "ar": 9, "od": 8, "hp": 6, "length": 120},
+                    eligible_ranks=list(RANKS),
+                )
+            )
         # Equal stored SOMSAI ratings allow immediate pairing while still exercising the real seed separately.
         for uid in range(10, 18):
             for kind in ("1v1", "2v2"):
@@ -259,9 +315,10 @@ class SomsaiCoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(match.stage, "banning")
         self.assertEqual(match.state["pool_candidates"], [])
         self.assertTrue(match.state["pool_selected"])
-        self.assertEqual(len(match.state["source_pools"]), 2)
+        self.assertEqual(match.state["source_pools"], [])
+        self.assertEqual(match.state["selection_kind"], "warehouse")
         self.assertEqual(len({slot["beatmap_id"] for slot in before}), len(before))
-        self.assertTrue(all(slot["source_revision"] == 1 for slot in before))
+        self.assertTrue(all(slot["warehouse_map_id"] for slot in before))
         alternative.name = "Changed by admin during draft"
         alternative.slots = []
         self.db.add(alternative)
@@ -276,8 +333,87 @@ class SomsaiCoreTests(unittest.IsolatedAsyncioTestCase):
         for _ in range(30):
             await self.add_alternative_pool()
         match = await self.make_match()
-        self.assertEqual(len(match.state["source_pools"]), 31)
-        self.assertEqual(match.state["selection_kind"], "mixed")
+        self.assertEqual(match.state["source_pools"], [])
+        self.assertEqual(match.state["selection_kind"], "warehouse")
+
+    async def test_ready_check_timeout_penalises_only_missing_player_and_stays_out_of_history(self):
+        match = await self.make_match()
+        await match_action(self.session, match, 10, "ready")
+        match.state = {**match.state, "deadline": (utcnow() - timedelta(seconds=1)).isoformat()}
+        await tick_match(self.session, match)
+        self.assertEqual(match.stage, "cancelled")
+        penalties = self.db.exec(select(RankedDodgePenalty)).all()
+        self.assertEqual([(penalty.user_id, penalty.level) for penalty in penalties], [(11, 1)])
+        self.assertEqual((await public_state(self.session, 11, 0, 0))["recent_matches"], [])
+        with self.assertRaises(HTTPException) as blocked:
+            await join_queue(self.session, 11, "1v1", 0, 0)
+        self.assertEqual(blocked.exception.status_code, 429)
+
+    async def test_decline_penalises_only_the_declining_player(self):
+        match = await self.make_match()
+        await match_action(self.session, match, 10, "decline")
+        self.assertEqual(match.stage, "cancelled")
+        penalties = self.db.exec(select(RankedDodgePenalty)).all()
+        self.assertEqual([(penalty.user_id, penalty.level) for penalty in penalties], [(10, 1)])
+
+    async def test_global_presence_keeps_search_alive_outside_somsai_screen(self):
+        await join_queue(self.session, 10, "2v2", 0, 0)
+        entry = self.db.exec(select(SomsaiQueue)).one()
+        original_expiry = entry.expires_at
+        snapshot = await global_presence(self.session, 10)
+        self.assertEqual(snapshot["queue"]["format"], "2v2")
+        self.assertGreater(aware(entry.expires_at), aware(original_expiry))
+
+    async def test_2v2_ready_check_penalises_each_non_accepting_player(self):
+        for uid in (10, 11, 12, 13):
+            await join_queue(self.session, uid, "2v2", 0, 0)
+        match = self.db.exec(select(SomsaiMatch)).one()
+        for uid in (10, 12):
+            await match_action(self.session, match, uid, "ready")
+        match.state = {**match.state, "deadline": (utcnow() - timedelta(seconds=1)).isoformat()}
+        await tick_match(self.session, match)
+        self.assertEqual(match.stage, "cancelled")
+        self.assertEqual(
+            {penalty.user_id for penalty in self.db.exec(select(RankedDodgePenalty)).all()},
+            set(members_of(match)) - {10, 12},
+        )
+
+    async def test_direct_duel_and_private_arbitrary_custom_invites(self):
+        await direct_invite(self.session, 10, 11, "duel", 0, 0, None)
+        duel_invite = self.db.exec(select(SomsaiDirectInvite)).one()
+        await direct_invite_action(self.session, 11, duel_invite.id, True)
+        duel = self.db.exec(select(SomsaiMatch)).one()
+        self.assertFalse(duel.ranked)
+        self.assertEqual(duel.stage, "banning")
+        await finish_match(self.session, duel, None, cancelled=True)
+        for uid in (10, 11):
+            await match_action(self.session, duel, uid, "leave_match")
+
+        await create_custom(self.session, 10, "4v4", 0, 0, None, "Secret", private=True, arbitrary=True)
+        custom = self.db.exec(select(SomsaiMatch).where(SomsaiMatch.name == "Secret")).one()
+        self.assertEqual((await public_state(self.session, 12, 0, 0))["customs"], [])
+        with self.assertRaises(HTTPException):
+            await join_custom(self.session, 12, custom.id, 1)
+        await direct_invite(self.session, 10, 12, "custom", 0, 0, custom.id)
+        custom_invite = self.db.exec(select(SomsaiDirectInvite).where(SomsaiDirectInvite.kind == "custom")).one()
+        await direct_invite_action(self.session, 12, custom_invite.id, True)
+        self.assertNotIn(12, members_of(custom))
+        self.assertEqual((await public_state(self.session, 12, 0, 0))["customs"][0]["id"], custom.id)
+        await join_custom(self.session, 12, custom.id, 0)
+        self.assertIn(12, custom.state["teams"][0])
+        await join_custom(self.session, 12, custom.id, 1)
+        self.assertIn(12, custom.state["teams"][1])
+        await direct_invite(self.session, 10, 13, "custom", 0, 0, custom.id)
+        second_invite = self.db.exec(select(SomsaiDirectInvite).where(SomsaiDirectInvite.target_id == 13)).one()
+        await direct_invite_action(self.session, 13, second_invite.id, True)
+        self.assertNotIn(13, members_of(custom))
+        await join_custom(self.session, 13, custom.id, 1)
+        self.assertEqual([len(team) for team in custom.state["teams"]], [1, 2])
+        with self.assertRaises(HTTPException) as forbidden:
+            await match_action(self.session, custom, 12, "custom_start")
+        self.assertEqual(forbidden.exception.status_code, 403)
+        await match_action(self.session, custom, 10, "custom_start")
+        self.assertEqual(custom.stage, "banning")
 
     async def test_custom_target_mmr_is_not_a_rating_change(self):
         await create_custom(self.session, 10, "1v1", 0, 0, None, "MMR test", target_mmr=1250)
@@ -576,7 +712,7 @@ class SomsaiCoreTests(unittest.IsolatedAsyncioTestCase):
         ):
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
                 path = f"/_lio/multiplayer/rooms/{match.room_id}/users/10"
-                response = await client.put(path, json={"password": match.password})
+                response = await client.put(path, json={})
                 self.assertEqual(response.status_code, 200, response.text)
                 self.assertEqual(self.db.exec(select(RoomParticipatedUser)).one().left_at, None)
                 response = await client.delete(path)
@@ -584,6 +720,8 @@ class SomsaiCoreTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(response.json()["room_ended"])
         self.assertIsNotNone(self.db.exec(select(RoomParticipatedUser)).one().left_at)
         room = await self.session.get(Room, match.room_id)
+        self.assertTrue(room.name.startswith("SOMSAI "))
+        self.assertIn(" | ", room.name)
         self.assertGreater(aware(room.ends_at), utcnow())
         room.tournament_mode = False
         self.assertTrue(await lio._end_room_if_empty(self.session, room.id))
@@ -647,13 +785,13 @@ class SomsaiCoreTests(unittest.IsolatedAsyncioTestCase):
     async def test_full_bo7_reaches_tb_and_persists_one_rating_update_after_restart(self):
         match = await self.make_match()
         await self.ready_first_map(match)
-        for round_index, winner in enumerate((0, 1, 0, 1, 0, 1, 0)):
+        for round_index, winner in enumerate((0, 1, 0, 1, 0, 1, 0, 1, 0)):
             if match.stage == "picking":
                 slot = next(slot["id"] for slot in match.state["slots"] if slot["status"] == "available")
                 await match_action(
                     self.session, match, match.state["captains"][match.state["turn_team"]], "pick", slot_id=slot
                 )
-            if round_index == 6:
+            if round_index == 8:
                 self.assertEqual(match.state["current_slot"], "TB")
             for uid in (10, 11):
                 await match_action(self.session, match, uid, "ready")
@@ -668,8 +806,8 @@ class SomsaiCoreTests(unittest.IsolatedAsyncioTestCase):
             self.db.expunge_all()
             match = self.db.get(SomsaiMatch, match_id)
         self.assertEqual(match.stage, "ended")
-        self.assertEqual(match.state["wins"], [4, 3])
-        self.assertEqual(len(match.state["history"]), 7)
+        self.assertEqual(match.state["wins"], [5, 4])
+        self.assertEqual(len(match.state["history"]), 9)
         self.assertEqual(len(match.state["rating_changes"]), 2)
         self.assertEqual(sum(row.games for row in self.db.exec(select(SomsaiRating)).all()), 2)
         self.assertFalse(await settle_round(self.session, match))

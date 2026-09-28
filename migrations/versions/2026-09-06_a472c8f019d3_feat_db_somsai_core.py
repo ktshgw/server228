@@ -108,7 +108,6 @@ def upgrade() -> None:
         sa.Column("owner_id", sa.Integer(), sa.ForeignKey("lazer_users.id"), nullable=False),
         sa.Column("pool_id", sa.Integer(), nullable=False),
         sa.Column("room_id", sa.Integer(), nullable=True),
-        sa.Column("password", sa.String(64), nullable=False),
         sa.Column("stage", sa.String(16), nullable=False),
         sa.Column("revision", sa.Integer(), nullable=False),
         sa.Column("state", sa.JSON(), nullable=False),

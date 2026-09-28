@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import base64
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import hashlib
 import io
 import json
@@ -89,6 +89,7 @@ from app.service.beatmap_ranking_service import (
     apply_local_rank,
     apply_local_unrank,
     get_effective_beatmap_policies,
+    get_effective_beatmap_policy,
     get_effective_beatmapset_policy,
 )
 from app.service.beatmap_search_overlay_service import overlay_local_ranked_beatmapsets
@@ -142,7 +143,12 @@ AVATAR_ATTEMPTS = 5
 SECURITY_WINDOW_SECONDS = 15 * 60
 SECURITY_ATTEMPTS = 10
 WEB_BEST_SCORE_LIMIT = 200
+DOWNLOAD_MIRRORS = {"beatconnect", "mino", "nerinyan", "hinamizawa"}
 LEGACY_DEFAULT_AVATAR_URLS: set[str] = set()
+
+
+class DownloadMirrorPreference(BaseModel):
+    mirror: Literal["beatconnect", "mino", "nerinyan", "hinamizawa"] = "beatconnect"
 RATE_INCREMENT_SCRIPT = """
 local attempts = redis.call('INCR', KEYS[1])
 if attempts == 1 then
@@ -263,11 +269,12 @@ class WebScorePinReorderRequest(BaseModel):
 
 
 class WebBeatmapModerationRequest(BaseModel):
-    """One-click set-wide ranking action exposed on the community site."""
+    """Apply the same set-wide or single-difficulty action as the lazer client."""
 
     model_config = ConfigDict(extra="forbid")
 
     action: Literal["rank", "unrank", "love"]
+    beatmap_id: int | None = Field(default=None, gt=0)
 
 
 class WebEmailChangeRequest(BaseModel):
@@ -667,7 +674,7 @@ async def _profile_extras_payload(
                 .join(Beatmapset, col(Beatmapset.id) == col(Beatmap.beatmapset_id))
                 .where(BeatmapPlaycounts.user_id == user.id, Beatmap.mode == mode)
                 .order_by(col(BeatmapPlaycounts.playcount).desc(), col(BeatmapPlaycounts.id).desc())
-                .limit(50)
+                .limit(200)
             )
         ).all()
     )
@@ -823,6 +830,7 @@ async def _recent_scores(session: Database, mode: GameMode, limit: int = 8) -> l
         .join(User, col(User.id) == col(Score.user_id))
         .where(
             Score.gamemode == mode,
+            col(Score.ended_at) >= utcnow() - timedelta(hours=24),
             col(Score.processed).is_(True),
             col(Score.passed).is_(True),
             or_(col(Score.pp) > 0, col(Score.leaderboard_eligible).is_(True)),
@@ -1747,6 +1755,83 @@ async def _web_friendship_payload(
     }
 
 
+@router.get(f"{WEB_API_PREFIX}/friends", tags=["Website"], include_in_schema=False)
+async def get_web_friends(
+    context: WebSession,
+    session: Database,
+    redis: Redis,
+    mode: ModeName = "osu",
+):
+    """Return the current user's followed players with live presence and mode statistics."""
+
+    game_mode = GameMode(mode)
+    rows = list(
+        (
+            await session.exec(
+                select(Relationship, User, UserStatistics)
+                .join(User, col(User.id) == col(Relationship.target_id))
+                .outerjoin(
+                    UserStatistics,
+                    and_(
+                        col(UserStatistics.user_id) == col(User.id),
+                        col(UserStatistics.mode) == game_mode,
+                    ),
+                )
+                .where(
+                    Relationship.user_id == context.user.id,
+                    Relationship.type == RelationshipType.FOLLOW,
+                    col(User.is_active).is_(True),
+                    col(User.is_bot).is_(False),
+                    ~User.is_restricted_query(col(User.id)),
+                )
+                .order_by(func.lower(col(User.username)), col(User.id))
+            )
+        ).all()
+    )
+    target_ids = {user.id for _, user, _ in rows}
+    mutual_ids = (
+        set(
+            (
+                await session.exec(
+                    select(Relationship.user_id).where(
+                        col(Relationship.user_id).in_(target_ids),
+                        Relationship.target_id == context.user.id,
+                        Relationship.type == RelationshipType.FOLLOW,
+                    )
+                )
+            ).all()
+        )
+        if target_ids
+        else set()
+    )
+    online_ids = set(await get_online_user_ids(redis))
+    items: list[dict[str, Any]] = []
+    seen_target_ids: set[int] = set()
+    for relationship, user, statistics in rows:
+        if user.id in seen_target_ids:
+            continue
+        seen_target_ids.add(user.id)
+        user_payload = await _user_payload(session, user)
+        user_payload["is_online"] = user.id in online_ids
+        items.append(
+            {
+                "relationship_id": relationship.id,
+                "mutual": user.id in mutual_ids,
+                "user": user_payload,
+                "pp": round(float(statistics.pp), 2) if statistics is not None else 0.0,
+                "accuracy": round(float(statistics.hit_accuracy), 2) if statistics is not None else 0.0,
+                "play_count": int(statistics.play_count) if statistics is not None else 0,
+            }
+        )
+
+    return {
+        "items": items,
+        "total": len(items),
+        "online": sum(1 for item in items if item["user"]["is_online"]),
+        "mode": str(game_mode),
+    }
+
+
 @router.get(f"{WEB_API_PREFIX}/users/{{identifier}}", tags=["Website"], include_in_schema=False)
 async def get_web_user(
     identifier: str,
@@ -1822,7 +1907,6 @@ async def update_web_friendship(
     )
 
     following = request.method == "PUT"
-    newly_followed = following and not any(item.type == RelationshipType.FOLLOW for item in outgoing)
     changed = False
     event_action: Literal["add", "update", "delete"] | None = None
     if following:
@@ -1856,29 +1940,6 @@ async def update_web_friendship(
             event_action = "delete"
 
     if changed and event_action is not None:
-        if newly_followed:
-            from app.features.somsai.services.soms_activity_service import stage_friend_notification
-
-            await session.flush()
-            saved_relationship = (
-                await session.exec(
-                    select(Relationship).where(
-                        Relationship.user_id == viewer_user_id,
-                        Relationship.target_id == target_user_id,
-                        Relationship.type == RelationshipType.FOLLOW,
-                    )
-                )
-            ).first()
-            if saved_relationship is None:
-                raise HTTPException(500, "Не удалось сохранить подписку")
-            await stage_friend_notification(session, context.user, target_user_id, saved_relationship.id)
-        elif not following:
-            from app.features.somsai.services.soms_activity_service import stage_friend_notification
-
-            removed_relationship = next(item for item in outgoing if item.type == RelationshipType.FOLLOW)
-            await stage_friend_notification(
-                session, context.user, target_user_id, removed_relationship.id, removed=True
-            )
         await session.commit()
         _emit_profile_event(
             UserRelationshipChangedEvent(
@@ -1985,7 +2046,12 @@ async def get_web_user_scores(
         base = base.where(Score.pinned_order > 0).order_by(col(Score.pinned_order), col(Score.id).desc())
         count_query = count_query.where(Score.pinned_order > 0)
     else:
-        base = base.order_by(col(Score.ended_at).desc(), col(Score.id).desc())
+        recent_cutoff = utcnow() - timedelta(hours=24)
+        base = base.where(col(Score.ended_at) >= recent_cutoff).order_by(
+            col(Score.ended_at).desc(),
+            col(Score.id).desc(),
+        )
+        count_query = count_query.where(col(Score.ended_at) >= recent_cutoff)
     total, offset, effective_page_size = _score_page_window(
         type,
         page,
@@ -2260,6 +2326,32 @@ async def update_web_profile_layout(
         user_id,
     )
     return {"profile_order": profile_order}
+
+
+@router.get(f"{WEB_API_PREFIX}/me/download-mirror", tags=["Website"], include_in_schema=False)
+async def get_web_download_mirror(context: WebSession, session: Database):
+    preference = await session.get(UserPreference, context.user.id)
+    mirror = str((preference.extra if preference else {}).get("download_mirror", "beatconnect"))
+    if mirror == "catboy":
+        mirror = "mino"
+    return {"mirror": mirror if mirror in DOWNLOAD_MIRRORS else "beatconnect"}
+
+
+@router.put(f"{WEB_API_PREFIX}/me/download-mirror", tags=["Website"], include_in_schema=False)
+async def update_web_download_mirror(
+    payload: DownloadMirrorPreference,
+    request: Request,
+    context: WebSession,
+    session: Database,
+):
+    _require_csrf(request, context)
+    preference = await session.get(UserPreference, context.user.id)
+    if preference is None:
+        preference = UserPreference(user_id=context.user.id)
+    preference.extra = {**(preference.extra or {}), "download_mirror": payload.mirror}
+    session.add(preference)
+    await session.commit()
+    return payload
 
 
 def _render_web_userpage(body: str) -> dict[str, str]:
@@ -2895,7 +2987,7 @@ async def moderate_web_beatmapset(
     context: WebSession,
     session: Database,
 ):
-    """Apply a set-wide local status from the community beatmap page."""
+    """Apply a set-wide or single-difficulty local status from the website."""
 
     _require_csrf(request, context)
     _require_web_permission(context, "beatmap_moderation")
@@ -2906,7 +2998,8 @@ async def moderate_web_beatmapset(
 
     await _refresh_web_ranking_target(beatmapset_id)
     actor_user_id = context.user.id
-    reason = f"Website {payload.action} action by {context.user.username}"
+    target = f" for beatmap {payload.beatmap_id}" if payload.beatmap_id is not None else ""
+    reason = f"Website {payload.action} action{target} by {context.user.username}"
     response_status = BeatmapRankStatus.GRAVEYARD
     leaderboard_enabled = False
     pp_enabled = False
@@ -2917,7 +3010,8 @@ async def moderate_web_beatmapset(
                     mutation_session,
                     actor_user_id=actor_user_id,
                     beatmapset_id=beatmapset_id,
-                    replace_difficulty_overrides=True,
+                    beatmap_id=payload.beatmap_id,
+                    replace_difficulty_overrides=payload.beatmap_id is None,
                     reason=reason,
                 )
             else:
@@ -2929,7 +3023,8 @@ async def moderate_web_beatmapset(
                     status=rank_status,
                     leaderboard_enabled=True,
                     pp_enabled=rank_status.has_pp(),
-                    replace_difficulty_overrides=True,
+                    beatmap_id=payload.beatmap_id,
+                    replace_difficulty_overrides=payload.beatmap_id is None,
                     reason=reason,
                 )
                 response_status = rank_status
@@ -2942,10 +3037,16 @@ async def moderate_web_beatmapset(
 
     if payload.action == "unrank":
         async with with_db() as state_session:
-            beatmapset = await state_session.get(Beatmapset, beatmapset_id)
-            if beatmapset is None:
-                raise HTTPException(status_code=404, detail="Beatmapset not found")
-            effective = await get_effective_beatmapset_policy(state_session, beatmapset)
+            if payload.beatmap_id is not None:
+                beatmap = await state_session.get(Beatmap, payload.beatmap_id)
+                if beatmap is None or beatmap.beatmapset_id != beatmapset_id:
+                    raise HTTPException(status_code=404, detail="Beatmap difficulty not found")
+                effective = await get_effective_beatmap_policy(state_session, beatmap)
+            else:
+                beatmapset = await state_session.get(Beatmapset, beatmapset_id)
+                if beatmapset is None:
+                    raise HTTPException(status_code=404, detail="Beatmapset not found")
+                effective = await get_effective_beatmapset_policy(state_session, beatmapset)
             response_status = effective.status
             leaderboard_enabled = effective.leaderboard_enabled
             pp_enabled = effective.pp_enabled
@@ -2953,6 +3054,8 @@ async def moderate_web_beatmapset(
         "ok": True,
         "action": payload.action,
         "beatmapset_id": beatmapset_id,
+        "beatmap_id": payload.beatmap_id,
+        "scope": "beatmap" if payload.beatmap_id is not None else "beatmapset",
         "status": int(response_status),
         "leaderboard_enabled": leaderboard_enabled,
         "pp_enabled": pp_enabled,

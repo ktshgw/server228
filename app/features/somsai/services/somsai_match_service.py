@@ -14,6 +14,7 @@ from app.features.somsai.services.somsai_rating_service import ensure_rating, pe
 from app.helpers import utcnow
 from app.models.room import MatchType, QueueMode, RoomCategory, RoomStatus
 from app.models.score import GameMode
+from app.service.ranked_dodge_service import register_dodge
 
 from sqlalchemy.orm import lazyload
 from sqlmodel import col, select
@@ -23,6 +24,7 @@ FINAL_STAGES = {"ended", "cancelled"}
 PICK_SECONDS = 60
 READY_SECONDS = 120
 RESULT_SECONDS = 45
+MATCH_ACCEPT_SECONDS = 60
 
 
 def deadline(seconds: int) -> str:
@@ -31,6 +33,22 @@ def deadline(seconds: int) -> str:
 
 def members_of(match: SomsaiMatch) -> list[int]:
     return [uid for team in match.state["teams"] for uid in team]
+
+
+async def penalise_unaccepted(session: AsyncSession, match: SomsaiMatch, user_ids: list[int]) -> None:
+    """Apply the existing escalating Ranked dodge penalty once per player and match."""
+    members = members_of(match)
+    for user_id in user_ids:
+        if user_id not in members or match.id is None:
+            continue
+        penalty_key = -(match.id * 100 + members.index(user_id) + 1)
+        await register_dodge(
+            session,
+            penalty_key,
+            user_id,
+            allow_missing_room=True,
+            audit_reason=f"Declined or missed SOMSAI match {match.id} ready check",
+        )
 
 
 def touch(match: SomsaiMatch, state: dict, stage: str | None = None) -> None:
@@ -45,7 +63,7 @@ def touch(match: SomsaiMatch, state: dict, stage: str | None = None) -> None:
 def find_slot(state: dict, slot_id: str) -> dict:
     slot = next((slot for slot in state["slots"] if slot["id"] == slot_id), None)
     if slot is None:
-        reject("Слот не найден.", 404)
+        reject("Slot not found.", 404)
     return slot
 
 
@@ -67,7 +85,7 @@ async def create_match(
 ) -> SomsaiMatch:
     bots = bots or []
     if bots and ranked:
-        reject("Боты доступны только в кастомных матчах.", 422)
+        reject("Bots are available only in custom matches.", 422)
     bot_ids = {bot["user_id"] for bot in bots}
     owner_id = owner_id or teams[0][0]
     ratings = [
@@ -82,12 +100,10 @@ async def create_match(
     from app.features.somsai.services.somsai_rank_pool import average_rank, rank_from_rating
 
     if pool_id is not None:
-        reject("Выбор отдельного турнирного пула больше недоступен. Используйте автоматический пул.", 422)
+        reject("Selecting an individual tournament pool is no longer available. Use the automatic pool.", 422)
     # All new matches, including custom rooms, use automatic slot mixing.
     pool_rank = (
-        average_rank([row.rating for row in ratings])
-        if ranked
-        else (target_rank or rank_from_rating(match_rating))
+        average_rank([row.rating for row in ratings]) if ranked else (target_rank or rank_from_rating(match_rating))
     )
     pool = await mixed_pool(session, ruleset_id, variant_id, match_rating, rank=pool_rank)
     slots = deepcopy(pool["slots"])
@@ -121,7 +137,9 @@ async def create_match(
         "bans": [0, 0],
         "turn_team": first_team,
         "next_pick_team": first_team,
-        "deadline": deadline(90 if ranked else 1800),
+        "deadline": deadline(MATCH_ACCEPT_SECONDS if ranked else 1800),
+        "private": False,
+        "arbitrary": False,
         "history": [],
         "reservations": reservations,
         "current_slot": None,
@@ -142,17 +160,15 @@ async def create_match(
         owner_id=owner_id,
         pool_id=pool["id"],
         state=state,
-        password=secrets.token_urlsafe(24),
     )
     session.add(match)
     await session.flush()
     room = Room(
-        name=f"SOMSAI · {match.id} · {match.name}",
+        name=f"SOMSAI {match.id} | {match.name}",
         category=RoomCategory.REALTIME,
         type=MatchType.TEAM_VERSUS,
         status=RoomStatus.IDLE,
         host_id=BANCHOBOT_ID,
-        password=match.password,
         queue_mode=QueueMode.HOST_ONLY,
         auto_skip=False,
         auto_start_duration=0,
@@ -186,7 +202,6 @@ async def create_match(
     )
     for uid in members_of(match):
         (await activity(session, uid)).match_id = match.id
-    start_filled_custom(match)
     session.add(match)
     await session.flush()
     return match
@@ -273,7 +288,11 @@ async def select_map(session: AsyncSession, match: SomsaiMatch, slot_id: str) ->
     ).first()
     if beatmap is None or beatmap.deleted_at:
         await finish_match(
-            session, match, None, cancelled=True, reason="Карта пула больше недоступна. Матч отменён без рейтинга."
+            session,
+            match,
+            None,
+            cancelled=True,
+            reason="A pool beatmap is no longer available. The match was cancelled without a rating change.",
         )
         return
     # A pool stores the revision visible when it was created. Serve the current
@@ -292,7 +311,11 @@ async def select_map(session: AsyncSession, match: SomsaiMatch, slot_id: str) ->
     state["results_notified"] = False
     state["round_started_at"] = None
     required = deepcopy(slot["mods"])
-    allowed = [{"acronym": "HD"}, {"acronym": "HR"}] if slot["category"] in ("FM", "TB") else []
+    allowed = (
+        [{"acronym": "EZ"}, {"acronym": "HD"}, {"acronym": "HR"}]
+        if slot["category"] in ("FM", "TB")
+        else []
+    )
     session.add(
         Playlist(
             room_id=match.room_id,
@@ -315,12 +338,12 @@ async def draft_action(session: AsyncSession, match: SomsaiMatch, user_id: int, 
     state = deepcopy(match.state)
     team = state["turn_team"]
     if state["captains"][team] != user_id:
-        reject("Сейчас ход капитана другой команды.", 403)
+        reject("It is the other team's captain's turn.", 403)
     if (action == "ban" and match.stage != "banning") or (action == "pick" and match.stage != "picking"):
-        reject("Фаза драфта уже изменилась.")
+        reject("The draft phase has already changed.")
     slot = find_slot(state, slot_id)
     if slot["status"] != "available":
-        reject("Этот слот уже недоступен.")
+        reject("This slot is no longer available.")
     if action == "ban":
         slot["status"] = "banned"
         slot["selected_by_team"] = team
@@ -399,9 +422,7 @@ async def settle_round(session: AsyncSession, match: SomsaiMatch, *, force: bool
             }
             if uid in by_user
             else {},
-            "maximum_statistics": bot_scores[str(uid)].get("maximum_statistics", {})
-            if str(uid) in bot_scores
-            else {},
+            "maximum_statistics": bot_scores[str(uid)].get("maximum_statistics", {}) if str(uid) in bot_scores else {},
             "rank": bot_scores[str(uid)].get("rank", "A")
             if str(uid) in bot_scores
             else by_user[uid].rank
@@ -455,7 +476,7 @@ async def complete_round(
         await finish_match(session, match, winner)
     elif winner is None and not forfeit:
         if sum(item["winner_team_id"] is None for item in state["history"]) >= 3:
-            await finish_match(session, match, None, reason="Три ничьи: матч завершён вничью.")
+            await finish_match(session, match, None, reason="Three draws: the match ended in a draw.")
         else:
             await select_map(session, match, slot["id"])
     elif min(state["wins"]) == state["best_of"] // 2:
@@ -479,19 +500,19 @@ async def match_action(
     pool_id: int | None = None,
 ) -> None:
     if user_id not in members_of(match):
-        reject("Вы не участвуете в этом матче.", 403)
+        reject("You are not participating in this match.", 403)
     if match.stage in FINAL_STAGES:
         if action == "leave_match":
             (await activity(session, user_id)).match_id = None
             return
-        reject("Матч уже завершён.")
+        reject("The match has already ended.")
     if expected_revision is not None and expected_revision != match.revision:
-        reject("Состояние матча обновилось. Повторите действие.")
+        reject("The match state has changed. Try again.")
     if action == "pool_vote":
         if match.stage != "pool_select" or user_id not in match.state["captains"]:
-            reject("Пул выбирают капитаны во время голосования.", 403)
+            reject("Captains select the pool during voting.", 403)
         if not any(candidate["id"] == pool_id for candidate in match.state["pool_candidates"]):
-            reject("Выберите один из предложенных турниров.", 422)
+            reject("Select one of the suggested tournaments.", 422)
         state = deepcopy(match.state)
         team = str(state["captains"].index(user_id))
         state["pool_votes"][team] = pool_id
@@ -502,29 +523,39 @@ async def match_action(
         await draft_action(session, match, user_id, action, slot_id or "")
     elif action == "leave_match":
         team = next(i for i, members in enumerate(match.state["teams"]) if user_id in members)
-        await finish_match(session, match, 1 - team, cancelled=match.stage == "waiting", reason="Игрок покинул матч.")
+        await finish_match(
+            session, match, 1 - team, cancelled=match.stage == "waiting", reason="A player left the match."
+        )
     elif action == "custom_start":
         if match.ranked or match.owner_id != user_id:
-            reject("Запустить кастом может его создатель.", 403)
+            reject("Only its creator can start this custom match.", 403)
         if match.stage != "waiting":
-            return  # Older clients may still send this after automatic start.
+            return
         size = int(match.format[0])
-        if any(len(team) != size for team in match.state["teams"]):
-            reject("Сначала заполните обе команды.")
+        if match.state.get("arbitrary"):
+            if any(len(team) < 1 for team in match.state["teams"]):
+                reject("Each team needs at least one player.")
+        elif any(len(team) != size for team in match.state["teams"]):
+            reject("Fill both teams first.")
         start_draft(match)
+    elif action == "decline":
+        if not match.ranked or match.stage != "waiting":
+            reject("This match can no longer be declined.")
+        await penalise_unaccepted(session, match, [user_id])
+        await finish_match(session, match, None, cancelled=True, reason="A player declined the ready check.")
     elif action in {"ready", "unready"}:
         if match.stage not in {"waiting", "ready"}:
-            reject("Сейчас нельзя подтвердить готовность.")
+            reject("You cannot confirm readiness right now.")
         state = deepcopy(match.state)
         if action == "unready" and match.stage != "ready":
-            reject("Снять готовность можно только перед картой.")
+            reject("Readiness can only be cancelled before a beatmap.")
         key = "accepted" if match.stage == "waiting" else "ready"
         state[key] = sorted(set(state[key]) | {user_id}) if action == "ready" else sorted(set(state[key]) - {user_id})
         touch(match, state)
         if match.ranked and match.stage == "waiting" and set(state["accepted"]) == set(members_of(match)):
             start_draft(match)
     else:
-        reject("Неизвестное действие.", 422)
+        reject("Unknown action.", 422)
     session.add(match)
 
 
@@ -541,9 +572,14 @@ async def match_payload(session: AsyncSession, match: SomsaiMatch, *, internal: 
             player.update(rating=rating.rating, ready=uid in state["ready"], accepted=uid in state["accepted"])
             bot = next((b for b in state.get("bots", []) if b["user_id"] == uid), None)
             if bot:
+                profile = bot.get("ai_profile") or {}
+                archetype = str(profile.get("archetype") or "unknown").replace("_", " ").title()
+                weakness = profile.get("weakness")
+                skillset = archetype + (f" / {str(weakness).replace('_', ' ').title()}" if weakness else "")
                 player.update(
                     is_bot=True,
                     bot_level=bot["level"],
+                    bot_skillset=skillset,
                     official_id=bot.get("official_id"),
                     official_username=bot.get("username"),
                     official_rank=bot.get("global_rank"),
@@ -552,7 +588,7 @@ async def match_payload(session: AsyncSession, match: SomsaiMatch, *, internal: 
         teams.append(
             {
                 "id": team_id,
-                "name": "Красная команда" if team_id == 0 else "Синяя команда",
+                "name": "Red Team" if team_id == 0 else "Blue Team",
                 "captain_id": state["captains"][team_id],
                 "members": players,
             }
@@ -569,7 +605,6 @@ async def match_payload(session: AsyncSession, match: SomsaiMatch, *, internal: 
         "revision": match.revision,
         "owner_id": match.owner_id,
         "room_id": match.room_id,
-        "password": match.password,
         "teams": teams,
         "wins": state["wins"],
         "best_of": state["best_of"],
@@ -591,6 +626,9 @@ async def match_payload(session: AsyncSession, match: SomsaiMatch, *, internal: 
         "rating_changes": state.get("rating_changes", []),
         "reason": state.get("reason", ""),
         "source_url": state.get("source_url"),
+        "private": bool(state.get("private")),
+        "arbitrary": bool(state.get("arbitrary")),
+        "accepted": list(state.get("accepted", [])),
     }
     if internal:
         payload.update(
@@ -634,7 +672,7 @@ async def room_event(
             [0, 0],
             [],
             forfeit=True,
-            reason="Игровой сервер не смог запустить карту: раунд пропущен без очков.",
+            reason="The game server could not start the beatmap. The round was skipped without points.",
         )
         return await match_payload(session, match, internal=True)
     state = deepcopy(match.state)
@@ -658,7 +696,7 @@ async def room_event(
             or (not state.get("force_start") and set(state["ready"]) != set(members_of(match)))
             or set(state["available"]) != set(members_of(match))
         ):
-            reject("Не все участники готовы.")
+            reject("Not all participants are ready.")
         state["round_started_at"] = utcnow().isoformat()
         state["deadline"] = deadline(1800)
         touch(match, state, "playing")
@@ -674,8 +712,6 @@ async def room_event(
 
 
 async def tick_match(session: AsyncSession, match: SomsaiMatch) -> None:
-    if start_filled_custom(match):
-        session.add(match)
     if match.stage in FINAL_STAGES:
         return
     state = match.state
@@ -684,7 +720,11 @@ async def tick_match(session: AsyncSession, match: SomsaiMatch) -> None:
         seconds=90
     ):
         await finish_match(
-            session, match, None, cancelled=True, reason="Потеряна связь с игровым сервером. Рейтинг не изменён."
+            session,
+            match,
+            None,
+            cancelled=True,
+            reason="Connection to the game server was lost. Rating was not changed.",
         )
         return
     offline_teams = [
@@ -701,7 +741,7 @@ async def tick_match(session: AsyncSession, match: SomsaiMatch) -> None:
             match,
             1 - offline_teams[0] if len(offline_teams) == 1 else None,
             cancelled=len(offline_teams) == 2,
-            reason="Время на переподключение истекло.",
+            reason="The reconnection period expired.",
         )
         return
     expired = state["deadline"] is not None and aware(datetime.fromisoformat(state["deadline"])) <= now
@@ -729,14 +769,19 @@ async def tick_match(session: AsyncSession, match: SomsaiMatch) -> None:
         await settle_round(session, match, force=expired)
     elif expired:
         if match.stage == "waiting":
-            await finish_match(session, match, None, cancelled=True, reason="Не все игроки подтвердили участие.")
+            missing = [uid for uid in members_of(match) if uid not in state.get("accepted", [])]
+            if match.ranked:
+                await penalise_unaccepted(session, match, missing)
+            await finish_match(session, match, None, cancelled=True, reason="Not all players accepted the match.")
         elif match.stage == "pool_select":
             finish_pool_vote(match)
             session.add(match)
         elif match.stage in {"banning", "picking"}:
             available = [slot for slot in state["slots"] if slot["status"] == "available"]
             if not available:
-                await finish_match(session, match, None, cancelled=True, reason="В пуле закончились доступные карты.")
+                await finish_match(
+                    session, match, None, cancelled=True, reason="The pool has no available beatmaps left."
+                )
                 return
             captain = state["captains"][state["turn_team"]]
             await draft_action(
@@ -753,9 +798,14 @@ async def tick_match(session: AsyncSession, match: SomsaiMatch) -> None:
                     [0, 0],
                     [],
                     forfeit=True,
-                    reason="Карта не скачана вовремя: техническое поражение в раунде."
-                    if missing
-                    else "Игровой сервер не подтвердил запуск: раунд пропущен без очков.",
+                    reason=(
+                        "The team did not satisfy the FreeMod requirements before the timer expired: "
+                        "technical round loss."
+                        if missing and find_slot(state, state["current_slot"])["category"] == "FM"
+                        else "The beatmap was not downloaded in time: technical round loss."
+                        if missing
+                        else "The game server did not confirm the start. The round was skipped without points."
+                    ),
                 )
             else:
                 next_state = deepcopy(state)
@@ -765,5 +815,5 @@ async def tick_match(session: AsyncSession, match: SomsaiMatch) -> None:
                 session.add(match)
         elif match.stage == "playing":
             await finish_match(
-                session, match, None, cancelled=True, reason="Матч не завершился вовремя. Рейтинг не изменён."
+                session, match, None, cancelled=True, reason="The match did not finish in time. Rating was not changed."
             )

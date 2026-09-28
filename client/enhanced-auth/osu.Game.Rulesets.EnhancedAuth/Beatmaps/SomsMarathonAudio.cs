@@ -36,20 +36,20 @@ public sealed class SomsMarathonAudio : IDisposable
     public static float[] Decode(string path, int startMs, int endMs, CancellationToken token)
     {
         int channel = Bass.CreateStream(path, 0, 0, BassFlags.Decode | BassFlags.Float | BassFlags.Prescan);
-        if (channel == 0) throw new InvalidOperationException("Не удалось прочитать аудио карты: " + Bass.LastError);
+        if (channel == 0) throw new InvalidOperationException("Could not read beatmap audio: " + Bass.LastError);
         try
         {
             if (!Bass.ChannelGetInfo(channel, out var info) || info.Channels is < 1 or > 8)
-                throw new InvalidOperationException("Неподдерживаемый формат аудио.");
+                throw new InvalidOperationException("Unsupported audio format.");
             double lengthMs = Bass.ChannelBytes2Seconds(channel, Bass.ChannelGetLength(channel)) * 1000;
             if (startMs >= lengthMs || endMs <= startMs || endMs - startMs > 183000)
-                throw new InvalidOperationException("Фрагмент находится за пределами аудио.");
+                throw new InvalidOperationException("The segment is outside the audio range.");
             int outputFrames = (int)Math.Round((endMs - startMs) * Frequency / 1000.0);
             var result = new float[outputFrames * 2];
             int sourceFrames = (int)Math.Ceiling((Math.Min(endMs, lengthMs) - Math.Max(0, startMs)) * info.Frequency / 1000.0) + 2;
             var source = new float[Math.Max(0, sourceFrames) * info.Channels];
             if (!Bass.ChannelSetPosition(channel, Bass.ChannelSeconds2Bytes(channel, Math.Max(0, startMs) / 1000.0)))
-                throw new InvalidOperationException("Не удалось перейти к фрагменту аудио.");
+                throw new InvalidOperationException("Could not seek to the audio segment.");
             var block = new float[16384];
             int read = 0;
             while (read < source.Length)

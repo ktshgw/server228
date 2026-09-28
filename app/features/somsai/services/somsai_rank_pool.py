@@ -40,7 +40,7 @@ def _slots(values: dict[str, str]) -> dict[str, tuple[float | None, float | None
 
 RULES_BY_BAND = {
     "ARCHSOM": RankPoolRule(13, 2, _slots({
-        **{f"NM{i}": "8+" for i in range(1, 6)}, "NM6": "6.01+",
+        **{f"NM{i}": "8+" for i in range(1, 6)}, "NM6": "7.01+",
         "HD1": "8+", "HD2": "7.6+", "HD3": "7.8+",
         "HR1": "8+", "HR2": "7.6+", "HR3": "7.8+",
         **{f"DT{i}": "8+" for i in range(1, 5)},
@@ -48,7 +48,7 @@ RULES_BY_BAND = {
     })),
     "DIAMOND": RankPoolRule(13, 2, _slots({
         "NM1": "7.6-7.99", "NM2": "7.6-7.99", "NM3": "7.6-7.99", "NM4": "7.4-7.99",
-        "NM5": "7.6-7.99", "NM6": "5-6", "HD1": "7.6-7.99", "HD2": "7.2-7.59",
+        "NM5": "7.6-7.99", "NM6": "6-7", "HD1": "7.6-7.99", "HD2": "7.2-7.59",
         "HD3": "7.4-7.79", "HR1": "7.6-7.99", "HR2": "7.2-7.59", "HR3": "7.4-7.79",
         "DT1": "7.6-7.99", "DT2": "7.6-7.99", "DT3": "7.6-7.99", "DT4": "7.6-7.99",
         "FM1": "7.2-7.59", "FM2": "7.2-7.59", "FM3": "7.2-7.59", "TB": "8-8.29",
@@ -74,7 +74,7 @@ RULES_BY_BAND = {
     "BRONZE": RankPoolRule(7, 1, _slots({
         "NM1": "<5.8", "NM2": "<5.5", "NM3": "<5.5", "NM4": "<5.5", "HD1": "<5.8",
         "HD2": "<5.4", "HR1": "<5.8", "HR2": "<5.6", "DT1": "<5.8", "DT2": "<5.8",
-        "DT3": "<5.8", "TB": "6.6-6.99",
+        "DT3": "<5.8", "TB": "6.6-6.79",
     })),
 }
 
@@ -82,7 +82,7 @@ RULES_BY_BAND = {
 def normalise_rank(value: str) -> str:
     rank = " ".join(value.upper().split())
     if rank not in RANKS:
-        raise ValueError("Неизвестный ранг SOMSAI")
+        raise ValueError("Unknown SOMSAI rank")
     return rank
 
 
@@ -126,7 +126,7 @@ def eligible_ranks(slot: str, stars: float) -> list[str]:
 
 def eligibility_label(ranks: list[str]) -> str:
     if not ranks:
-        return "Не используется"
+        return "Not used"
     groups: list[str] = []
     for band in BANDS:
         present = [rank.split()[1] for rank in ranks if rank.startswith(f"{band} ")]

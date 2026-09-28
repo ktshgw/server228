@@ -24,7 +24,15 @@ namespace osu.Server.Spectator
     #endregion
 
     public static bool TrackBuildUserCounts { get; set; }
-    public static bool ClientCheckVersion { get; set; }
+    public static bool ClientCheckVersion { get; set; } = true;
+    public static string[] RequiredClientVersionHashes { get; set; } =
+    [
+      "f1b6c9ce20c39620c0965a0d25bf0a9b",
+      "3d5918e57f4706d25d3d234b985a8b04",
+      "133ebceecc1bb64e60b886812f69ad4c",
+      "07b9a009056ede0eb3ca7ec413b00d66",
+      "255abec932d21cb133e06ef2fe94d41a",
+    ];
     public static int[] ClientCheckVersionExemptGroups { get; set; }
 
     public static int ServerPort { get; set; } = 8086;
@@ -105,6 +113,8 @@ namespace osu.Server.Spectator
 
       TrackBuildUserCounts = bool.TryParse(Environment.GetEnvironmentVariable("TRACK_BUILD_USER_COUNTS"), out bool trackBuildUserCounts) ? trackBuildUserCounts : TrackBuildUserCounts;
       ClientCheckVersion = bool.TryParse(Environment.GetEnvironmentVariable("CLIENT_CHECK_VERSION"), out bool clientCheckVersion) ? clientCheckVersion : ClientCheckVersion;
+      RequiredClientVersionHashes = (Environment.GetEnvironmentVariable("SOMS_REQUIRED_CLIENT_HASHES") ?? string.Join(',', RequiredClientVersionHashes))
+                                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
       ClientCheckVersionExemptGroups = Environment.GetEnvironmentVariable("CLIENT_CHECK_VERSION_EXEMPT_GROUPS")?.Split(',')
                                                   .Select(id =>

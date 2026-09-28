@@ -1,6 +1,54 @@
 {
   "releases": [
     {
+      "version": "28.9.26b",
+      "date": "2026-09-28",
+      "channel": "BETA RELEASE",
+      "type": "release",
+      "groups": [
+        {
+          "kind": "added",
+          "title": "New",
+          "items": [
+            "Added background SOMSAI matchmaking with penalties for declining matches.",
+            "Added download mirrors to both the client and the website as a fallback in case the primary links are down.",
+            "Added Friends tab on web.",
+            "Added player-selectable EZ, HD and HR combinations to SOMSAI FreeMod and tiebreaker rounds.",
+            "Added an option to randomize skin on every map start.",
+            "Added private custom matches to SOMSAI.",
+            "Added an option to ignore recommended difficulty in Song Select.",
+            "Added an Easter egg to very low-ranked SOMSAI lobbies.",
+            "Added mandatory switcher version checks and safer client startup."
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixes",
+          "items": [
+            "Map difficulty in Multiplayer now dynamically recalculates stats based on the local mod set.",
+            "Fixed an issue where a map was unnecessarily downloaded when entering the SOMSAI lobby."
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changes",
+          "items": [
+            "Reworked SOMSAI AI bots with rank-scaled skill, rerolled archetypes, player traits and realistic score simulation.",
+            "Replaced Ranked Play with SOMSAI entirely.",
+            "Improved the profile play history tab.",
+            "Moved recent plays to the Chronology tab; scores older than 24 hours are now automatically cleared from the tab."
+          ]
+        },
+        {
+          "kind": "removed",
+          "title": "Removed",
+          "items": [
+            "Removed notifications when other players add or remove you as a friend."
+          ]
+        }
+      ]
+    },
+    {
       "version": "25.9.26b1",
       "date": "2026-09-25",
       "channel": "BETA HOTFIX",

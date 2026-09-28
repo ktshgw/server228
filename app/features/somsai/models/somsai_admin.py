@@ -78,13 +78,21 @@ class SomsaiMapDelete(BaseModel):
 class SomsaiWarehouseImport(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     url: str = Field(min_length=10, max_length=500)
-    round: str = Field(default="__all__", min_length=1, max_length=160)
+    rounds: list[str] = Field(default_factory=lambda: ["__all__"], min_length=1, max_length=64)
     reason: str = Field(default="no reason", max_length=500)
 
-    @field_validator("round", mode="before")
+    @field_validator("rounds", mode="before")
     @classmethod
     def all_rounds(cls, value):
-        return value or "__all__"
+        values = value or ["__all__"]
+        if not isinstance(values, list):
+            values = [values]
+        cleaned = list(dict.fromkeys(str(item).strip() for item in values if str(item).strip()))
+        if "__all__" in cleaned:
+            return ["__all__"]
+        if not cleaned or any(len(item) > 160 for item in cleaned):
+            raise ValueError("Select at least one valid tournament stage")
+        return cleaned
 
 
 class SomsaiImportRequest(BaseModel):

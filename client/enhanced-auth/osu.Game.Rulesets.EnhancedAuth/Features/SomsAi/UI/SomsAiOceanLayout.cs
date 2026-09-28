@@ -22,7 +22,7 @@ public partial class SomsAiScreen
         if (matchOnly) { buildArenaLayout(); return; }
         Body.Spacing = new Vector2(0, 14);
         if (!matchOnly) Body.Add(new SomsAiOceanHeader(matchOnly || partyOnly,
-            matchOnly ? "ТУРНИРНАЯ АРЕНА" : partyOnly ? "ВАША КОМАНДА" : ""));
+            matchOnly ? "TOURNAMENT ARENA" : partyOnly ? "YOUR TEAM" : ""));
         StatusText.Colour = SomsAiOceanTheme.Cream;
         StatusText.Shadow = true;
         StatusText.ShadowColour = SomsAiOceanTheme.Ink;

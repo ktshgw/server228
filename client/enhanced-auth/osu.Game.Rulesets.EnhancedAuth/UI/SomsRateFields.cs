@@ -33,8 +33,8 @@ public static class SomsRateConversion
 public partial class SomsRateFields : FillFlowContainer
 {
     private readonly ModDoubleTime mod;
-    private readonly FormTextBox bpm = new() { Caption = "BPM карты", SelectAllOnFocus = true, LengthLimit = 16 };
-    private readonly FormTextBox ar = new() { Caption = "AR карты", SelectAllOnFocus = true, LengthLimit = 16 };
+    private readonly FormTextBox bpm = new() { Caption = "BPM", SelectAllOnFocus = true, LengthLimit = 16 };
+    private readonly FormTextBox ar = new() { Caption = "AR", SelectAllOnFocus = true, LengthLimit = 16 };
     private IBindable<WorkingBeatmap> working = null!;
     private IBindable<IReadOnlyList<Mod>> selected = null!;
     private IBindable<RulesetInfo> ruleset = null!;

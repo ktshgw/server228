@@ -1,87 +1,58 @@
 #nullable enable
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace SomsAi.Shared;
 
+/// <summary>A freshly rolled, match-scoped competitive identity.</summary>
 public sealed class BotSkillProfile
 {
-    [JsonPropertyName("rank")] public int? Rank { get; set; }
-    [JsonPropertyName("comfort")] public double Comfort { get; set; }
-    [JsonPropertyName("samples")] public BotMapSample[] Samples { get; set; } = Array.Empty<BotMapSample>();
+    [JsonPropertyName("version")] public int Version { get; set; } = 2;
+    [JsonPropertyName("rating")] public int Rating { get; set; } = 1500;
+    [JsonPropertyName("division")] public string Division { get; set; } = "GOLD I";
+    [JsonPropertyName("minimum_score")] public int MinimumScore { get; set; } = 700_000;
+    [JsonPropertyName("minimum_accuracy")] public double MinimumAccuracy { get; set; } = 91;
+    [JsonPropertyName("archetype")] public string Archetype { get; set; } = "allrounder";
+    [JsonPropertyName("weakness")] public string? Weakness { get; set; }
+    [JsonPropertyName("match_form")] public double MatchForm { get; set; } = .80;
+    [JsonPropertyName("consistency")] public double Consistency { get; set; } = .04;
+    [JsonPropertyName("freemod_preference")] public string? FreemodPreference { get; set; }
+    [JsonPropertyName("tiebreaker_preference")] public string? TiebreakerPreference { get; set; }
+    [JsonPropertyName("slot_modifiers")] public Dictionary<string, double> SlotModifiers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
-public sealed class BotMapSample
-{
-    [JsonPropertyName("stars")] public double Stars { get; set; }
-    [JsonPropertyName("mods")] public string[] Mods { get; set; } = Array.Empty<string>();
-    [JsonPropertyName("bpm")] public double Bpm { get; set; }
-    [JsonPropertyName("nps")] public double Nps { get; set; }
-    [JsonPropertyName("ar")] public double Ar { get; set; }
-    [JsonPropertyName("cs")] public double Cs { get; set; }
-    [JsonPropertyName("length")] public double Length { get; set; }
-    [JsonPropertyName("slider_ratio")] public double SliderRatio { get; set; }
-    [JsonPropertyName("ability")] public double Ability { get; set; }
-    [JsonPropertyName("quality")] public double Quality { get; set; } = 1;
-    [JsonPropertyName("aim_ratio")] public double AimRatio { get; set; }
-    [JsonPropertyName("stamina")] public double Stamina { get; set; }
-    [JsonPropertyName("rhythm")] public double? Rhythm { get; set; }
-    [JsonPropertyName("angles")] public double? Angles { get; set; }
-    [JsonPropertyName("slider_tech")] public double? SliderTech { get; set; }
-    [JsonPropertyName("slider_control")] public double? SliderControl { get; set; }
-}
+public readonly record struct BotAttemptPlan(double Performance, long TargetScore, double TargetAccuracy);
 
 public static class BotSkillModel
 {
-    // Keep this small numerical model in sync with somsai_bot_skill.py's draft
-    // prediction. Actual gameplay always supplies native, mod-adjusted stars.
-    public static double RankSkill(int? rank, string level)
+    public static BotSkillProfile Fallback(string level) => level.ToLowerInvariant() switch
     {
-        int value = rank is > 0 ? rank.Value : level.ToLowerInvariant() switch
-        {
-            "easy" => 350000, "hard" => 3500,
-            "expert" or "impossible" or "top1000" => 350,
-            "mrekk" => 1, _ => 35000,
-        };
-        return Math.Clamp(11.6 - 1.4 * Math.Log10(value), 2.5, 11);
+        "easy" => profile(700_000, 81, .76, "BRONZE I", 500),
+        "medium" => profile(700_000, 87.5, .80, "SILVER I", 1050),
+        "hard" => profile(700_000, 91, .82, "GOLD I", 1550),
+        "expert" or "impossible" or "top1000" => profile(800_000, 94.5, .84, "DIAMOND V", 2950),
+        "mrekk" => profile(800_000, 99.7, 1, "ARCHSOM", 3600),
+        _ => profile(700_000, 91, .80, "GOLD I", 1550),
+    };
+
+    public static BotAttemptPlan Plan(BotSkillProfile profile, string? slot, int seed)
+    {
+        var random = new Random(seed);
+        double modifier = slot != null && profile.SlotModifiers.TryGetValue(slot, out double value) ? value : 0;
+        double spread = Math.Clamp(profile.Consistency, 0, .12);
+        // Average two rolls to avoid a uniform distribution with too many extreme games.
+        double variance = ((random.NextDouble() + random.NextDouble()) / 2 - .5) * 2 * spread;
+        double performance = Math.Clamp(profile.MatchForm + modifier + variance, 0, 1);
+        long score = (long)Math.Round(profile.MinimumScore + performance * (1_000_000 - profile.MinimumScore));
+        double floor = Math.Clamp(profile.MinimumAccuracy / 100, .50, 1);
+        double accuracy = floor + Math.Pow(performance, .9) * (1 - floor);
+        return new(performance, Math.Clamp(score, profile.MinimumScore, 1_000_000), Math.Clamp(accuracy, floor, 1));
     }
 
-    public static double ComfortFor(BotSkillProfile? profile, BotMapSample target, string level)
+    private static BotSkillProfile profile(int score, double accuracy, double form, string division, int rating) => new()
     {
-        double baseline = profile?.Comfort is > 0 and < 20 ? profile.Comfort : RankSkill(profile?.Rank, level);
-        if (profile?.Samples is not { Length: > 0 } samples) return baseline;
-        var nearest = samples.Select(sample => (Sample: sample, Distance: distance(sample, target)))
-            .OrderBy(item => item.Distance).Take(6)
-            .Select(item => (item.Sample, item.Distance, Weight: Math.Exp(-item.Distance) * item.Sample.Quality)).ToArray();
-        double total = nearest.Sum(item => item.Weight);
-        double observed = nearest.Sum(item => item.Sample.Ability * item.Weight) / Math.Max(1e-9, total);
-        double reference = samples.Select(s => s.Ability).OrderBy(v => v).ElementAt(samples.Length / 2);
-        double adjustment = Math.Clamp(observed - reference, -.65, .65) * Math.Min(1, total / 2);
-        return baseline + adjustment + Math.Min(.25, total / 12) - Math.Min(.3, nearest[0].Distance * .07);
-    }
-
-    private static double distance(BotMapSample sample, BotMapSample target)
-    {
-        double result = sample.Mods.Except(target.Mods).Count() * .9 + target.Mods.Except(sample.Mods).Count() * .9;
-        result += Math.Min(2, Math.Abs(sample.Bpm - target.Bpm) / 90);
-        result += Math.Min(2, Math.Abs(sample.Nps - target.Nps) / 5);
-        result += Math.Min(2, Math.Abs(sample.Ar - target.Ar) / 3);
-        result += Math.Min(2, Math.Abs(sample.Cs - target.Cs) / 3);
-        result += Math.Min(2, Math.Abs(sample.SliderRatio - target.SliderRatio) / .6);
-        result += Math.Min(2, Math.Abs(sample.AimRatio - target.AimRatio) / .15);
-        result += Math.Min(2, Math.Abs(sample.Stamina - target.Stamina) / .5);
-        if (sample.Rhythm.HasValue && target.Rhythm.HasValue) result += Math.Min(2, Math.Abs(sample.Rhythm.Value - target.Rhythm.Value) / .2);
-        if (sample.Angles.HasValue && target.Angles.HasValue) result += Math.Min(2, Math.Abs(sample.Angles.Value - target.Angles.Value) / .25);
-        if (sample.SliderTech.HasValue && target.SliderTech.HasValue) result += Math.Min(2, Math.Abs(sample.SliderTech.Value - target.SliderTech.Value) / .2);
-        if (sample.SliderControl.HasValue && target.SliderControl.HasValue) result += Math.Min(2, Math.Abs(sample.SliderControl.Value - target.SliderControl.Value) / .2);
-        return result + Math.Abs(Math.Log(Math.Max(1, sample.Length) / Math.Max(1, target.Length))) * .5;
-    }
-
-    public static (double Miss, double Imperfect) ErrorRates(double demand, double comfort)
-    {
-        double overload = Math.Clamp(demand - comfort, -6, 8);
-        return (Math.Clamp(.00001 + .001 * Math.Exp(1.5 * overload), .00001, .38),
-            Math.Clamp(.002 + .024 * Math.Exp(1.25 * overload), .002, .80));
-    }
+        MinimumScore = score, MinimumAccuracy = accuracy, MatchForm = form,
+        Division = division, Rating = rating, Archetype = "allrounder",
+    };
 }

@@ -32,8 +32,11 @@ from app.database import (
     BeatmapSync,
     LoginSession,
     OAuthToken,
+    RankedDodgePenalty,
     Score,
     ScoreImport,
+    SomsaiMap,
+    SomsaiMatch,
     TotpKeys,
     TrustedDevice,
     User,
@@ -46,6 +49,7 @@ from app.dependencies.database import Database, Redis, with_db
 from app.dependencies.fetcher import Fetcher
 from app.dependencies.storage import StorageService
 from app.features.somsai.services.somsai_mmr_service import MAX_ADMIN_MMR, change_somsai_mmr, list_somsai_mmr
+from app.features.somsai.services.somsai_warehouse_service import REFRESH_STATE
 from app.fetcher._base import TokenAuthError
 from app.helpers import utcnow
 from app.log import log
@@ -65,7 +69,9 @@ from app.service.beatmap_ranking_service import (
     resolve_ranking_event,
 )
 from app.service.beatmapset_update_service import get_beatmapset_update_service
+from app.service.home_activity_service import online_history
 from app.service.online_presence_service import get_online_user_ids
+from app.service.ranked_dodge_service import as_utc, dodge_status, latest_penalty, penalty_end
 from app.service.ranking_cache_service import get_ranking_cache_service
 from app.service.replay_retention_service import best_replay_score, lock_replay_candidates, replay_combination_scores
 from app.service.score_import_service import (
@@ -118,6 +124,14 @@ logger = log("AdminPanel")
 
 AuditReason = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
 PositiveStrictInt = Annotated[StrictInt, Field(gt=0)]
+
+
+class SomsaiQueueBanAdminRequest(BaseModel):
+    action: Literal["apply", "cancel", "reset"]
+    level: int = Field(default=1, ge=1, le=13)
+    reason: AuditReason = ""
+
+
 ScoreSource = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=512)]
 OfficialRuleset = Literal["osu", "taiko", "fruits", "mania"]
 
@@ -501,17 +515,16 @@ async def logout_admin_panel(request: Request, response: Response, context: Admi
 @router.get("/admin-panel/dashboard", tags=["Admin Panel"], include_in_schema=False)
 async def get_admin_dashboard(context: AdminSession, session: Database, redis: Redis):
     del context
-    day_ago = utcnow() - timedelta(days=1)
+    now = utcnow()
+    day_ago = now - timedelta(days=1)
+    two_weeks_ago = (now - timedelta(days=13)).date()
     total_users = (await session.exec(select(func.count(col(User.id))).where(col(User.is_bot).is_(False)))).one()
     online_user_ids = await get_online_user_ids(redis)
     online_users = 0
     if online_user_ids:
         online_users = (
             await session.exec(
-                select(func.count(col(User.id))).where(
-                    col(User.is_bot).is_(False),
-                    col(User.id).in_(online_user_ids),
-                )
+                select(func.count(col(User.id))).where(col(User.is_bot).is_(False), col(User.id).in_(online_user_ids))
             )
         ).one()
     total_scores = (await session.exec(select(func.count(col(Score.id))))).one()
@@ -535,6 +548,35 @@ async def get_admin_dashboard(context: AdminSession, session: Database, redis: R
             select(func.count(col(BeatmapRankingEvent.id))).where(col(BeatmapRankingEvent.resolved_at).is_(None))
         )
     ).one()
+
+    score_rows = (await session.exec(
+        select(func.date_format(Score.ended_at, "%Y-%m-%d %H:00:00"), func.count(col(Score.id)))
+        .where(col(Score.ended_at) >= day_ago)
+        .group_by(func.date_format(Score.ended_at, "%Y-%m-%d %H:00:00"))
+    )).all()
+    scores_by_hour = {str(bucket): int(count) for bucket, count in score_rows}
+    hour = now.replace(minute=0, second=0, microsecond=0)
+    score_activity = []
+    for offset in range(23, -1, -1):
+        point = hour - timedelta(hours=offset)
+        key = point.strftime("%Y-%m-%d %H:00:00")
+        score_activity.append({"time": int(point.timestamp()), "value": scores_by_hour.get(key, 0)})
+
+    registration_rows = (await session.exec(
+        select(func.date(User.join_date), func.count(col(User.id)))
+        .where(col(User.is_bot).is_(False), func.date(User.join_date) >= two_weeks_ago)
+        .group_by(func.date(User.join_date))
+    )).all()
+    registrations_by_day = {str(day): int(count) for day, count in registration_rows}
+    registration_activity = []
+    for offset in range(13, -1, -1):
+        day = now.date() - timedelta(days=offset)
+        registration_activity.append({"date": day.isoformat(), "value": registrations_by_day.get(day.isoformat(), 0)})
+
+    warehouse_maps = (await session.exec(select(func.count(col(SomsaiMap.id))))).one()
+    active_matches = (
+        await session.exec(select(func.count(col(SomsaiMatch.id))).where(col(SomsaiMatch.ended_at).is_(None)))
+    ).one()
     redis_ok = bool(await redis.ping())
     return {
         "users": {"total": total_users, "online": online_users},
@@ -544,10 +586,14 @@ async def get_admin_dashboard(context: AdminSession, session: Database, redis: R
             "active_difficulty_policies": active_diff_policies,
             "pending_events": pending_events,
         },
+        "activity": {
+            "online": await online_history(redis),
+            "scores": score_activity,
+            "registrations": registration_activity,
+        },
+        "somsai": {"maps": warehouse_maps, "active_matches": active_matches, "refresh": dict(REFRESH_STATE)},
         "system": {
-            "api": True,
-            "database": True,
-            "redis": redis_ok,
+            "api": True, "database": True, "redis": redis_ok,
             "uptime_seconds": max(0, int(time.time() - STARTED_AT)),
             "server_url": str(settings.server_url).rstrip("/"),
             "scoring_mode": str(settings.scoring_mode),
@@ -655,7 +701,51 @@ async def get_admin_user(user_id: int, context: AdminSession, session: Database)
         for item in recent_logins
     ]
     result["somsai_mmr"] = await list_somsai_mmr(session, user_id)
+    result["somsai_queue_ban"] = (await dodge_status(session, user_id)).model_dump(mode="json")
     return result
+
+
+@router.post("/admin-panel/users/{user_id}/somsai-queue-ban", tags=["Admin Panel"], include_in_schema=False)
+async def manage_admin_somsai_queue_ban(
+    user_id: int,
+    payload: SomsaiQueueBanAdminRequest,
+    request: Request,
+    context: AdminSession,
+    session: Database,
+):
+    _require_csrf(request, context)
+    _require_capability(context, "administrator")
+    target = await resolve_human_user(session, user_id)
+    if target is None or target.is_bot:
+        raise HTTPException(status_code=404, detail="User not found")
+    if (target.is_owner or target.is_admin) and not _role_flags(context.user)["owner"]:
+        raise HTTPException(status_code=403, detail="Only an owner can manage administrators and owners")
+    before = (await dodge_status(session, user_id)).model_dump(mode="json")
+    if payload.action == "reset":
+        await session.exec(delete(RankedDodgePenalty).where(RankedDodgePenalty.user_id == user_id))
+    elif payload.action == "cancel":
+        current = await latest_penalty(session, user_id)
+        if current is not None and (current.expires_at is None or as_utc(current.expires_at) > utcnow()):
+            current.expires_at = utcnow()
+            current.account_banned = False
+            session.add(current)
+    else:
+        now = utcnow().replace(microsecond=0)
+        room_id = -int(time.time_ns() % 2_000_000_000)
+        while await session.get(RankedDodgePenalty, room_id) is not None:
+            room_id -= 1
+        session.add(RankedDodgePenalty(
+            room_id=room_id, user_id=user_id, level=payload.level, created_at=now,
+            expires_at=penalty_end(now, payload.level), account_banned=False,
+        ))
+    await session.flush()
+    after = (await dodge_status(session, user_id)).model_dump(mode="json")
+    await _audit(
+        session, request, context.user, action=f"user.somsai_queue_ban.{payload.action}",
+        target_type="user", target_id=user_id, reason=payload.reason, before=before, after=after,
+    )
+    await session.commit()
+    return after
 
 
 @router.patch(

@@ -92,7 +92,7 @@ public sealed partial class SomsLegacyUserPanel : Container
     private void updateUser()
     {
         bool loggedIn = api?.IsLoggedIn == true;
-        username.Text = loggedIn ? user?.Value.Username ?? "Игрок" : "Войти в аккаунт";
+        username.Text = loggedIn ? user?.Value.Username ?? "Player" : "Sign in";
         avatar.Clear();
         // Do not block a menu transition while an avatar is being fetched.
         avatar.Add(new DelayedLoadWrapper(new DrawableAvatar(loggedIn ? user?.Value : null)) { RelativeSizeAxes = Axes.Both });
@@ -108,8 +108,8 @@ public sealed partial class SomsLegacyUserPanel : Container
     {
         // LocalUser intentionally carries no statistics. Read the same cache as lazer's account panel.
         var stats = ruleset?.Value is { } mode ? statisticsProvider?.GetStatisticsFor(mode) : null;
-        performance.Text = stats?.PP is { } pp ? $"Производительность: {pp:N0}pp" : "Производительность: —";
-        accuracy.Text = stats != null ? $"Точность: {stats.Accuracy:0.00}%" : "Точность: —";
+        performance.Text = stats?.PP is { } pp ? $"Performance: {pp:N0}pp" : "Performance: —";
+        accuracy.Text = stats != null ? $"Accuracy: {stats.Accuracy:0.00}%" : "Accuracy: —";
         level.Text = stats != null ? $"Lv{stats.Level.Current}" : "Lv—";
         rank.Text = stats?.GlobalRank is { } position ? $"#{position:N0}" : "";
         progress.Width = Math.Clamp((stats?.Level.Progress ?? 0) / 100f, 0, 1);

@@ -31,14 +31,14 @@ async def stage_releases(session, fetcher, category: str, start: datetime):
             if (await session.exec(select(SomsActivity.id).where(SomsActivity.event_key == key))).first():
                 continue
             title = f"{item['artist']} — {item['title']}"
-            prefix = "Новая Loved-карта" if category == "loved" else "Новая рейтинговая карта"
+            prefix = "New Loved beatmap" if category == "loved" else "New ranked beatmap"
             session.add(
                 SomsActivity(
                     event_key=key,
                     kind="new_map",
                     payload={"beatmapset_id": item["id"], "status": category},
                     announcement=f"{prefix}: {chat_link(f'beatmapsets/{item["id"]}', title[:300])} "
-                    f"от {str(item.get('creator', ''))[:80]}!",
+                    f"by {str(item.get('creator', ''))[:80]}!",
                 )
             )
         await session.commit()

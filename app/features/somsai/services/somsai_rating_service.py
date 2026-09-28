@@ -139,7 +139,7 @@ def performance_impacts(teams: list[list[int]], rounds: list[dict], winning_team
 async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], winner: int | None) -> list[dict]:
     from app.features.somsai.services.somsai_rank_pool import rank_midpoint_rating
 
-    impacts = performance_impacts(teams, match.state.get("history", []), winner)  # только для UI
+    impacts = performance_impacts(teams, match.state.get("history", []), winner)  # UI only
     rows = {
         uid: await ensure_rating(session, uid, match.ruleset_id, match.variant_id, match.format)
         for team in teams
@@ -165,7 +165,7 @@ async def settle_ratings(session: AsyncSession, match, teams: list[list[int]], w
                 adjustment *= max(0.6, min(1.5, 1 + 0.08 * direction))
 
             after = max(0, min(5000, before + adjustment))
-            row.rating = round(after)  # Elo хранится целым числом
+            row.rating = round(after)  # Elo is stored as an integer
             row.last_delta = row.rating - round(before)
             row.games += 1
             row.wins += winner == team_id

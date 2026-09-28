@@ -54,14 +54,12 @@ namespace osu.Server.Spectator.Database
       });
     }
 
-    public async Task<int[]> GetUsersInGroupsAsync(int[] groupIds)
+    public Task<int[]> GetUsersInGroupsAsync(int[] groupIds)
     {
-      var connection = await getConnectionAsync();
-
-      return (await connection.QueryAsync<int>("SELECT DISTINCT `user_id` FROM `phpbb_user_group` WHERE `group_id` IN @groupIds", new
-      {
-        groupIds = groupIds
-      })).ToArray();
+      // SOMS has no osu-web phpbb_user_group table and deliberately has no
+      // version-check exemptions. Keep the interface method for upstream
+      // compatibility without letting a legacy query break every hub method.
+      return Task.FromResult(Array.Empty<int>());
     }
 
     public async Task<bool> IsUserRestrictedAsync(int userId)
@@ -599,13 +597,16 @@ namespace osu.Server.Spectator.Database
 
     public Task<osu_build?> GetBuildByHashAsync(string hash)
     {
+      if (!AppSettings.RequiredClientVersionHashes.Contains(hash, StringComparer.OrdinalIgnoreCase))
+        return Task.FromResult<osu_build?>(null);
+
       return Task.FromResult<osu_build?>(new osu_build
       {
-        build_id = 0,
+        build_id = 20260921,
         allow_bancho = true,
-        hash = null,
+        hash = Convert.FromHexString(hash),
         users = 0,
-        version = null,
+        version = "2026.921.0",
       });
     }
 

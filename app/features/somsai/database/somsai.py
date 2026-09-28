@@ -41,9 +41,23 @@ class SomsaiPartyInvite(SQLModel, table=True):
     expires_at: datetime = Field(sa_column=Column(DateTime, nullable=False))
 
 
+class SomsaiDirectInvite(SQLModel, table=True):
+    __tablename__: str = "somsai_direct_invites"
+    id: int | None = Field(default=None, primary_key=True)
+    kind: str = Field(max_length=16)
+    inviter_id: int = Field(foreign_key="lazer_users.id", index=True)
+    target_id: int = Field(foreign_key="lazer_users.id", index=True)
+    match_id: int | None = Field(default=None, foreign_key="somsai_matches.id")
+    ruleset_id: int = 0
+    variant_id: int = 0
+    status: str = Field(default="pending", max_length=16)
+    expires_at: datetime = Field(sa_column=Column(DateTime, nullable=False, index=True))
+
+
 class SomsaiActivity(SQLModel, table=True):
     __tablename__: str = "somsai_activity"
     user_id: int = Field(primary_key=True, foreign_key="lazer_users.id")
+    last_seen_at: datetime = Field(default_factory=utcnow, sa_column=Column(DateTime, nullable=False))
     party_id: int | None = Field(default=None, foreign_key="somsai_parties.id")
     reservation_id: str | None = Field(default=None, max_length=36, index=True)
     match_id: int | None = Field(default=None, index=True)
@@ -108,7 +122,6 @@ class SomsaiMatch(SQLModel, table=True):
     pool_id: int
     # Rooms are transient; match history and rating changes must survive cleanup.
     room_id: int | None = Field(default=None, index=True)
-    password: str = Field(default="", max_length=64)
     stage: str = Field(default="waiting", max_length=16, index=True)
     revision: int = 1
     state: dict[str, Any] = Field(sa_column=Column(JSON, nullable=False))

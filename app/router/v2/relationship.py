@@ -148,9 +148,6 @@ async def add_relationship(
             .with_for_update()
         )
     ).first()
-    newly_followed = relationship_type == RelationshipType.FOLLOW and (
-        relationship is None or relationship.type != RelationshipType.FOLLOW
-    )
     if relationship:
         relationship_action = "update"
         relationship.type = relationship_type
@@ -179,11 +176,6 @@ async def add_relationship(
     current_user_id = current_user.id
     current_gamemode = current_user.playmode
     relationship_type_value = relationship_type.value
-    if newly_followed:
-        from app.features.somsai.services.soms_activity_service import stage_friend_notification
-
-        await db.flush()
-        await stage_friend_notification(db, current_user, target, relationship.id)
     await db.commit()
     hub.emit(
         UserRelationshipChangedEvent(
@@ -266,10 +258,6 @@ async def delete_relationship(
         raise RequestError(ErrorType.RELATIONSHIP_TYPE_MISMATCH)
     current_user_id = current_user.id
     relationship_type_value = relationship_type.value
-    if relationship_type == RelationshipType.FOLLOW:
-        from app.features.somsai.services.soms_activity_service import stage_friend_notification
-
-        await stage_friend_notification(db, current_user, target, relationship.id, removed=True)
     await db.delete(relationship)
     await db.commit()
     hub.emit(

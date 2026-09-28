@@ -15,7 +15,7 @@ from sqlmodel import col, select
 async def leaderboard(session, user_id: int, ruleset_id: int, variant_id: int, format: str, page: int) -> dict:
     validate_mode(ruleset_id, variant_id)
     if format not in {"1v1", "2v2"} or page < 1 or page > 10000:
-        reject("Неизвестный формат или страница.", 422)
+        reject("Unknown format or page.", 422)
     own = await ensure_rating(session, user_id, ruleset_id, variant_id, format)
     filters = [
         SomsaiRating.ruleset_id == ruleset_id,
@@ -58,15 +58,15 @@ async def party_chat(session, redis, user_id: int, message: str | None = None) -
     party = await get_party(session, user_id)
     if party is None:
         if message is not None:
-            reject("Сначала пригласите друга в пати.", 409)
+            reject("Invite a friend to the party first.", 409)
         return {"party_id": None, "messages": []}
     key = f"somsai:party-chat:{party.id}"
     if message is not None:
         message = message.strip()
         if not message or len(message) > 500:
-            reject("Сообщение должно содержать от 1 до 500 символов.", 422)
+            reject("Messages must contain between 1 and 500 characters.", 422)
         if not await redis.set(f"{key}:throttle:{user_id}", "1", nx=True, ex=1):
-            reject("Слишком много сообщений. Подождите секунду.", 429)
+            reject("Too many messages. Wait a second.", 429)
         sender = await user_payload(session, user_id)
         message_id = await redis.incr(f"{key}:sequence")
         value = {

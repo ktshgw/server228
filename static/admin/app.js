@@ -23,6 +23,10 @@
         somsaiSlot: "NM1",
         somsaiCategory: "NM",
         somsaiMapPage: 1,
+        somsaiMapFilters: { search: "", rank: "", source: "", stars_min: "", stars_max: "", bpm_min: "", bpm_max: "", length_min: "", length_max: "", cs_min: "", cs_max: "", ar_min: "", ar_max: "", od_min: "", od_max: "", hp_min: "", hp_max: "" },
+        somsaiMapLoad: 0,
+        somsaiRefreshRunning: false,
+        somsaiRefreshTimer: 0,
         somsaiImportPreview: null,
         somsaiWarehouseImportRunning: false,
         negativePPTarget: null,
@@ -33,14 +37,15 @@
         auditTab: "account",
         busy: 0,
     };
+    let somsaiMapSearchTimer = 0;
 
     const views = {
         "negative-pp": { kicker: "Отрицательные PP", title: "Расстрельный список", capability: "administrator" },
         dashboard: { kicker: "Главная", title: "Обзор сервера", capability: "staff" },
         users: { kicker: "Аккаунты", title: "Пользователи", capability: "administrator" },
         imports: { kicker: "Перенос результатов", title: "Импорт score", capability: "owner" },
-        beatmaps: { kicker: "Локальный рейтинг", title: "Карты", capability: "ranker" },
-        inbox: { kicker: "Мониторинг карт", title: "Уведомления", capability: "ranker" },
+        beatmaps: { kicker: "Локальный рейтинг", title: "Карты", capability: "administrator" },
+        inbox: { kicker: "Мониторинг карт", title: "Уведомления", capability: "administrator" },
         audit: { kicker: "Безопасность", title: "История действий", capability: "administrator" },
         system: { kicker: "Диагностика", title: "Система", capability: "staff" },
         somsai: { kicker: "Турнирный мультиплеер", title: "SOMSAI", capability: "administrator" },
@@ -292,7 +297,6 @@
         $("#profile-name").textContent = session.user.username;
         $("#profile-role").textContent = roleName(session.user);
         $("#profile-avatar").textContent = initials(session.user.username);
-        $("#welcome-name").textContent = session.user.username;
 
         $$('[data-capability]').forEach((element) => {
             element.hidden = !hasCapability(element.dataset.capability);
@@ -517,9 +521,17 @@
             : result.running
                 ? `Импортируется: ${result.done} из ${result.total || "…"}; ошибок: ${result.failed}`
                 : `Импортировано: ${result.imported}; ошибок: ${result.failed}`;
-        $("#somsai-warehouse-import-result").replaceChildren(
-            make("p", result.error || result.failed ? "error-message" : "muted", text)
-        );
+        const output = $("#somsai-warehouse-import-result");
+        output.replaceChildren(make("p", result.error || result.failed ? "error-message" : "muted", text));
+        const details = result.error_details || [];
+        if (details.length) {
+            const list = make("details", "import-errors");
+            list.open = !result.running;
+            const hidden = Number(result.details_truncated || 0);
+            list.append(make("summary", "", `Причины и предупреждения (${details.length}${hidden ? `, ещё ${hidden} скрыто` : ""})`));
+            details.forEach(message => list.append(make("p", "error-message", message)));
+            output.append(list);
+        }
     }
 
     async function pollWarehouseImport() {
@@ -573,6 +585,9 @@
         HR: ["HR1", "HR2", "HR3"], DT: ["DT1", "DT2", "DT3", "DT4"],
         FM: ["FM1", "FM2", "FM3"], TB: ["TB"],
     };
+    const somsaiRanks = ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND"]
+        .flatMap(band => ["I", "II", "III", "IV", "V"].map(division => `${band} ${division}`))
+        .concat("ARCHSOM");
 
     function showSomsaiPage(page) {
         $$("[data-somsai-page]").forEach(button => {
@@ -589,6 +604,8 @@
         if (!slots.includes(state.somsaiSlot)) state.somsaiSlot = slots[0];
         $$("[data-somsai-category]").forEach(button => button.classList.toggle("is-active", button.dataset.somsaiCategory === category));
         const root = $("#somsai-slot-tabs");
+        const refreshButton = $("#somsai-refresh-category");
+        if (refreshButton) refreshButton.textContent = `Обновить ${state.somsaiSlot}`;
         root.replaceChildren(...slots.map(slot => {
             const button = make("button", slot === state.somsaiSlot ? "is-active" : "", slot);
             button.type = "button";
@@ -599,56 +616,150 @@
 
     function renderSomsaiMap(row) {
         const card = make("article", "somsai-map-card");
-        if (row.cover_url) card.style.backgroundImage = `linear-gradient(90deg, rgba(12,16,27,.96), rgba(12,16,27,.72)), url(${JSON.stringify(row.cover_url).slice(1, -1)})`;
+        const cover = make("div", "somsai-map-cover");
+        const coverImage = document.createElement("img");
+        coverImage.alt = "";
+        coverImage.loading = "lazy";
+        coverImage.decoding = "async";
+        const assetBase = `https://assets.ppy.sh/beatmaps/${row.beatmapset_id}/covers`;
+        coverImage.src = `${API_ROOT}/somsai/maps/${row.id}/cover`;
+        coverImage.addEventListener("error", () => {
+            if (!coverImage.dataset.fallback) {
+                coverImage.dataset.fallback = "1";
+                coverImage.src = `${assetBase}/card.jpg`;
+            } else coverImage.hidden = true;
+        });
+        cover.append(coverImage);
+        const coverBadges = make("div", "somsai-map-cover-badges");
+        coverBadges.append(make("span", "somsai-slot-badge", row.slot));
+        cover.append(coverBadges);
+
         const copy = make("div", "somsai-map-copy");
         const title = make("a", "", row.name);
         title.href = row.beatmap_url; title.target = "_blank"; title.rel = "noopener noreferrer";
-        copy.append(title, make("small", "", `#${row.beatmap_id} · ${row.slot} · ${row.eligibility_label}`));
+        const metadata = make("div", "somsai-map-meta");
+        metadata.append(
+            make("span", "", `Beatmap #${row.beatmap_id}`),
+            make("span", "", `Set #${row.beatmapset_id}`),
+            make("span", "", row.source_kind === "manual" ? "Вручную" : row.source_kind === "collector_tournament" ? "Турнир" : "Коллекция"),
+        );
+        const rank = make("div", "somsai-map-rank");
+        const eligible = row.eligible_ranks || [];
+        rank.dataset.rank = eligible.length ? eligible[eligible.length - 1].split(" ")[0] : "NONE";
+        rank.append(make("span", "somsai-map-label", "Подходит для"), make("strong", "", row.eligibility_label || "Не используется"));
+        copy.append(title, metadata, rank);
+
         const stats = row.stats || {};
         const facts = make("div", "somsai-map-stats");
-        [["★", stats.stars], ["TIME", stats.length == null ? "—" : `${Math.floor(stats.length / 60)}:${String(Math.round(stats.length % 60)).padStart(2, "0")}`],
-            ["CS", stats.cs], ["AR", stats.ar], ["OD", stats.od], ["HP", stats.hp]].forEach(([key, value]) => facts.append(make("span", "", `${key} ${value ?? "—"}`)));
-        const remove = make("button", "button button-danger", "Удалить");
+        const duration = stats.length == null ? "—" : `${Math.floor(stats.length / 60)}:${String(Math.round(stats.length % 60)).padStart(2, "0")}`;
+        const primary = make("div", "somsai-map-primary-stats");
+        [["Звёзды", stats.stars == null ? "—" : Number(stats.stars).toFixed(2), "is-stars"], ["BPM", stats.bpm ?? "—", ""], ["Время", duration, ""]]
+            .forEach(([label, value, className]) => {
+                const fact = make("div", `somsai-map-stat ${className}`.trim());
+                fact.append(make("span", "", label), make("strong", "", value));
+                primary.append(fact);
+            });
+        const difficulty = make("div", "somsai-map-difficulty-stats");
+        [["CS", stats.cs], ["AR", stats.ar], ["OD", stats.od], ["HP", stats.hp]].forEach(([label, value]) => {
+            const fact = make("div", "somsai-map-stat");
+            fact.append(make("span", "", label), make("strong", "", value ?? "—"));
+            difficulty.append(fact);
+        });
+        facts.append(primary, difficulty);
+
+        const refresh = make("button", "button button-secondary somsai-refresh-control", "Обновить");
+        refresh.type = "button";
+        refresh.disabled = state.somsaiRefreshRunning;
+        refresh.addEventListener("click", async () => {
+            if (!confirm(`Пересчитать ${row.slot} #${row.beatmap_id} по текущим правилам SOMSAI?`)) return;
+            renderSomsaiRefresh(await api(`/somsai/maps/${row.id}/refresh`, { method: "POST" }));
+            scheduleSomsaiRefreshPoll(250);
+        });
+        const remove = make("button", "button button-danger somsai-refresh-control", "Удалить");
         remove.type = "button";
+        remove.disabled = state.somsaiRefreshRunning;
         remove.addEventListener("click", async () => {
             if (!confirm(`Удалить ${row.slot} #${row.beatmap_id} из хранилища?`)) return;
             await api(`/somsai/maps/${row.id}`, { method: "DELETE", data: { reason: "no reason" } });
             await loadSomsaiMaps();
         });
-        card.append(copy, facts, remove);
+        const actions = make("div", "somsai-map-actions");
+        actions.append(refresh, remove);
+        card.append(cover, copy, facts, actions);
         return card;
     }
 
     async function loadSomsaiMaps() {
-        const result = await api(`/somsai/maps?slot=${encodeURIComponent(state.somsaiSlot)}&page=${state.somsaiMapPage}`);
+        const request = ++state.somsaiMapLoad;
+        const params = new URLSearchParams({ slot: state.somsaiSlot, page: String(state.somsaiMapPage) });
+        Object.entries(state.somsaiMapFilters).forEach(([key, value]) => { if (value) params.set(key, value); });
+        const result = await api(`/somsai/maps?${params}`);
+        if (request !== state.somsaiMapLoad) return;
         $("#somsai-storage-title").textContent = state.somsaiSlot;
-        $("#somsai-storage-count").textContent = `${result.total} карт`;
+        const filtered = Object.values(state.somsaiMapFilters).some(Boolean);
+        $("#somsai-storage-count").textContent = `${result.total} карт${filtered ? " по фильтрам" : ""}`;
         $("#somsai-maps-page").textContent = `${result.page} / ${result.pages}`;
         $("#somsai-maps-prev").disabled = result.page <= 1;
         $("#somsai-maps-next").disabled = result.page >= result.pages;
         const root = $("#somsai-map-grid");
         root.replaceChildren(...result.maps.map(renderSomsaiMap));
-        if (!result.maps.length) root.append(make("p", "muted", "В этом слоте пока нет карт."));
+        if (!result.maps.length) root.append(make("div", "empty-state compact", filtered ? "По выбранным фильтрам карт нет." : "В этом слоте пока нет карт."));
     }
 
     async function loadSomsai() {
         const all = Object.values(somsaiSlots).flat();
         $("#somsai-map-slot").replaceChildren(...all.map(slot => new Option(slot, slot)));
+        $("#somsai-map-rank").replaceChildren(
+            new Option("Все ранги", ""),
+            new Option("Не используется", "__not_used__"),
+            ...somsaiRanks.map(rank => new Option(rank, rank)),
+        );
         renderSomsaiSlots(state.somsaiCategory);
         await loadSomsaiMaps();
         const refresh = await api("/somsai/warehouse/refresh");
         renderSomsaiRefresh(refresh);
+        scheduleSomsaiRefreshPoll(refresh.running ? 500 : 2000);
     }
 
     function renderSomsaiRefresh(status) {
+        state.somsaiRefreshRunning = Boolean(status.running);
         const compared = `изменено: ${status.changed || 0}, без изменений: ${status.unchanged || 0}`;
+        const details = status.error_details || [];
+        const errorHint = details.length ? ` · ${details[details.length - 1]}` : "";
+        const scope = status.scope === "map"
+            ? `Карта #${status.map_id}`
+            : status.scope === "category"
+                ? `Категория ${status.category}`
+                : "Полный пересчёт";
         $("#somsai-refresh-status").textContent = status.running
-            ? `Полный пересчёт: ${status.done} / ${status.total}, ${compared}, ошибок: ${status.failed}`
-            : status.total ? `Последний полный пересчёт: ${status.done} / ${status.total}, ${compared}, ошибок: ${status.failed}` : "";
+            ? `${scope}: ${status.done} / ${status.total}, ${compared}, ошибок: ${status.failed}${errorHint}`
+            : status.total ? `Последний пересчёт (${scope.toLowerCase()}): ${status.done} / ${status.total}, ${compared}, ошибок: ${status.failed}${errorHint}` : "";
+        $$(".somsai-refresh-control").forEach(button => { button.disabled = state.somsaiRefreshRunning; });
+        $("#somsai-refresh").textContent = status.running ? "База обновляется…" : "Обновить базу";
     }
 
-    function metricCard(label, value, note, icon) {
-        const card = make("article", "metric-card");
+    function scheduleSomsaiRefreshPoll(delay = 1000) {
+        window.clearTimeout(state.somsaiRefreshTimer);
+        if (state.currentView !== "somsai") return;
+        state.somsaiRefreshTimer = window.setTimeout(pollSomsaiRefresh, delay);
+    }
+
+    async function pollSomsaiRefresh() {
+        try {
+            const wasRunning = state.somsaiRefreshRunning;
+            const status = await api("/somsai/warehouse/refresh");
+            renderSomsaiRefresh(status);
+            if (wasRunning && !status.running && state.currentView === "somsai") await loadSomsaiMaps();
+            scheduleSomsaiRefreshPoll(status.running ? 500 : 2000);
+        } catch (error) {
+            toast(error.message, "error");
+            scheduleSomsaiRefreshPoll(3000);
+        }
+    }
+
+
+    function metricCard(label, value, note, icon, tone = "") {
+        const card = make("article", `metric-card ${tone}`.trim());
         const head = make("div", "metric-head");
         head.append(make("span", "", label), make("span", "metric-icon", icon));
         card.append(head, make("strong", "metric-value", value), make("small", "metric-note", note));
@@ -663,35 +774,138 @@
         return row;
     }
 
+    function svgNode(name, attributes = {}) {
+        const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+        Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, value));
+        return node;
+    }
+
+    let chartTooltip;
+    function addChartTooltip(node, text) {
+        if (!chartTooltip) {
+            chartTooltip = make("div", "chart-tooltip");
+            chartTooltip.hidden = true;
+            document.body.append(chartTooltip);
+        }
+        const move = event => {
+            chartTooltip.style.left = `${Math.min(window.innerWidth - chartTooltip.offsetWidth - 12, event.clientX + 14)}px`;
+            chartTooltip.style.top = `${Math.max(10, event.clientY - chartTooltip.offsetHeight - 12)}px`;
+        };
+        node.addEventListener("pointerenter", event => {
+            chartTooltip.textContent = text;
+            chartTooltip.hidden = false;
+            move(event);
+        });
+        node.addEventListener("pointermove", move);
+        node.addEventListener("pointerleave", () => { chartTooltip.hidden = true; });
+    }
+
+    function renderLineChart(root, points) {
+        root.replaceChildren();
+        const clean = points.map(point => Number(point.users) || 0);
+        if (!clean.length) { root.append(make("p", "chart-empty", "Данных пока нет")); return; }
+        const width = 720, height = 190, pad = 14, max = Math.max(1, ...clean);
+        const svg = svgNode("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": "График онлайна" });
+        for (let y = 0; y < 4; y++) svg.append(svgNode("line", { x1: 0, y1: pad + y * 48, x2: width, y2: pad + y * 48, class: "chart-grid-line" }));
+        const coordinates = clean.map((value, index) => {
+            const x = clean.length === 1 ? width / 2 : index * width / (clean.length - 1);
+            const y = height - pad - value / max * (height - pad * 2);
+            return [x, y];
+        });
+        const line = coordinates.map(([x, y], index) => `${index ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+        const area = `${line} L${width},${height} L0,${height} Z`;
+        const gradient = svgNode("linearGradient", { id: "online-area", x1: "0", x2: "0", y1: "0", y2: "1" });
+        gradient.append(svgNode("stop", { offset: "0", "stop-color": "#67e8c2", "stop-opacity": ".32" }), svgNode("stop", { offset: "1", "stop-color": "#67e8c2", "stop-opacity": "0" }));
+        const defs = svgNode("defs"); defs.append(gradient); svg.append(defs);
+        svg.append(svgNode("path", { d: area, class: "chart-area" }), svgNode("path", { d: line, class: "chart-line" }));
+        coordinates.forEach(([x, y], index) => {
+            const hit = svgNode("circle", { cx: x, cy: y, r: 9, class: "chart-hover-point" });
+            const title = svgNode("title");
+            const timestamp = Number(points[index]?.time || 0) * 1000;
+            const time = timestamp ? new Date(timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "—";
+            const tooltip = `${time}: ${clean[index]} онлайн`;
+            title.textContent = tooltip;
+            hit.append(title);
+            addChartTooltip(hit, tooltip);
+            svg.append(hit);
+        });
+        const [lastX, lastY] = coordinates[coordinates.length - 1];
+        svg.append(svgNode("circle", { cx: lastX, cy: lastY, r: 5, class: "chart-point" }));
+        root.append(svg);
+    }
+
+    function renderBarChart(root, points, tone = "pink", kind = "hour") {
+        root.replaceChildren();
+        const clean = points.map(point => Number(point.value) || 0);
+        if (!clean.length) { root.append(make("p", "chart-empty", "Данных пока нет")); return; }
+        const max = Math.max(1, ...clean);
+        const bars = make("div", `chart-bars is-${tone}`);
+        clean.forEach((value, index) => {
+            const bar = make("i", "");
+            bar.style.height = `${Math.max(3, value / max * 100)}%`;
+            const point = points[index] || {};
+            const label = kind === "day"
+                ? new Date(`${point.date}T00:00:00`).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
+                : new Date(Number(point.time || 0) * 1000).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+            addChartTooltip(bar, `${label}: ${value}`);
+            bar.style.animationDelay = `${index * 18}ms`;
+            bars.append(bar);
+        });
+        root.append(bars);
+    }
+
+
+    function opsStat(label, value, note = "") {
+        const row = make("div", "ops-stat");
+        const copy = make("span", ""); copy.append(make("strong", "", label), make("small", "", note));
+        row.append(copy, make("b", "", value));
+        return row;
+    }
+
     async function loadDashboard() {
         const tasks = [api("/dashboard")];
-        if (hasCapability("ranker")) tasks.push(api("/ranking/events?limit=3"));
+        if (hasCapability("administrator")) tasks.push(api("/ranking/events?limit=3"));
         const [data, eventsData] = await Promise.all(tasks);
         state.dashboard = data;
-
         const metrics = $("#dashboard-metrics");
         metrics.replaceChildren(
-            metricCard("Пользователи", formatNumber(data.users.total), `${formatNumber(data.users.online)} сейчас онлайн`, "◉"),
-            metricCard("Результаты", formatNumber(data.scores.total), `${formatNumber(data.scores.last_24h)} за последние сутки`, "⌁"),
-            metricCard("Локальный ранг", formatNumber(data.ranking.active_set_policies + data.ranking.active_difficulty_policies), `${formatNumber(data.ranking.active_difficulty_policies)} отдельных сложностей`, "◇"),
-            metricCard("Уведомления", formatNumber(data.ranking.pending_events), data.ranking.pending_events ? "нужно проверить" : "всё спокойно", "◌"),
+            metricCard("Игроки", formatNumber(data.users.total), `${formatNumber(data.users.online)} сейчас онлайн`, "●", "is-green"),
+            metricCard("Результаты", formatNumber(data.scores.total), `${formatNumber(data.scores.last_24h)} за сутки`, "⌁", "is-pink"),
+            metricCard("Карты SOMSAI", formatNumber(data.somsai.maps), `${formatNumber(data.somsai.active_matches)} активных матчей`, "✦", "is-cyan"),
+            metricCard("Уведомления", formatNumber(data.ranking.pending_events), data.ranking.pending_events ? "нужно проверить" : "всё спокойно", "!", "is-yellow"),
         );
+        $("#dashboard-health").replaceChildren(healthRow("API", data.system.api), healthRow("MySQL", data.system.database), healthRow("Redis", data.system.redis));
+        $("#dashboard-server-url").textContent = data.system.server_url;
+        $("#dashboard-uptime").textContent = `Работает ${formatDuration(data.system.uptime_seconds)}`;
+        $("#dashboard-online-now").textContent = formatNumber(data.users.online);
 
-        $("#dashboard-health").replaceChildren(
-            healthRow("API сервера", data.system.api),
-            healthRow("База данных", data.system.database),
-            healthRow("Redis и сессии", data.system.redis),
+        const onlinePoints = data.activity.online.points || [];
+        const onlineValues = onlinePoints.map(point => point.users);
+        renderLineChart($("#dashboard-online-chart"), onlinePoints);
+        $("#dashboard-online-peak").textContent = `пик ${formatNumber(Math.max(0, ...onlineValues))}`;
+        const scorePoints = data.activity.scores || [];
+        const scoreValues = scorePoints.map(point => point.value);
+        renderBarChart($("#dashboard-score-chart"), scorePoints, "pink", "hour");
+        $("#dashboard-score-total").textContent = `${formatNumber(scoreValues.reduce((a, b) => a + b, 0))} сыграно`;
+        const userPoints = data.activity.registrations || [];
+        const userValues = userPoints.map(point => point.value);
+        renderBarChart($("#dashboard-user-chart"), userPoints, "cyan", "day");
+        $("#dashboard-user-total").textContent = `+${formatNumber(userValues.reduce((a, b) => a + b, 0))}`;
+
+        const refresh = data.somsai.refresh || {};
+        const refreshNote = refresh.running ? `${refresh.done || 0} / ${refresh.total || 0}` : refresh.completed_at ? "последний пересчёт завершён" : "ещё не запускался";
+        $("#dashboard-somsai-status").replaceChildren(
+            opsStat("Хранилище", formatNumber(data.somsai.maps), "карт в базе"),
+            opsStat("Матчи", formatNumber(data.somsai.active_matches), "сейчас активны"),
+            opsStat("Пересчёт", refresh.running ? "В работе" : "Готов", refreshNote),
+            opsStat("Ошибки", formatNumber(refresh.failed || 0), "в последнем запуске"),
         );
         const allOk = data.system.api && data.system.database && data.system.redis;
         const serverStatus = $("#sidebar-server-status");
-        serverStatus.classList.toggle("is-ok", allOk);
-        serverStatus.classList.toggle("is-bad", !allOk);
+        serverStatus.classList.toggle("is-ok", allOk); serverStatus.classList.toggle("is-bad", !allOk);
         serverStatus.lastElementChild.textContent = allOk ? "Все системы работают" : "Есть проблема с сервисом";
-
         const pending = Number(data.ranking.pending_events || 0);
-        const badge = $("#nav-inbox-badge");
-        badge.textContent = pending > 99 ? "99+" : String(pending);
-        badge.hidden = pending === 0;
+        const badge = $("#nav-inbox-badge"); badge.textContent = pending > 99 ? "+99" : `+${pending}`; badge.hidden = pending === 0;
         renderDashboardInbox(eventsData?.items || [], pending);
     }
 
@@ -835,6 +1049,14 @@
         $("#password-form").hidden = true;
         $("#profile-clear-section").hidden = !owner;
         $("#profile-clear-form").hidden = true;
+        const queueBan = user.somsai_queue_ban || {};
+        const expires = queueBan.expires_at ? new Date(queueBan.expires_at) : null;
+        const activeBan = expires && expires.getTime() > Date.now();
+        $("#somsai-ban-status").textContent = activeBan
+            ? "Level " + queueBan.level + " · until " + formatDate(queueBan.expires_at)
+            : queueBan.level ? "Expired · last level " + queueBan.level : "No active ban.";
+        $("#somsai-ban-cancel").disabled = !activeBan;
+        $("#somsai-ban-section").hidden = protectedTarget;
 
         renderUserStatistics(user.statistics || []);
         renderUserSomsaiMmr();
@@ -1098,7 +1320,6 @@
                 state.session.user = { ...state.session.user, ...updated };
                 $("#profile-name").textContent = updated.username;
                 $("#profile-avatar").textContent = initials(updated.username);
-                $("#welcome-name").textContent = updated.username;
             }
             toast("Изменения сохранены");
             await openUser(user.id);
@@ -1794,7 +2015,7 @@
         $("#events-empty").hidden = data.items.length > 0;
         const pending = data.items.filter((item) => !item.resolved_at).length;
         const badge = $("#nav-inbox-badge");
-        badge.textContent = pending > 99 ? "99+" : String(pending);
+        badge.textContent = pending > 99 ? "+99" : `+${pending}`;
         badge.hidden = pending === 0;
     }
 
@@ -1901,6 +2122,27 @@
         return wrapper;
     }
 
+    async function manageSomsaiBan(action) {
+        const user = state.activeUser;
+        if (!user) return;
+        const labels = { apply: "Apply this queue ban?", cancel: "Cancel the current queue ban?", reset: "Reset all escalation history?" };
+        if (!window.confirm(labels[action])) return;
+        try {
+            await api("/users/" + user.id + "/somsai-queue-ban", {
+                method: "POST",
+                data: {
+                    action,
+                    level: Number($("#somsai-ban-level").value || 1),
+                    reason: $("#somsai-ban-reason").value.trim(),
+                },
+            });
+            await openUser(user.id);
+            toast("SOMSAI queue ban updated.");
+        } catch (error) {
+            toast(error.message, "error");
+        }
+    }
+
     async function loadSystem() {
         const data = await api("/dashboard");
         state.dashboard = data;
@@ -1955,6 +2197,9 @@
         $("#somsai-mmr-pool").addEventListener("change", updateSelectedSomsaiMmr);
         $("#somsai-mmr-form").addEventListener("submit", saveSomsaiMmr);
         $("#somsai-mmr-refresh").addEventListener("click", refreshSomsaiMmr);
+        $("#somsai-ban-apply").addEventListener("click", () => manageSomsaiBan("apply"));
+        $("#somsai-ban-cancel").addEventListener("click", () => manageSomsaiBan("cancel"));
+        $("#somsai-ban-reset").addEventListener("click", () => manageSomsaiBan("reset"));
         $("#password-open").addEventListener("click", () => {
             $("#password-form").hidden = false;
             $("#new-password").focus();
@@ -2093,6 +2338,39 @@
         }));
         $("#somsai-maps-prev").addEventListener("click", () => { state.somsaiMapPage--; loadSomsaiMaps(); });
         $("#somsai-maps-next").addEventListener("click", () => { state.somsaiMapPage++; loadSomsaiMaps(); });
+        $("#somsai-map-search").addEventListener("input", event => {
+            state.somsaiMapFilters.search = event.target.value.trim();
+            state.somsaiMapPage = 1;
+            window.clearTimeout(somsaiMapSearchTimer);
+            somsaiMapSearchTimer = window.setTimeout(() => loadSomsaiMaps().catch(error => toast(error.message, "error")), 250);
+        });
+        [["#somsai-map-rank", "rank"], ["#somsai-map-source", "source"]].forEach(([selector, key]) => {
+            $(selector).addEventListener("change", event => {
+                state.somsaiMapFilters[key] = event.target.value;
+                state.somsaiMapPage = 1;
+                loadSomsaiMaps().catch(error => toast(error.message, "error"));
+            });
+        });
+        $$('[data-somsai-filter]').forEach(input => input.addEventListener("input", event => {
+            state.somsaiMapFilters[event.target.dataset.somsaiFilter] = event.target.value;
+            state.somsaiMapPage = 1;
+            window.clearTimeout(somsaiMapSearchTimer);
+            somsaiMapSearchTimer = window.setTimeout(() => loadSomsaiMaps().catch(error => toast(error.message, "error")), 300);
+        }));
+        $("#somsai-map-advanced-toggle").addEventListener("click", event => {
+            const panel = $("#somsai-map-advanced");
+            panel.hidden = !panel.hidden;
+            event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+        });
+        $("#somsai-map-filters-clear").addEventListener("click", () => {
+            Object.keys(state.somsaiMapFilters).forEach(key => { state.somsaiMapFilters[key] = ""; });
+            $("#somsai-map-search").value = "";
+            $("#somsai-map-rank").value = "";
+            $("#somsai-map-source").value = "";
+            $$('[data-somsai-filter]').forEach(input => { input.value = ""; });
+            state.somsaiMapPage = 1;
+            loadSomsaiMaps().catch(error => toast(error.message, "error"));
+        });
         $("#somsai-map-form").addEventListener("submit", event => {
             event.preventDefault();
             somsaiAction(async () => {
@@ -2108,20 +2386,44 @@
             const url = $("#somsai-warehouse-import-url").value.trim();
             const result = await api("/somsai/import/preview", { method: "POST", data: { url, round: null, category: "NM" } });
             state.somsaiImportPreview = result;
-            $("#somsai-warehouse-import-round").replaceChildren(new Option("Все раунды", "__all__"), ...result.rounds.map(round => new Option(round, round)));
+            const picker = $("#somsai-warehouse-import-rounds");
+            picker.replaceChildren();
+            const rounds = result.rounds || [];
+            if (!rounds.length) {
+                const label = make("label", "somsai-round-option");
+                const checkbox = document.createElement("input"); checkbox.type = "checkbox"; checkbox.value = "__all__"; checkbox.checked = true;
+                label.append(checkbox, make("span", "", "Коллекция")); picker.append(label);
+            } else {
+                rounds.forEach(round => {
+                    const label = make("label", "somsai-round-option");
+                    const checkbox = document.createElement("input"); checkbox.type = "checkbox"; checkbox.value = round; checkbox.checked = true;
+                    label.append(checkbox, make("span", "", round)); picker.append(label);
+                });
+            }
             $("#somsai-warehouse-import").disabled = false;
             $("#somsai-warehouse-import-result").replaceChildren(make("p", "muted", result.rounds.length ? `Найдено раундов: ${result.rounds.length}` : "Коллекция готова к импорту"));
         }));
         $("#somsai-warehouse-import").addEventListener("click", () => somsaiAction(async () => {
+            const rounds = $$('#somsai-warehouse-import-rounds input:checked').map(input => input.value);
+            if (!rounds.length) throw new Error("Выберите хотя бы одну стадию турнира");
             const result = await api("/somsai/warehouse/import", { method: "POST", data: {
-                url: $("#somsai-warehouse-import-url").value.trim(), round: $("#somsai-warehouse-import-round").value, reason: "no reason",
+                url: $("#somsai-warehouse-import-url").value.trim(), rounds, reason: "no reason",
             } });
             renderWarehouseImport(result);
             window.setTimeout(pollWarehouseImport, 500);
         }));
         $("#somsai-refresh").addEventListener("click", () => somsaiAction(async () => {
+            if (!confirm("Пересчитать всю базу SOMSAI по текущим правилам?")) return;
             renderSomsaiRefresh(await api("/somsai/warehouse/refresh", { method: "POST" }));
             toast("Полное обновление хранилища запущено");
+            scheduleSomsaiRefreshPoll(250);
+        }));
+        $("#somsai-refresh-category").addEventListener("click", () => somsaiAction(async () => {
+            const slot = state.somsaiSlot;
+            if (!confirm(`Пересчитать все карты слота ${slot}?`)) return;
+            renderSomsaiRefresh(await api(`/somsai/warehouse/refresh/slot/${slot}`, { method: "POST" }));
+            toast(`Пересчёт слота ${slot} запущен`);
+            scheduleSomsaiRefreshPoll(250);
         }));
         updateRankingForm();
         try {

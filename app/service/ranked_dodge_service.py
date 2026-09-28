@@ -87,6 +87,7 @@ async def register_dodge(
     *,
     now: datetime | None = None,
     allow_missing_room: bool = False,
+    audit_reason: str | None = None,
 ) -> RankedDodgeStatus:
     """Save the cancellation and penalty atomically; caller owns the commit.
 
@@ -133,7 +134,7 @@ async def register_dodge(
             action="ranked.dodge",
             target_type="user",
             target_id=str(user_id),
-            reason=f"Left Ranked room {room_id} before confirming the initial hand",
+            reason=audit_reason or f"Left Ranked room {room_id} before confirming the initial hand",
             before={"level": previous.level if previous else 0},
             after={"room_id": room_id, **status_for(penalty).model_dump(mode="json")},
         )

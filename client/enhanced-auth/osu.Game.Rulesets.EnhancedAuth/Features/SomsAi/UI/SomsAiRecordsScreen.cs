@@ -31,7 +31,7 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
 {
     private const double transition_duration = 360;
     private const float transition_distance = 110;
-    public override string Title => matchId.HasValue ? $"SOMSAI · Матч #{matchId}" : "SOMSAI · Рейтинг";
+    public override string Title => matchId.HasValue ? $"SOMSAI · Match #{matchId}" : "SOMSAI · Ranked";
     public override bool ShowFooter => true;
     [Resolved] private IAPIProvider api { get; set; } = null!;
     [Resolved(CanBeNull = true)] private ILinkHandler? links { get; set; }
@@ -42,7 +42,7 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
     private int page = 1;
     private readonly FillFlowContainer rows = Flow();
     private readonly Container own = new() { RelativeSizeAxes = Axes.X, Height = 72, Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft };
-    private readonly OsuSpriteText status = Text("Загрузка…", 18);
+    private readonly OsuSpriteText status = Text("Loading…", 18);
     private SomsAiDataRequest? request;
     private readonly OsuScrollContainer scroll;
 
@@ -69,7 +69,7 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
                         RelativeSizeAxes = Axes.None,
                         Width = 130,
                         Height = 40,
-                        Text = "Рейтинг " + choice,
+                        Text = "Ranked " + choice,
                         Action = () =>
                         {
                             if (this.format == choice) return;
@@ -128,7 +128,7 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
     {
         request?.Cancel();
         rows.Clear(); own.Clear();
-        status.Text = "Загрузка…";
+        status.Text = "Loading…";
         var current = request = new SomsAiDataRequest(matchId.HasValue ? $"matches/{matchId}" : $"leaderboard?ruleset_id={rulesetId}&variant_id={variantId}&format={format}&page={page}");
         current.Success += data => Schedule(() =>
         {
@@ -137,16 +137,16 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
             if (matchId.HasValue) showMatch(data.ToObject<SomsAiMatch>()!);
             else
             {
-                status.Text = $"{format} · MMR · страница {page}";
+                status.Text = $"{format} · MMR · page {page}";
                 foreach (var item in data["items"] ?? new JArray()) rows.Add(rankingRow(item));
                 if (data["self"] is JToken self) own.Add(rankingRow(self, true));
-                if (page > 1) rows.Add(Button("← Предыдущая страница", () => { page--; refresh(); }));
-                if (data.Value<bool>("has_more")) rows.Add(Button("Следующая страница →", () => { page++; refresh(); }));
+                if (page > 1) rows.Add(Button("← Previous page", () => { page--; refresh(); }));
+                if (data.Value<bool>("has_more")) rows.Add(Button("Next page →", () => { page++; refresh(); }));
             }
             scroll.ScrollToStart();
         });
         current.Failure += _ => Schedule(() =>
-        { if (request == current) { request = null; status.Text = "Не удалось загрузить записи."; rows.Add(Button("Повторить", refresh)); } });
+        { if (request == current) { request = null; status.Text = "Could not load records."; rows.Add(Button("Retry", refresh)); } });
         api.Queue(current);
     }
     private Drawable rankingRow(JToken data, bool local = false)
@@ -156,7 +156,7 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
         double rating = data.Value<double>("rating");
         var rank = SomsAiRank.FromRating(rating);
         var caption = Flow(); caption.Padding = new MarginPadding { Left = 80, Top = 10, Right = 12 }; caption.Spacing = new Vector2(0, 3);
-        caption.Add(new TruncatingSpriteText { RelativeSizeAxes = Axes.X, Text = $"#{data.Value<int>("rank")}  {user.Username}" + (local ? " · ВЫ" : ""), Font = OsuFont.GetFont(size: 20, weight: FontWeight.SemiBold) });
+        caption.Add(new TruncatingSpriteText { RelativeSizeAxes = Axes.X, Text = $"#{data.Value<int>("rank")}  {user.Username}" + (local ? " · YOU" : ""), Font = OsuFont.GetFont(size: 20, weight: FontWeight.SemiBold) });
         caption.Add(new OsuSpriteText { Text = $"{rating:N0} MMR · {rank.Name} · {data.Value<int>("wins")}W / {data.Value<int>("losses")}L", Font = OsuFont.GetFont(size: 16), Colour = rank.Colour });
         return new osu.Game.Graphics.Containers.OsuClickableContainer { RelativeSizeAxes = Axes.X, Height = 70, Masking = true, CornerRadius = 8,
             Action = () => links?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, user)),
@@ -169,7 +169,7 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
     }
     private void showMatch(SomsAiMatch match)
     {
-        string team(int? id) => id.HasValue ? string.Join(" + ", match.Teams.FirstOrDefault(t => t.Id == id)?.Members.Select(p => SomsAiRank.DisplayName(p.Username)) ?? Array.Empty<string>()) : "Тайбрейкер";
+        string team(int? id) => id.HasValue ? string.Join(" + ", match.Teams.FirstOrDefault(t => t.Id == id)?.Members.Select(p => SomsAiRank.DisplayName(p.Username)) ?? Array.Empty<string>()) : "Tiebreaker";
         int? localTeam = match.Teams.FirstOrDefault(t => t.Members.Any(p => p.Id == api.LocalUser.Value.OnlineID))?.Id;
         status.Text = $"{match.Format} · {match.Wins.ElementAtOrDefault(0)} : {match.Wins.ElementAtOrDefault(1)} · BO{match.BestOf}";
         if (match.Teams.Count >= 2)
@@ -177,13 +177,13 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
         foreach (var ban in match.DraftHistory.Where(e => e.Value<string>("action") == "ban"))
         {
             int? bannedBy = ban.Value<int?>("team_id");
-            addEvent(match, ban.Value<string>("slot_id"), $"БАН · {team(bannedBy)}", null,
+            addEvent(match, ban.Value<string>("slot_id"), $"BAN · {team(bannedBy)}", null,
                 bannedBy is { } side ? teamColour(side) : SomsAiOceanTheme.Muted);
         }
         foreach (var round in match.History.OrderBy(r => r.Value<int>("round")))
         {
             int? winner = round.Value<int?>("winner_team_id");
-            string result = winner.HasValue ? "Победа: " + team(winner) : "Ничья";
+            string result = winner.HasValue ? "Winner: " + team(winner) : "Draw";
             Color4 resultColour = winner == null || localTeam == null ? SomsAiOceanTheme.Muted
                 : winner == localTeam ? new Color4(103, 239, 164, 255) : new Color4(255, 103, 119, 255);
             var details = Flow();
@@ -197,10 +197,10 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
             details.Add(totals);
             foreach (var player in round["players"] ?? new JArray())
                 details.Add(playerResultRow(match, player));
-            if (round.Value<bool>("forfeit")) details.Add(Text("Технический результат · " + round.Value<string>("reason"), 17));
-            addEvent(match, round.Value<string>("slot_id"), $"РАУНД {round.Value<int>("round")} · ПИК: {team(round.Value<int?>("picked_by_team"))}", details, resultColour);
+            if (round.Value<bool>("forfeit")) details.Add(Text("Forfeit result · " + round.Value<string>("reason"), 17));
+            addEvent(match, round.Value<string>("slot_id"), $"ROUND {round.Value<int>("round")} · PICK: {team(round.Value<int?>("picked_by_team"))}", details, resultColour);
         }
-        if (match.History.Count == 0 && match.DraftHistory.Count == 0) rows.Add(Text("В этом матче карты ещё не игрались.", 18));
+        if (match.History.Count == 0 && match.DraftHistory.Count == 0) rows.Add(Text("No beatmaps have been played in this match yet.", 18));
     }
 
     private Drawable matchupHeader(SomsAiTeam red, SomsAiTeam blue, int redWins, int blueWins)
@@ -220,7 +220,9 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
     private Drawable teamPanel(SomsAiTeam team, int wins, bool red)
     {
         Color4 colour = red ? SomsAiOceanTheme.Coral : SomsAiOceanTheme.Aqua;
-        string name = string.IsNullOrWhiteSpace(team.Name) ? (red ? "Красная команда" : "Синяя команда") : team.Name;
+        // Team colours are protocol-defined. Do not reuse legacy/localised names
+        // returned by an older server when rendering stored match history.
+        string name = red ? "Red Team" : "Blue Team";
         var players = new FillFlowContainer { RelativeSizeAxes = Axes.X, Height = 57, Direction = FillDirection.Horizontal, Spacing = new Vector2(8) };
         foreach (var player in team.Members)
             players.Add(playerChip(player, colour));
@@ -307,10 +309,6 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
         int miss = statistic(statistics, "miss");
         int perfect = statistic(statistics, "perfect");
         int good = statistic(statistics, "good");
-        string hitCounts = statistics == null || !statistics.Properties().Any()
-            ? "Статистика старого матча недоступна"
-            : $"GREAT {great:N0}  ·  OK {ok:N0}  ·  MEH {meh:N0}  ·  MISS {miss:N0}"
-              + (perfect > 0 || good > 0 ? $"  ·  PERFECT {perfect:N0}  ·  GOOD {good:N0}" : "");
         string grade = result.Value<string>("rank") ?? (result.Value<bool?>("passed") == false ? "F" : "—");
         string displayGrade = gradeLabel(grade);
         Color4 gradeAccent = gradeColour(grade);
@@ -326,11 +324,7 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
             {
                 new Box { RelativeSizeAxes = Axes.Both, Colour = new Color4(2, 29, 42, 190) },
                 new Box { RelativeSizeAxes = Axes.Y, Width = 4, Colour = colour },
-                new OsuSpriteText
-                {
-                    X = 340, Y = 39, RelativeSizeAxes = Axes.X, Width = .42f,
-                    Text = hitCounts, Font = OsuFont.GetFont(size: 12, weight: FontWeight.SemiBold), Colour = SomsAiOceanTheme.Muted,
-                },
+                judgementCounts(statistics, great, ok, meh, miss, perfect, good),
                 new OsuSpriteText
                 {
                     Anchor = Anchor.CentreRight, Origin = Anchor.CentreRight, Position = new Vector2(-80, -9),
@@ -410,6 +404,43 @@ internal sealed partial class SomsAiRecordsScreen : OsuScreen
             LinkAction.External,
             $"https://osu.ppy.sh/rankings/{mode}/performance?country={Uri.EscapeDataString(country)}"));
     }
+
+    private static Drawable judgementCounts(
+        JObject? statistics, int great, int ok, int meh, int miss, int perfect, int good)
+    {
+        var flow = new FillFlowContainer
+        {
+            X = 340,
+            Y = 38,
+            RelativeSizeAxes = Axes.X,
+            Width = .42f,
+            Height = 18,
+            Direction = FillDirection.Horizontal,
+            Spacing = new Vector2(10, 0),
+        };
+        if (statistics == null || !statistics.Properties().Any())
+        {
+            addJudgement(flow, "Statistics for this old match are unavailable", 0, SomsAiOceanTheme.Muted, false);
+            return flow;
+        }
+
+        addJudgement(flow, "GREAT", great, new Color4(91, 201, 255, 255));
+        addJudgement(flow, "OK", ok, new Color4(112, 218, 112, 255));
+        addJudgement(flow, "MEH", meh, new Color4(255, 205, 74, 255));
+        addJudgement(flow, "MISS", miss, new Color4(255, 91, 111, 255));
+        if (perfect > 0) addJudgement(flow, "PERFECT", perfect, new Color4(192, 132, 255, 255));
+        if (good > 0) addJudgement(flow, "GOOD", good, new Color4(83, 230, 190, 255));
+        return flow;
+    }
+
+    private static void addJudgement(
+        FillFlowContainer flow, string name, int value, Color4 colour, bool showValue = true) =>
+        flow.Add(new OsuSpriteText
+        {
+            Text = showValue ? $"{name} {value:N0}" : name,
+            Font = OsuFont.GetFont(size: 12, weight: FontWeight.SemiBold),
+            Colour = colour,
+        });
 
     private static int statistic(JObject? statistics, string name) =>
         statistics?.GetValue(name, StringComparison.OrdinalIgnoreCase)?.Value<int>() ?? 0;

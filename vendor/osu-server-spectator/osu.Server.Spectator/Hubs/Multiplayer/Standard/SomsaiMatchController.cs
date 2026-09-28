@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,8 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using osu.Game.Online;
 using osu.Game.Online.Multiplayer;
+using osu.Game.Online.Multiplayer.Countdown;
 using osu.Game.Online.Multiplayer.MatchTypes.TeamVersus;
 using osu.Game.Online.Rooms;
+using osu.Game.Online.API;
 using osu.Server.Spectator.Database;
 using osu.Server.Spectator.Database.Models;
 using osu.Server.Spectator.Extensions;
@@ -22,7 +25,12 @@ namespace osu.Server.Spectator.Hubs.Multiplayer.Standard
     [NonController]
     public sealed class SomsaiMatchController : IMatchController
     {
-        public const string ROOM_PREFIX = "SOMSAI · ";
+        public const string ROOM_PREFIX = "SOMSAI ";
+        internal static readonly TimeSpan MatchStartDelay = TimeSpan.FromSeconds(5);
+
+        public static bool IsManagedRoomName(string? name)
+            => !string.IsNullOrEmpty(name) && name.StartsWith(ROOM_PREFIX, StringComparison.OrdinalIgnoreCase);
+
         private readonly ServerMultiplayerRoom room;
         private readonly IDatabaseFactory dbFactory;
         private readonly MultiplayerEventDispatcher events;
@@ -72,10 +80,10 @@ namespace osu.Server.Spectator.Hubs.Multiplayer.Standard
             state = TeamVersusRoomState.CreateDefault();
             state.Locked = true;
             room.MatchState = state;
-            await applyConfiguration(configuration);
             foreach (var bot in configuration.Bots)
                 if (room.Users.All(user => user.UserID != bot.UserId))
                     await room.AddUser(new MultiplayerRoomUser(bot.UserId) { Role = MultiplayerRoomUserRole.Player });
+            await applyConfiguration(configuration);
             await events.PostMatchRoomStateChangedAsync(room);
             if (runPump)
                 _ = pump();
@@ -208,6 +216,18 @@ namespace osu.Server.Spectator.Hubs.Multiplayer.Standard
                 stopBots();
                 if (latest.Stage != "ready") return;
                 botItemId = latest.PlaylistItemId;
+                foreach (var bot in latest.Bots)
+                {
+                    string preference = latest.MapSlot?.Equals("TB", StringComparison.OrdinalIgnoreCase) == true
+                        ? bot.AiProfile?.TiebreakerPreference ?? ""
+                        : latest.MapSlot?.StartsWith("FM", StringComparison.OrdinalIgnoreCase) == true
+                            ? bot.AiProfile?.FreemodPreference ?? ""
+                            : "";
+                    var acronyms = CurrentItem.AllowedMods.Any()
+                        ? preference.Chunk(2).Select(chars => new APIMod { Acronym = new string(chars) })
+                        : Enumerable.Empty<APIMod>();
+                    await room.ChangeUserMods(bot.UserId, acronyms);
+                }
                 preparingBots = botGameplay?.Prepare(room.RoomID, CurrentItem, latest);
                 if (preparingBots == null) throw new InvalidOperationException("Bot gameplay transport is unavailable.");
             }
@@ -248,8 +268,29 @@ namespace osu.Server.Spectator.Hubs.Multiplayer.Standard
 
         private int[] connected() => room.Users.Where(user => user.Role == MultiplayerRoomUserRole.Player).Select(user => user.UserID).ToArray();
         private int[] ready() => room.Users.Where(user => user.State == MultiplayerUserState.Ready).Select(user => user.UserID).ToArray();
-        private int[] available() => room.Users.Where(user => user.Role == MultiplayerRoomUserRole.Player
-            && user.BeatmapAvailability.State == DownloadState.LocallyAvailable).Select(user => user.UserID).ToArray();
+
+        internal static bool MeetsFreemodRequirement(IEnumerable<IEnumerable<string>> selections)
+        {
+            var mods = selections.Select(value => value.ToHashSet(StringComparer.OrdinalIgnoreCase)).ToArray();
+            if (mods.Length == 0) return false;
+            if (mods.Length == 1) return mods[0].Contains("HD") || mods[0].Contains("HR");
+            return mods.Any(value => value.Contains("HD") && !value.Contains("HR"))
+                   && mods.Any(value => value.Contains("HR"));
+        }
+
+        private bool teamMeetsFreemodRequirement(int[] team) => MeetsFreemodRequirement(team.Select(id =>
+            room.Users.FirstOrDefault(user => user.UserID == id)?.Mods.Select(mod => mod.Acronym)
+            ?? Enumerable.Empty<string>()));
+
+        private int[] available()
+        {
+            var downloaded = room.Users.Where(user => user.Role == MultiplayerRoomUserRole.Player
+                && user.BeatmapAvailability.State == DownloadState.LocallyAvailable).Select(user => user.UserID);
+            if (configuration.MapSlot?.StartsWith("FM", StringComparison.OrdinalIgnoreCase) != true)
+                return downloaded.ToArray();
+            var valid = configuration.Roster.Where(teamMeetsFreemodRequirement).SelectMany(team => team).ToHashSet();
+            return downloaded.Where(valid.Contains).ToArray();
+        }
 
         // HTTP never holds the room lock. The start intent is kept until the app
         // acknowledges it, so a committed response lost in transit can be retried.
@@ -314,11 +355,21 @@ namespace osu.Server.Spectator.Hubs.Multiplayer.Standard
                 bool allReady = roster.SequenceEqual(connected().Order()) && roster.SequenceEqual(ready().Order());
                 if (latest.Stage == "playing" && room.State == MultiplayerRoomState.Open && !CurrentItem.Expired)
                 {
-                    if (pendingStart == CurrentItem.ID && latest.PlaylistItemId == CurrentItem.ID && allReady)
+                    var countdown = room.FindCountdownOfType<MatchStartCountdown>();
+                    if (countdown != null)
+                    {
+                        if (latest.PlaylistItemId != CurrentItem.ID || !allReady)
+                        {
+                            await room.StopCountdown(countdown);
+                            pendingAbort = CurrentItem.ID;
+                        }
+                    }
+                    else if (pendingStart == CurrentItem.ID && latest.PlaylistItemId == CurrentItem.ID && allReady)
                     {
                         try
                         {
-                            await ServerMultiplayerRoom.StartMatch(room);
+                            // Use the native multiplayer countdown so every client sees the same five seconds.
+                            await room.StartMatchCountdown(MatchStartDelay);
                             pendingStart = null;
                         }
                         catch

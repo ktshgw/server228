@@ -35,7 +35,7 @@ async def internal_bot_beatmap(room_id: int, item_id: int, session: Database, fe
         or match.stage not in {"ready", "playing"}
         or match.state["playlist_item_id"] != item_id
     ):
-        reject("Раунд ботов недоступен.", 409)
+        reject("Bot round unavailable.", 409)
     slot = next(slot for slot in match.state["slots"] if slot["id"] == match.state["current_slot"])
     # Exact reviewed revision, using the same cache/fallbacks as player downloads.
     raw = await fetcher.get_beatmap_raw(slot["beatmap_id"], slot["checksum"])
@@ -52,14 +52,14 @@ async def internal_bot_results(room_id: int, payload: SomsaiBotResults):
             or match.stage not in {"playing", "results"}
             or match.state["playlist_item_id"] != payload.playlist_item_id
         ):
-            reject("Раунд ботов уже изменился.", 409)
+            reject("The bot round has already changed.", 409)
         ids = {bot["user_id"] for bot in match.state.get("bots", [])}
         if {score.user_id for score in payload.scores} != ids or len(payload.scores) != len(ids):
-            reject("Состав ботов не совпадает.", 422)
+            reject("The bot lineup does not match.", 422)
         scores = {str(score.user_id): score.model_dump() for score in payload.scores}
         previous = match.state.get("bot_scores", {})
         if previous and previous != scores:
-            reject("Результаты раунда уже сохранены.", 409)
+            reject("The round results have already been saved.", 409)
         state = deepcopy(match.state)
         state["bot_scores"] = scores
         match.state = state

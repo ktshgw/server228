@@ -54,7 +54,7 @@ public sealed class GetSomsStealthRequest(string mode, double pp, string? countr
 public sealed partial class SomsStealthSession : Component
 {
     public static SomsStealthSession? Current { get; private set; }
-    public readonly Bindable<string> Status = new("Stealth mode выключен.");
+    public readonly Bindable<string> Status = new("Stealth mode is disabled.");
     public readonly Bindable<bool> Busy = new(false);
     public SomsStealthIdentity? Identity { get; private set; }
     public int? DisplayRank { get; private set; }
@@ -109,7 +109,7 @@ public sealed partial class SomsStealthSession : Component
         needsIdentity = enabled?.Value == true;
         lastPP = double.NaN;
         nextCheck = 0;
-        Status.Value = needsIdentity ? "Ожидание PP аккаунта…" : "Stealth mode выключен.";
+        Status.Value = needsIdentity ? "Waiting for account PP…" : "Stealth mode is disabled.";
         SomsStealthPresentation.Refresh();
     }
 
@@ -130,7 +130,7 @@ public sealed partial class SomsStealthSession : Component
         lastMode = mode;
         bool selecting = needsIdentity;
         Busy.Value = true;
-        Status.Value = selecting ? "Подбор игрока с близким PP…" : "Обновление ранга…";
+        Status.Value = selecting ? "Finding a player with similar PP…" : "Updating rank…";
         pending = new GetSomsStealthRequest(mode, target, selecting ? null : Identity?.CountryCode);
         pending.Success += result => Schedule(() =>
         {
@@ -176,7 +176,7 @@ public sealed partial class SomsStealthSession : Component
             rankPP = target;
             rankMode = mode;
             Status.Value = $"{Identity!.Username} · #{DisplayRank:N0} · {target:N0} pp" +
-                           (selecting ? $" (у игрока {Identity.PP:N0} pp)" : result.Estimated ? " · ранг ≈" : "");
+                           (selecting ? $" (player has {Identity.PP:N0} pp)" : result.Estimated ? " · rank ≈" : "");
             SomsStealthPresentation.Refresh();
         });
         pending.Failure += _ => Schedule(() => { if (!disposed && revision == generation) failed(); });
@@ -188,8 +188,8 @@ public sealed partial class SomsStealthSession : Component
         Busy.Value = false;
         pending = null;
         needsIdentity = false;
-        Status.Value = Identity == null ? "Не удалось подобрать игрока. Нажмите Reroll stealth для повтора."
-            : "Ранг не обновлён: сервер недоступен. Выбранный игрок сохранён.";
+        Status.Value = Identity == null ? "Could not find a player. Press Reroll stealth to try again."
+            : "Rank was not updated because the server is unavailable. The selected player was preserved.";
         if (Identity != null) { lastPP = double.NaN; nextCheck = Clock.CurrentTime + 15000; }
     }
 

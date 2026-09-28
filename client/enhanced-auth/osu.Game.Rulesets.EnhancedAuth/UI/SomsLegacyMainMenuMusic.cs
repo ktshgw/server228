@@ -32,7 +32,7 @@ public sealed partial class SomsLegacyMainMenuMusic : Container
         Add(new Box { RelativeSizeAxes = Axes.Both, Colour = Color4.Black, Alpha = 0.45f });
         Add(new OsuSpriteText
         {
-            Position = new Vector2(9, 3), Text = "Сейчас играет", Font = SomsLegacyFont.Font(11), Alpha = 0.65f,
+            Position = new Vector2(9, 3), Text = "Now playing", Font = SomsLegacyFont.Font(11), Alpha = 0.65f,
         });
         Add(song = new TruncatingSpriteText
         {

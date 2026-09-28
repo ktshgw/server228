@@ -121,9 +121,11 @@ namespace osu.Server.Spectator.Hubs.Multiplayer
       }
     }
 
-    public Task<MultiplayerRoom> JoinRoom(long roomId) => JoinRoomWithPassword(roomId, string.Empty);
+    public Task<MultiplayerRoom> JoinRoom(long roomId) => joinRoom(roomId, string.Empty);
 
-    public async Task<MultiplayerRoom> JoinRoomWithPassword(long roomId, string password)
+    public Task<MultiplayerRoom> JoinRoomWithPassword(long roomId, string password) => joinRoom(roomId, password);
+
+    private async Task<MultiplayerRoom> joinRoom(long roomId, string password)
     {
       Log($"Attempting to join room {roomId}");
       using (var db = databaseFactory.GetInstance())

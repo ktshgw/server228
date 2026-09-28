@@ -46,7 +46,7 @@ namespace osu.Game.Rulesets.EnhancedAuth.UI;
 
 public sealed partial class SomsMarathonScreen : OsuScreen
 {
-    public override string Title => "Марафон";
+    public override string Title => "Marathon";
     public override bool ShowFooter => true;
     public override bool HideOverlaysOnEnter => true;
     // Like the native playlist lounge, editing does not lease global selection.
@@ -64,11 +64,11 @@ public sealed partial class SomsMarathonScreen : OsuScreen
     private readonly FillFlowContainer library = flow();
     private readonly FillFlowContainer fragments = flow();
     private readonly Dictionary<SomsMarathonSegment, (MarathonListItem Card, OsuSpriteText Title, OsuSpriteText Range)> fragmentCards = new();
-    private readonly OsuSpriteText fragmentHint = label("Добавьте песни из своей библиотеки карт.", 20);
+    private readonly OsuSpriteText fragmentHint = label("Add songs from your beatmap library.", 20);
     private readonly OsuSpriteText fragmentSummary = label("", 16);
-    private readonly FormTextBox name = new() { Caption = "Название марафона", Current = { Value = "Songs compilation" }, LengthLimit = 100 };
-    private readonly FormTextBox search = new() { Caption = "Поиск марафона", PlaceholderText = "Название или автор", Current = { Value = "" } };
-    private readonly OsuSpriteText status = label("Добавьте карты. Фрагменты Kiai будут выбраны автоматически.", 16);
+    private readonly FormTextBox name = new() { Caption = "Marathon name", Current = { Value = "Songs compilation" }, LengthLimit = 100 };
+    private readonly FormTextBox search = new() { Caption = "Search marathons", PlaceholderText = "Title or creator", Current = { Value = "" } };
+    private readonly OsuSpriteText status = label("Add beatmaps. Kiai segments will be selected automatically.", 16);
     private SomsMarathonDefinition definition = new();
     private readonly Dictionary<string, WorkingBeatmap> resolved = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<SomsMarathonRequest, byte> requests = new();
@@ -117,12 +117,12 @@ public sealed partial class SomsMarathonScreen : OsuScreen
     private ShearedButton button(string text, Action action)
     {
         var result = new ShearedButton { Text = text, RelativeSizeAxes = Axes.X, Height = 40, Action = () => { if (!busy && !closed) action(); } };
-        if (text is "Играть" or "Применить")
+        if (text is "Play" or "Apply")
         {
             result.DarkerColour = new Color4(90, 140, 32, 255); result.LighterColour = new Color4(170, 235, 92, 255);
             result.TextColour = new Color4(22, 34, 15, 255);
         }
-        else if (text is "Сохранить" or "Создать марафон" || text.StartsWith("+"))
+        else if (text is "Save" or "Create marathon" || text.StartsWith("+"))
         { result.DarkerColour = new Color4(81, 48, 125, 255); result.LighterColour = new Color4(121, 75, 175, 255); }
         return result;
     }
@@ -153,7 +153,7 @@ public sealed partial class SomsMarathonScreen : OsuScreen
         if (busy || closed) return;
         busy = true;
         name.ReadOnly = true;
-        status.Text = "Подождите…";
+        status.Text = "Please wait…";
         _ = execute();
         async Task execute()
         {
@@ -166,7 +166,7 @@ public sealed partial class SomsMarathonScreen : OsuScreen
     }
     private async Task<JObject> request(SomsMarathonRequest request)
     {
-        if (api.State.Value != APIState.Online) throw new InvalidOperationException("Войдите в SOMS, чтобы сохранить или запустить марафон.");
+        if (api.State.Value != APIState.Online) throw new InvalidOperationException("Sign in to SOMS to save or play a marathon.");
         var completion = new TaskCompletionSource<JObject>(TaskCreationOptions.RunContinuationsAsynchronously);
         requests.TryAdd(request, 0);
         request.Success += result => completion.TrySetResult(result);
@@ -204,10 +204,10 @@ public sealed partial class SomsMarathonScreen : OsuScreen
                     AutoSizeAxes = Axes.Both, Direction = FillDirection.Horizontal, Spacing = new Vector2(4, 0),
                     Children = canEdit ? new Drawable[]
                     {
-                        fragmentAction(FontAwesome.Solid.Pen, "Редактировать отрезок", () => editSegment(segment)),
-                        fragmentAction(FontAwesome.Solid.ChevronUp, "Переместить выше", () => move(definition.Segments.IndexOf(segment), -1)),
-                        fragmentAction(FontAwesome.Solid.ChevronDown, "Переместить ниже", () => move(definition.Segments.IndexOf(segment), 1)),
-                        fragmentAction(FontAwesome.Solid.Minus, "Убрать песню", () => { definition.Segments.Remove(segment); changed(); renderFragments(); }),
+                        fragmentAction(FontAwesome.Solid.Pen, "Edit segment", () => editSegment(segment)),
+                        fragmentAction(FontAwesome.Solid.ChevronUp, "Move up", () => move(definition.Segments.IndexOf(segment), -1)),
+                        fragmentAction(FontAwesome.Solid.ChevronDown, "Move down", () => move(definition.Segments.IndexOf(segment), 1)),
+                        fragmentAction(FontAwesome.Solid.Minus, "Remove song", () => { definition.Segments.Remove(segment); changed(); renderFragments(); }),
                     } : Array.Empty<Drawable>(),
                 };
                 var captions = new Container
@@ -220,13 +220,13 @@ public sealed partial class SomsMarathonScreen : OsuScreen
                 fragmentCards.Add(segment, entry = (card, title, rangeLabel));
             }
             entry.Title.Text = $"{i + 1}. {segment.Title}";
-            entry.Range.Text = $"{timestamp(segment.StartMs)} — {timestamp(segment.EndMs)} · {(segment.EndMs - segment.StartMs) / 1000.0:0.##} с";
+            entry.Range.Text = $"{timestamp(segment.StartMs)} — {timestamp(segment.EndMs)} · {(segment.EndMs - segment.StartMs) / 1000.0:0.##} sec";
             fragments.SetLayoutPosition(entry.Card, i);
         }
         fragmentHint.Alpha = definition.Segments.Count == 0 ? 1 : 0;
         fragments.SetLayoutPosition(fragmentHint, -1);
         fragments.SetLayoutPosition(fragmentSummary, float.MaxValue);
-        fragmentSummary.Text = $"{definition.Segments.Count}/20 песен · {duration(definition)} · без PP и MMR";
+        fragmentSummary.Text = $"{definition.Segments.Count}/20 songs · {duration(definition)} · no PP or MMR";
     }
     private IconButton fragmentAction(IconUsage icon, string tooltip, Action action) => new()
     {
@@ -249,7 +249,7 @@ public sealed partial class SomsMarathonScreen : OsuScreen
         var info = findInstalled(segment);
         if (info != null) return beatmaps.GetWorkingBeatmap(info);
         if (segment.BeatmapId <= 0 && resolved.TryGetValue(segment.Checksum, out var working)) return working;
-        throw new InvalidOperationException("Карта ещё не установлена: " + segment.Title + ". Нажмите «Скачать недостающие» и дождитесь импорта.");
+        throw new InvalidOperationException("Beatmap is not installed yet: " + segment.Title + ". Click Download missing and wait for the import to finish.");
     }
     private BeatmapInfo? findInstalled(SomsMarathonSegment segment) => segment.BeatmapId > 0
         ? beatmaps.QueryBeatmap(map => map.OnlineID == segment.BeatmapId)
@@ -269,26 +269,26 @@ public sealed partial class SomsMarathonScreen : OsuScreen
             {
                 if (downloads.GetExistingDownload(new BeatmapSetInfo { OnlineID = segment.BeatmapSetId }) != null) continue;
                 var map = await lookup.GetBeatmapAsync(segment.BeatmapId, lifetime.Token);
-                if (map?.BeatmapSet == null) throw new InvalidOperationException("Не удалось найти карту: " + segment.Title);
+                if (map?.BeatmapSet == null) throw new InvalidOperationException("Could not find beatmap: " + segment.Title);
                 Schedule(() => { if (!closed && findInstalled(segment) == null) downloads.Download(map.BeatmapSet, true); });
             }
-            Schedule(() => status.Text = missing.Length == 0 ? "Все карты установлены. Можно играть." : "Дождитесь загрузки и импорта карт. Прогресс показан на карточках и в загрузках (Ctrl+B).");
+            Schedule(() => status.Text = missing.Length == 0 ? "All beatmaps are installed. Ready to play." : "Wait for beatmap downloads and imports to finish. Progress is shown on the cards and in Downloads (Ctrl+B).");
         });
     }
 
     private async Task save()
     {
-        if (!canEdit) throw new InvalidOperationException("Редактировать марафон может только создатель.");
-        if (definition.Segments.Count < 2) throw new InvalidOperationException("Добавьте хотя бы две карты.");
+        if (!canEdit) throw new InvalidOperationException("Only the creator can edit this marathon.");
+        if (definition.Segments.Count < 2) throw new InvalidOperationException("Add at least two beatmaps.");
         if (canEdit && name.Current.Value.Trim() != definition.Name) changed();
-        if (definition.Id > 0) { Schedule(() => status.Text = "Этот марафон уже сохранён."); return; }
+        if (definition.Id > 0) { Schedule(() => status.Text = "This marathon is already saved."); return; }
         definition.Name = string.IsNullOrWhiteSpace(name.Current.Value) ? "Songs compilation" : name.Current.Value.Trim();
         JObject body = JObject.FromObject(definition);
         body.Remove("id"); body.Remove("owner_id"); body.Remove("owner_name");
         var response = await request(new SomsMarathonRequest(body: body));
         definition = response.ToObject<SomsMarathonDefinition>()!;
         File.WriteAllText(draftPath, JsonConvert.SerializeObject(definition));
-        Schedule(() => status.Text = "Марафон сохранён. Он доступен в общем списке.");
+        Schedule(() => status.Text = "Marathon saved. It is now available in the public list.");
     }
     private async Task play()
     {
@@ -315,7 +315,7 @@ public sealed partial class SomsMarathonScreen : OsuScreen
                     ["attempt_id"] = attemptId, ["total_score"] = result.Score,
                     ["accuracy"] = result.Accuracy, ["max_combo"] = result.Combo,
                 }));
-                string message = saved.Value<bool>("saved") ? "Результат сохранён в таблице марафона." : "Результат с автоматической игрой не добавляется в таблицу.";
+                string message = saved.Value<bool>("saved") ? "Result saved to the marathon leaderboard." : "Results played with automation are not added to the leaderboard.";
                 Schedule(() => status.Text = message);
                 return message;
             })));
@@ -333,13 +333,13 @@ public sealed partial class SomsMarathonScreen : OsuScreen
                 savedMarathons.Clear();
                 savedMarathons.AddRange(data["items"]!.ToObject<List<SomsMarathonDefinition>>()!);
                 hasMore = data.Value<bool>("has_more");
-                renderSavedCards(); status.Text = "Выберите марафон или создайте свою подборку песен.";
+                renderSavedCards(); status.Text = "Select a marathon or create your own song playlist.";
             });
         });
     }
     private void showLeaderboard()
     {
-        if (definition.Id == 0) { status.Text = "Сначала сохраните марафон."; return; }
+        if (definition.Id == 0) { status.Text = "Save the marathon first."; return; }
         run(async () =>
         {
             var data = await request(new SomsMarathonRequest($"/{definition.Id}/scores"));
@@ -361,8 +361,8 @@ public sealed partial class SomsMarathonScreen : OsuScreen
                     records.Add(entry);
                     entry.OnLoadComplete += _ => entry.FadeInFromZero(200);
                 }
-                if (rank == 0) records.Add(label("Пока нет результатов. Сыграйте первым!"));
-                status.Text = "Песни, отрезки и рекорды выбранного марафона.";
+                if (rank == 0) records.Add(label("No results yet. Be the first to play!"));
+                status.Text = "Songs, segments and records for the selected marathon.";
             });
         });
     }

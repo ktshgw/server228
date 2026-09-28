@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
+import importlib
 import re
 from typing import Any
 from urllib.parse import urlsplit
@@ -17,6 +18,7 @@ from app.features.somsai.services.somsai_rank_pool import eligibility_label, eli
 from app.helpers import utcnow
 
 from fastapi import HTTPException
+from httpx import AsyncClient, HTTPStatusError, Timeout, TimeoutException
 from sqlalchemy import func
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -32,6 +34,12 @@ REFRESH_STATE: dict[str, Any] = {
     "last_id": 0,
     "started_at": None,
     "completed_at": None,
+    "error_details": [],
+    "details_truncated": 0,
+    "scope": "all",
+    "category": None,
+    "slot": None,
+    "map_id": None,
 }
 
 
@@ -57,6 +65,7 @@ def map_payload(row: SomsaiMap) -> dict[str, Any]:
         **row.model_dump(),
         "name": f"{row.artist} — {row.title} [{row.version}]",
         "beatmap_url": f"https://osu.ppy.sh/beatmaps/{row.beatmap_id}",
+        "cover_url": row.cover_url or f"https://assets.ppy.sh/beatmaps/{row.beatmapset_id}/covers/cover.jpg",
     }
 
 
@@ -165,9 +174,16 @@ async def save_map(
     return before, row
 
 
-async def refresh_all_maps() -> None:
+def begin_refresh(
+    *,
+    scope: str = "all",
+    category: str | None = None,
+    slot: str | None = None,
+    map_id: int | None = None,
+) -> bool:
+    """Atomically reserve one process-wide refresh job before returning to the event loop."""
     if REFRESH_STATE["running"]:
-        return
+        return False
     REFRESH_STATE.update(
         running=True,
         done=0,
@@ -178,68 +194,199 @@ async def refresh_all_maps() -> None:
         last_id=0,
         started_at=datetime.now(UTC).isoformat(),
         completed_at=None,
+        error_details=[],
+        details_truncated=0,
+        scope=scope,
+        category=category,
+        slot=slot,
+        map_id=map_id,
     )
+    return True
+
+
+def reload_somsai_calculators() -> None:
+    """Reload editable calculation rules before an operator-triggered refresh."""
+
+    from app.features.somsai.services import somsai_map_stats, somsai_rank_pool
+
+    importlib.invalidate_caches()
+    importlib.reload(somsai_map_stats)
+    importlib.reload(somsai_rank_pool)
+    global display_stats, eligible_ranks, eligibility_label
+    display_stats = somsai_map_stats.display_stats
+    eligible_ranks = somsai_rank_pool.eligible_ranks
+    eligibility_label = somsai_rank_pool.eligibility_label
+
+
+async def _refresh_api_request(client: AsyncClient, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
+    """Use a refresh-only client so a slow bulk job cannot stall website requests."""
+
+    fetcher = await get_fetcher()
+    for attempt in range(2):
+        await fetcher.ensure_valid_access_token()
+        response = await client.request(method, url, headers=fetcher.header, **kwargs)
+        if response.status_code == 401 and attempt == 0:
+            fetcher.token_expiry = 0
+            continue
+        response.raise_for_status()
+        return response.json()
+    raise RuntimeError("osu! API authentication failed")
+
+
+async def _refresh_canonical_map(
+    client: AsyncClient,
+    slot: str,
+    beatmap_id: int,
+    ruleset_id: int,
+    variant_id: int,
+) -> dict[str, Any]:
+    """Fetch only metadata and difficulty attributes needed by a warehouse row."""
+
+    beatmap = await _refresh_api_request(client, "GET", f"https://osu.ppy.sh/api/v2/beatmaps/{beatmap_id}")
+    if int(beatmap["id"]) != beatmap_id:
+        raise ValueError("beatmap identity mismatch")
+    if int(beatmap.get("mode_int", 0)) != ruleset_id:
+        raise ValueError("beatmap ruleset no longer matches the warehouse row")
+
+    category = slot[:2]
+    calculation_mods = [dict(mod) for mod in CATEGORY_MODS[category]]
+    gameplay_mods = [] if category == "FM" else calculation_mods
+    attribute_response = await _refresh_api_request(
+        client,
+        "POST",
+        f"https://osu.ppy.sh/api/v2/beatmaps/{beatmap_id}/attributes",
+        json={"ruleset_id": ruleset_id, "mods": calculation_mods},
+    )
+    source = {
+        "category": category,
+        "mods": calculation_mods,
+        "bpm": beatmap.get("bpm", 0),
+        "cs": beatmap.get("cs", 0),
+        "od": beatmap.get("accuracy", 0),
+        "ar": beatmap.get("ar", 0),
+        "hp": beatmap.get("drain", 0),
+        "total_length": beatmap.get("total_length", 0),
+        "hit_length": beatmap.get("hit_length", 0),
+    }
+    stats = {
+        key: round(value, 2) if isinstance(value, float) else value
+        for key, value in display_stats("", source, attribute_response["attributes"], ruleset_id).items()
+    }
+    ranks = eligible_ranks(slot, float(stats["stars"]))
+    beatmapset = beatmap.get("beatmapset") or {}
+    covers = beatmapset.get("covers") or {}
+    return {
+        "slot": slot,
+        "category": category,
+        "beatmap_id": beatmap_id,
+        "beatmapset_id": int(beatmap.get("beatmapset_id") or beatmapset.get("id") or 0),
+        "ruleset_id": ruleset_id,
+        "variant_id": variant_id,
+        "checksum": beatmap.get("checksum"),
+        "artist": str(beatmapset.get("artist") or "")[:255],
+        "title": str(beatmapset.get("title") or "")[:255],
+        "version": str(beatmap.get("version") or "")[:255],
+        "cover_url": covers.get("cover@2x") or covers.get("cover") or covers.get("card@2x") or covers.get("card"),
+        "mods": gameplay_mods,
+        "stats": stats,
+        "eligible_ranks": ranks,
+        "eligibility_label": eligibility_label(ranks),
+        "refreshed_at": utcnow(),
+    }
+
+
+async def _refresh_one_map(row_id: int, client: AsyncClient) -> bool:
+    """Recalculate one row without occupying the website's shared API client."""
+
+    for attempt in range(2):
+        try:
+            async with with_db() as session:
+                source = await session.get(SomsaiMap, row_id)
+                if source is None:
+                    return False
+                identity = (source.slot, source.beatmap_id, source.ruleset_id, source.variant_id)
+
+            data = await _refresh_canonical_map(client, *identity)
+
+            async with with_db() as session:
+                row = await session.get(SomsaiMap, row_id)
+                if row is None:
+                    return False
+                before = {key: value for key, value in map_payload(row).items() if key != "refreshed_at"}
+                for key, value in data.items():
+                    setattr(row, key, value)
+                session.add(row)
+                await session.flush()
+                after = {key: value for key, value in map_payload(row).items() if key != "refreshed_at"}
+                await session.commit()
+                REFRESH_STATE["changed" if before != after else "unchanged"] += 1
+                return True
+        except Exception as exc:
+            if attempt == 0 and not isinstance(exc, TimeoutException):
+                await asyncio.sleep(0.35)
+                continue
+            details = REFRESH_STATE["error_details"]
+            if isinstance(exc, HTTPStatusError):
+                description = f"HTTP {exc.response.status_code} from osu! API"
+            else:
+                description = str(exc).strip() or type(exc).__name__
+            message = f"Map #{row_id}: {type(exc).__name__}: {description}"[:1000]
+            if len(details) < 100:
+                details.append(message)
+            else:
+                REFRESH_STATE["details_truncated"] += 1
+    return False
+
+
+async def refresh_all_maps(
+    *,
+    prepared: bool = False,
+    category: str | None = None,
+    slot: str | None = None,
+    map_id: int | None = None,
+) -> None:
+    scope = "map" if map_id is not None else "slot" if slot is not None else "category" if category is not None else "all"
+    if not prepared and not begin_refresh(scope=scope, category=category, slot=slot, map_id=map_id):
+        return
     try:
+        reload_somsai_calculators()
+        filters = []
+        if category is not None:
+            filters.append(SomsaiMap.category == category)
+        if slot is not None:
+            filters.append(SomsaiMap.slot == slot)
+        if map_id is not None:
+            filters.append(SomsaiMap.id == map_id)
         async with with_db() as session:
-            upper_id = int((await session.exec(select(func.max(SomsaiMap.id)))).one() or 0)
-            REFRESH_STATE["total"] = (
-                await session.exec(select(func.count()).select_from(SomsaiMap).where(col(SomsaiMap.id) <= upper_id))
-            ).one()
+            upper_query = select(func.max(SomsaiMap.id))
+            count_query = select(func.count()).select_from(SomsaiMap)
+            if filters:
+                upper_query = upper_query.where(*filters)
+                count_query = count_query.where(*filters)
+            upper_id = int((await session.exec(upper_query)).one() or 0)
+            REFRESH_STATE["total"] = int((await session.exec(count_query)).one() or 0)
         cursor = 0
         while cursor < upper_id:
             async with with_db() as session:
-                ids = [
-                    int(value)
-                    for value in (
-                        await session.exec(
-                            select(SomsaiMap.id)
-                            .where(col(SomsaiMap.id) > cursor, col(SomsaiMap.id) <= upper_id)
-                            .order_by(col(SomsaiMap.id))
-                            .limit(500)
-                        )
-                    ).all()
-                    if value is not None
-                ]
+                id_query = (
+                    select(SomsaiMap.id)
+                    .where(col(SomsaiMap.id) > cursor, col(SomsaiMap.id) <= upper_id, *filters)
+                    .order_by(col(SomsaiMap.id))
+                    .limit(500)
+                )
+                ids = [int(value) for value in (await session.exec(id_query)).all() if value is not None]
             if not ids:
                 break
-            for row_id in ids:
-                refreshed = False
-                for attempt in range(3):
-                    try:
-                        async with with_db() as session:
-                            row = await session.get(SomsaiMap, row_id)
-                            if row is not None:
-                                before = {
-                                    key: value
-                                    for key, value in map_payload(row).items()
-                                    if key != "refreshed_at"
-                                }
-                                data = await canonical_map(
-                                    row.slot, row.beatmap_id, row.ruleset_id, row.variant_id, session=session
-                                )
-                                for key, value in data.items():
-                                    setattr(row, key, value)
-                                session.add(row)
-                                await session.flush()
-                                after = {
-                                    key: value
-                                    for key, value in map_payload(row).items()
-                                    if key != "refreshed_at"
-                                }
-                                await session.commit()
-                                REFRESH_STATE["changed" if before != after else "unchanged"] += 1
-                        refreshed = True
-                        break
-                    except Exception:
-                        await asyncio.sleep(0.5 * (2**attempt))
-                if not refreshed:
-                    REFRESH_STATE["failed"] += 1
-                cursor = row_id
-                REFRESH_STATE["last_id"] = row_id
-                REFRESH_STATE["done"] += 1
-                # One in-flight Bancho request at a time; retry/backoff handles
-                # transient failures without skipping the remainder of the DB.
-                await asyncio.sleep(0.12)
+            timeout = Timeout(8.0, connect=4.0)
+            async with AsyncClient(timeout=timeout, follow_redirects=True) as client:
+                for row_id in ids:
+                    refreshed = await _refresh_one_map(row_id, client)
+                    if not refreshed:
+                        REFRESH_STATE["failed"] += 1
+                    REFRESH_STATE["done"] += 1
+                    REFRESH_STATE["last_id"] = row_id
+                    cursor = row_id
+                    await asyncio.sleep(0.12)
     finally:
         REFRESH_STATE["running"] = False
         REFRESH_STATE["completed_at"] = datetime.now(UTC).isoformat()

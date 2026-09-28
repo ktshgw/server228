@@ -81,6 +81,7 @@ class WebSiteBeatmapModerationTests(unittest.IsolatedAsyncioTestCase):
             mutation_session,
             actor_user_id=9,
             beatmapset_id=123,
+            beatmap_id=None,
             status=BeatmapRankStatus.LOVED,
             leaderboard_enabled=True,
             pp_enabled=False,
@@ -90,6 +91,35 @@ class WebSiteBeatmapModerationTests(unittest.IsolatedAsyncioTestCase):
         assert result["status"] == BeatmapRankStatus.LOVED
         assert result["leaderboard_enabled"] is True
         assert result["pp_enabled"] is False
+
+    async def test_bng_can_rank_only_the_selected_difficulty(self) -> None:
+        mutation_session = SimpleNamespace()
+        with (
+            patch("app.router.private.web_site._refresh_web_ranking_target", new_callable=AsyncMock),
+            patch("app.router.private.web_site.with_db", return_value=_MutationContext(mutation_session)),
+            patch("app.router.private.web_site.apply_local_rank", new_callable=AsyncMock) as apply_rank,
+        ):
+            result = await moderate_web_beatmapset(
+                123,
+                WebBeatmapModerationRequest(action="rank", beatmap_id=456),
+                _request(),
+                _context(bng=True),
+                SimpleNamespace(),  # type: ignore[arg-type]
+            )
+
+        apply_rank.assert_awaited_once_with(
+            mutation_session,
+            actor_user_id=9,
+            beatmapset_id=123,
+            beatmap_id=456,
+            status=BeatmapRankStatus.RANKED,
+            leaderboard_enabled=True,
+            pp_enabled=True,
+            replace_difficulty_overrides=False,
+            reason="Website rank action for beatmap 456 by operator",
+        )
+        assert result["scope"] == "beatmap"
+        assert result["beatmap_id"] == 456
 
     async def test_non_bng_specialist_cannot_moderate_beatmaps(self) -> None:
         context = _context()

@@ -284,6 +284,7 @@ async def download_beatmapset(
     fetcher: Fetcher,
     no_video: Annotated[bool, Query(alias="noVideo", description="Whether to download the no-video version")] = False,
     link_only: Annotated[bool, Query(description="Just return the download url without redirect")] = False,
+    mirror: Annotated[str | None, Query(description="Explicit SOMS client mirror")] = None,
 ):
     """Download a beatmapset file.
 
@@ -299,6 +300,19 @@ async def download_beatmapset(
     Returns:
         RedirectResponse | str: Redirect to the download URL or the download url text.
     """
+    mirror_urls = {
+        "beatconnect": f"https://beatconnect.io/b/{beatmapset_id}",
+        "mino": f"https://catboy.best/d/{beatmapset_id}{'n' if no_video else ''}",
+        "nerinyan": f"https://api.nerinyan.moe/d/{beatmapset_id}",
+        "hinamizawa": f"https://mirror.hinamizawa.ai/api/v1/hinai/d/{beatmapset_id}",
+        "osudirect": f"https://osu.direct/api/d/{beatmapset_id}?noVideo={str(no_video).lower()}",
+    }
+    if mirror is not None:
+        download_url = mirror_urls.get(mirror.lower())
+        if download_url is None:
+            raise HTTPException(status_code=422, detail="Unknown download mirror")
+        return PlainTextResponse(content=download_url, status_code=200) if link_only else RedirectResponse(download_url)
+
     try:
         upstream_beatmapset = await fetcher.get_beatmapset(beatmapset_id)
     except HTTPStatusError as exc:

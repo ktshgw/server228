@@ -68,12 +68,12 @@ namespace osu.Server.Spectator.Hubs.Multiplayer
                 using (var db = databaseFactory.GetInstance())
                 {
                     var pending = await db.GetRealtimeRoomAsync(roomId);
-                    if (pending?.name.StartsWith(Standard.SomsaiMatchController.ROOM_PREFIX, StringComparison.Ordinal) == true)
+                    if (Standard.SomsaiMatchController.IsManagedRoomName(pending?.name))
                     {
                         var match = await new SomsaiInteropClient().GetRoom(roomId);
-                        if (!match.Contains(user.UserId) || pending.password != password)
+                        if (!match.Contains(user.UserId))
                             throw new InvalidStateException("Not eligible to join this SOMSAI match.");
-                        return await joinOrCreateRoom(roomId, user, password, isNewRoom: true);
+                        return await joinOrCreateRoom(roomId, user, string.Empty, isNewRoom: true);
                     }
                 }
             }
@@ -95,16 +95,15 @@ namespace osu.Server.Spectator.Hubs.Multiplayer
                     {
                         room = roomUsage.Item ??= await ServerMultiplayerRoom.InitialiseAsync(roomId, this, databaseFactory, eventDispatcher, loggerFactory, rulesetManager);
 
+                        bool somsai = room.MatchController is Standard.SomsaiMatchController;
+
                         if (!await room.UserCanJoin(roomUser.UserID))
                             throw new InvalidStateException("Not eligible to join this room.");
 
-                        if (!string.IsNullOrEmpty(room.Settings.Password))
-                        {
-                            if (room.Settings.Password != password)
-                                throw new InvalidPasswordException();
-                        }
+                        if (!somsai && !string.IsNullOrEmpty(room.Settings.Password) && room.Settings.Password != password)
+                            throw new InvalidPasswordException();
 
-                        if (isNewRoom && !room.Settings.MatchType.IsMatchmakingType())
+                        if (isNewRoom && !somsai && !room.Settings.MatchType.IsMatchmakingType())
                             room.Host = roomUser;
 
                         if (nativeRoomLeases != null && roomUser.Role == MultiplayerRoomUserRole.Player

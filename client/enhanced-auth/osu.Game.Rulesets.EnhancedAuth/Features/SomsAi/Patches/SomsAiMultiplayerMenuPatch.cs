@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using HarmonyLib;
+using Microsoft.AspNetCore.SignalR.Client;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -13,6 +15,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.Matchmaking;
 using osu.Game.Online.Multiplayer;
 using osu.Game.Online.Multiplayer.MatchTypes.RankedPlay;
+using osu.Game.Online.Rooms;
 using osu.Game.Overlays;
 using osu.Game.Rulesets.EnhancedAuth.Configuration;
 using osu.Game.Rulesets.EnhancedAuth.UI;
@@ -28,31 +31,31 @@ namespace osu.Game.Rulesets.EnhancedAuth.Patches;
 [HarmonyPatch(typeof(ButtonSystem), "load")]
 public static class SomsAiMultiplayerMenuPatch
 {
-    static void Postfix(ButtonSystem __instance, List<MainMenuButton> ___buttonsMulti, ButtonArea ___buttonArea)
+    static void Postfix(ButtonSystem __instance, List<MainMenuButton> ___buttonsMulti)
     {
-        if (!SomsClientPreferences.Enabled || SomsDrawableLifecycle.IsDisposed(__instance) || ___buttonsMulti.Any(button => button.Name == "somsai-menu-button")) return;
-        var button = new MainMenuButton("SOMSAI", "button-daily-select", FontAwesome.Solid.Trophy, new Color4(67, 157, 172, 255), (_, _) =>
+        if (!SomsClientPreferences.Enabled || SomsDrawableLifecycle.IsDisposed(__instance))
+            return;
+
+        MainMenuButton? rankedButton = ___buttonsMulti.ElementAtOrDefault(1);
+        if (rankedButton == null || rankedButton.Name == "somsai-menu-button")
+            return;
+
+        // Keep the native Ranked Play button itself, including its crown, purple
+        // colour, sounds and shortcut. Only its label and destination change.
+        var content = Traverse.Create(rankedButton).Field("content").GetValue<Container>();
+        var label = content?.Children.OfType<osu.Game.Graphics.Sprites.OsuSpriteText>().FirstOrDefault();
+        if (label != null)
+            label.Text = "SOMSAI";
+        rankedButton.Name = "somsai-menu-button";
+
+        __instance.OnRankedPlay = () =>
         {
-            var api = (IAPIProvider?)AccessTools.Property(typeof(ButtonSystem), "api").GetValue(__instance);
-            if (api?.State.Value != APIState.Online)
-            {
-                (AccessTools.Property(typeof(ButtonSystem), "loginOverlay").GetValue(__instance) as LoginOverlay)?.Show();
-                return;
-            }
             var game = AccessTools.Property(typeof(ButtonSystem), "game").GetValue(__instance) as OsuGame;
-            if (game != null) SomsAiBubbleTransition.Enter(game);
-        }, Key.A)
-        {
-            Name = "somsai-menu-button",
-            Anchor = Anchor.CentreLeft,
-            Origin = Anchor.CentreLeft,
-            VisibleState = ButtonSystemState.Multi,
+            if (game != null)
+                SomsAiBubbleTransition.Enter(game);
         };
-        ___buttonsMulti.Add(button);
-        ___buttonArea.Add(button);
     }
 }
-
 [HarmonyPatch(typeof(ScreenQueue), nameof(ScreenQueue.SetState))]
 public static class SomsTeamRankedScreenPatch
 {
@@ -79,7 +82,32 @@ public static class SomsTeamRankedScreenPatch
         }
         button.Action = null;
         button.Enabled.Value = false;
-        button.Text = "Иди в обычный лазер";
+        button.Text = "Use official osu!lazer";
         button.Width = 350;
+    }
+}
+
+/// <summary>
+/// The stock client routes even empty-password joins through
+/// JoinRoomWithPassword. Use the passwordless hub endpoint instead.
+/// </summary>
+[HarmonyPatch(typeof(OnlineMultiplayerClient), "JoinRoomInternal")]
+public static class SomsPasswordlessRoomJoinPatch
+{
+    static bool Prefix(
+        OnlineMultiplayerClient __instance,
+        long roomId,
+        string? password,
+        ref Task<MultiplayerRoom> __result)
+    {
+        if (!SomsClientPreferences.Enabled || !string.IsNullOrEmpty(password))
+            return true;
+
+        var connection = AccessTools.Property(typeof(OnlineMultiplayerClient), "connection").GetValue(__instance) as HubConnection;
+        if (connection == null)
+            return true;
+
+        __result = connection.InvokeAsync<MultiplayerRoom>(nameof(IMultiplayerServer.JoinRoom), roomId);
+        return false;
     }
 }

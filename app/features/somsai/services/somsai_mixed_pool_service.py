@@ -36,7 +36,10 @@ async def mixed_pool(
     *,
     rank: str | None = None,
 ) -> dict:
-    target_rank = normalise_rank(rank) if rank else rank_from_rating(rating or 1000)
+    if rating is not None and rating <= 50:
+        target_rank = "ARCHSOM"
+    else:
+        target_rank = normalise_rank(rank) if rank else rank_from_rating(rating or 1000)
     rule = rule_for(target_rank)
     options: dict[str, list[SomsaiMap]] = {}
     for slot in rule.slots:
@@ -46,7 +49,7 @@ async def mixed_pool(
         options[slot] = [row for row in rows if target_rank in row.eligible_ranks]
     missing = [slot for slot, rows in options.items() if not rows]
     if missing:
-        reject(f"В хранилище нет подходящих карт для {target_rank}: {', '.join(missing)}")
+        reject(f"No suitable warehouse beatmaps for {target_rank}: {', '.join(missing)}")
 
     rng = secrets.SystemRandom()
     candidates = {slot: list(rows) for slot, rows in options.items()}
@@ -66,7 +69,7 @@ async def mixed_pool(
 
     for slot in sorted(candidates, key=lambda item: len(candidates[item])):
         if not assign(slot, set()):
-            reject(f"Недостаточно разных карт, чтобы собрать {target_rank} без повторов")
+            reject(f"Not enough unique beatmaps to build {target_rank} without duplicates")
     selected = {
         slot: rng.choice([row for row in options[slot] if row.beatmap_id == map_id])
         for map_id, slot in owners.items()

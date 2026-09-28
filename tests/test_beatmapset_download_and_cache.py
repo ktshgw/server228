@@ -98,6 +98,48 @@ class BeatmapsetSharedCacheTests(unittest.IsolatedAsyncioTestCase):
 
 
 class BeatmapsetDownloadTests(unittest.IsolatedAsyncioTestCase):
+    async def test_explicit_client_mirror_redirects_without_server_side_archive_request(self) -> None:
+        fetcher = Mock()
+        fetcher.get_beatmapset = AsyncMock()
+
+        response = await download_beatmapset(
+            client_ip="203.0.113.1",
+            beatmapset_id=123,
+            current_user=cast(User, SimpleNamespace(country_code="US")),
+            download_service=Mock(),
+            fetcher=fetcher,
+            mirror="beatconnect",
+        )
+
+        assert response.status_code == 307
+        assert response.headers["location"] == "https://beatconnect.io/b/123"
+        fetcher.get_beatmapset.assert_not_awaited()
+
+    async def test_explicit_mino_mirror_preserves_no_video_choice(self) -> None:
+        response = await download_beatmapset(
+            client_ip="203.0.113.1",
+            beatmapset_id=123,
+            current_user=cast(User, SimpleNamespace(country_code="US")),
+            download_service=Mock(),
+            fetcher=Mock(),
+            mirror="mino",
+            no_video=True,
+        )
+
+        assert response.headers["location"] == "https://catboy.best/d/123n"
+
+    async def test_explicit_osudirect_mirror_preserves_no_video_choice(self) -> None:
+        response = await download_beatmapset(
+            client_ip="203.0.113.1",
+            beatmapset_id=123,
+            current_user=cast(User, SimpleNamespace(country_code="US")),
+            download_service=Mock(),
+            fetcher=Mock(),
+            mirror="osudirect",
+            no_video=True,
+        )
+
+        assert response.headers["location"] == "https://osu.direct/api/d/123?noVideo=true"
     async def test_reliable_international_mirrors_precede_catboy(self) -> None:
         service = BeatmapDownloadService()
         try:

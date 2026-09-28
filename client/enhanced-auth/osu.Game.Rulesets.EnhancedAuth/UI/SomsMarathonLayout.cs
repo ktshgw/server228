@@ -61,7 +61,7 @@ public sealed partial class SomsMarathonScreen
                 new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding { Top = 78, Bottom = 58 },
                     Child = new OsuScrollContainer { RelativeSizeAxes = Axes.Both, Child = fragments } },
                 new Container { RelativeSizeAxes = Axes.X, Height = 44, Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft,
-                    Child = row(addSongsButton = button("+ Добавить песни", chooseSongs), button("Скачать недостающие", downloadMissing)) },
+                    Child = row(addSongsButton = button("+ Add songs", chooseSongs), button("Download missing", downloadMissing)) },
             },
         };
         var recordPanel = new Container
@@ -69,7 +69,7 @@ public sealed partial class SomsMarathonScreen
             RelativeSizeAxes = Axes.Both, Width = .41f, Anchor = Anchor.TopRight, Origin = Anchor.TopRight,
             Children = new Drawable[]
             {
-                label("Рекорды марафона", 26),
+                label("Marathon leaderboard", 26),
                 new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding { Top = 42 },
                     Child = new OsuScrollContainer { RelativeSizeAxes = Axes.Both, Child = records } },
             },
@@ -79,17 +79,17 @@ public sealed partial class SomsMarathonScreen
             new Box { RelativeSizeAxes = Axes.Both, Colour = new Color4(47, 42, 57, 255) },
             new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding { Horizontal = 22, Top = 20, Bottom = 82 }, Children = new Drawable[] { fragmentPanel, recordPanel } },
             new Container { RelativeSizeAxes = Axes.X, Height = 58, Anchor = Anchor.BottomCentre, Origin = Anchor.BottomCentre,
-                Padding = new MarginPadding { Horizontal = 22 }, Child = row(saveButton = button("Сохранить", () => run(save)), button("Играть", () => run(play)), button("Обновить рекорды", showLeaderboard)) },
+                Padding = new MarginPadding { Horizontal = 22 }, Child = row(saveButton = button("Save", () => run(save)), button("Play", () => run(play)), button("Refresh leaderboard", showLeaderboard)) },
         };
         InternalChildren = new Drawable[]
         {
             new Box { RelativeSizeAxes = Axes.Both, Colour = ColourInfo.GradientVertical(new Color4(26, 21, 32, 255), new Color4(21, 43, 46, 255)) },
             new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding { Horizontal = 32, Top = 24, Bottom = 70 }, Children = new Drawable[]
             {
-                label("Марафон · Songs compilation", 29),
+                label("Marathon · Songs compilation", 29),
                 new Container { RelativeSizeAxes = Axes.X, Y = 44, Height = 30, Child = status },
                 new Container { RelativeSizeAxes = Axes.X, Y = 80, Height = 44,
-                    Child = row(button("Все марафоны", showLounge), button("Создать марафон", fresh), button("Мой черновик", showDraft)) },
+                    Child = row(button("Songs Compilations", showLounge), button("Create Compilation", fresh), button("Draft", showDraft)) },
                 new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding { Top = 142 }, Children = new Drawable[] { lounge, detail } },
             } },
         };
@@ -105,7 +105,7 @@ public sealed partial class SomsMarathonScreen
         renderFragments();
         records.Clear();
         if (definition.Id > 0) showLeaderboard();
-        else records.Add(label("Сохраните подборку, чтобы открыть её таблицу рекордов.", 17));
+        else records.Add(label("Save the playlist to unlock its leaderboard.", 17));
     }
 
     private void showDraft()
@@ -152,7 +152,7 @@ public sealed partial class SomsMarathonScreen
             {
                 if (closed) return;
                 foreach (var item in additions) { resolved[item.Segment.Checksum] = item.Map; definition.Segments.Add(item.Segment); }
-                changed(); renderFragments(); status.Text = $"Добавлено песен: {additions.Count}. Отрезки можно изменить кнопкой «Редактировать».";
+                changed(); renderFragments(); status.Text = $"Songs added: {additions.Count}. Segments can be changed with the Edit button.";
             });
         });
     }
@@ -211,8 +211,8 @@ public sealed partial class SomsMarathonScreen
             }
             var open = new MarathonListItem(songCard(item.Segments.FirstOrDefault(), 120,
                     label(item.Name, 25),
-                    new Container { RelativeSizeAxes = Axes.X, Y = 38, Height = 26, Child = label($"{item.Segments.Count} песен · {duration(item)} · автор {item.OwnerName}", 17) },
-                    new Container { RelativeSizeAxes = Axes.X, Y = 70, Height = 24, Child = label("Songs compilation   ·   отдельная таблица рекордов", 15) }), 120)
+                    new Container { RelativeSizeAxes = Axes.X, Y = 38, Height = 26, Child = label($"{item.Segments.Count} songs · {duration(item)} · by {item.OwnerName}", 17) },
+                    new Container { RelativeSizeAxes = Axes.X, Y = 70, Height = 24, Child = label("Songs compilation   ·   separate leaderboard", 15) }), 120)
             {
                 Action = () => { if (busy) return; definition = Newtonsoft.Json.JsonConvert.DeserializeObject<SomsMarathonDefinition>(Newtonsoft.Json.JsonConvert.SerializeObject(item))!; name.Current.Value = item.Name; showDetail(); },
             };
@@ -220,9 +220,9 @@ public sealed partial class SomsMarathonScreen
             {
                 bool confirm = false;
                 ShearedButton? remove = null;
-                remove = button("Удалить", () =>
+                remove = button("Delete", () =>
                 {
-                    if (!confirm) { confirm = true; remove!.Text = "Точно удалить?"; return; }
+                    if (!confirm) { confirm = true; remove!.Text = "Delete permanently?"; return; }
                     run(async () =>
                     {
                         await request(new SomsMarathonRequest($"/{item.Id}", method: System.Net.Http.HttpMethod.Delete));
@@ -231,7 +231,7 @@ public sealed partial class SomsMarathonScreen
                             savedMarathons.Remove(item);
                             if (definition.Id == item.Id) changed();
                             renderSavedCards();
-                            status.Text = "Марафон удалён.";
+                            status.Text = "Marathon deleted.";
                         });
                     });
                 });
@@ -246,9 +246,9 @@ public sealed partial class SomsMarathonScreen
             if (matches) library.SetLayoutPosition(open, visible++);
         }
         void addExtra(Drawable extra) { library.Add(extra); libraryExtras.Add(extra); library.SetLayoutPosition(extra, float.MaxValue); }
-        if (visible == 0) addExtra(label("Марафонов не найдено. Создайте свою подборку!", 22));
-        if (libraryPage > 1) addExtra(button("← Предыдущие", () => { libraryPage--; loadSaved(); }));
-        if (hasMore) addExtra(button("Следующие →", () => { libraryPage++; loadSaved(); }));
+        if (visible == 0) addExtra(label("No marathons found. Create your own playlist!", 22));
+        if (libraryPage > 1) addExtra(button("← Previous", () => { libraryPage--; loadSaved(); }));
+        if (hasMore) addExtra(button("Next →", () => { libraryPage++; loadSaved(); }));
     }
 
     private bool hasMore;
@@ -268,20 +268,20 @@ public sealed partial class SomsMarathonScreen
                 if (closed) return;
                 var timeline = range = new SomsMarathonRange(Math.Min(7200000, end), segment.StartMs, segment.EndMs);
                 var caption = label("", 21);
-                void updateCaption() => caption.Text = $"{timestamp(timeline.Start)}  —  {timestamp(timeline.End)}   ·   {(timeline.End - timeline.Start) / 1000.0:0.00} с";
+                void updateCaption() => caption.Text = $"{timestamp(timeline.Start)}  —  {timestamp(timeline.End)}   ·   {(timeline.End - timeline.Start) / 1000.0:0.00} sec";
                 timeline.Changed = updateCaption; updateCaption();
                 var contents = flow();
-                contents.Add(label("Выберите отрезок", 28)); contents.Add(label(segment.Title, 18));
-                contents.Add(label("Перетащите границы · от 5 до 90 секунд", 16));
+                contents.Add(label("Select a segment", 28)); contents.Add(label(segment.Title, 18));
+                contents.Add(label("Drag the handles · 5 to 90 seconds", 16));
                 contents.Add(timeline); contents.Add(caption);
-                contents.Add(row(button("Прослушать", () =>
+                contents.Add(row(button("Preview", () =>
                 {
                     Beatmap.Value = working; music.Play(); music.SeekTo(timeline.Start); previewEnd = timeline.End;
-                }), button("Применить", () =>
+                }), button("Apply", () =>
                 {
                     if (!canEdit) return;
                     segment.StartMs = timeline.Start; segment.EndMs = timeline.End; changed(); closeRange(); renderFragments();
-                }), button("Отмена", closeRange)));
+                }), button("Cancel", closeRange)));
                 AddInternal(rangeModal = new RangeModal(contents, closeRange));
             });
         });

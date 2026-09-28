@@ -24,7 +24,7 @@ async def _snapshot(session: AsyncSession, room_id: int) -> tuple[str, dict[str,
 
 def _check_member(state: dict[str, Any], user_id: int) -> None:
     if not any(user_id in team for team in state.get("teams", [])):
-        raise HTTPException(403, "Вы не участвуете в этом матче SOMSAI.")
+        raise HTTPException(403, "You are not participating in this SOMSAI match.")
 
 
 async def validate_somsai_score_token(session: AsyncSession, room_id: int, playlist_id: int, user_id: int) -> None:
@@ -34,7 +34,7 @@ async def validate_somsai_score_token(session: AsyncSession, room_id: int, playl
     stage, state = snapshot
     _check_member(state, user_id)
     if stage != "playing" or state.get("playlist_item_id") != playlist_id or not state.get("current_slot"):
-        raise HTTPException(409, "Сейчас нельзя начинать игру на этой карте SOMSAI.")
+        raise HTTPException(409, "This SOMSAI beatmap cannot be started right now.")
 
 
 def _same_setting(left: object, right: object) -> bool:
@@ -58,11 +58,11 @@ def _validate_settings(actual: APIMod, expected: APIMod, ruleset_id: int) -> Non
         if acronym == "DT" and key == "adjust_pitch" and key not in configured and isinstance(submitted[key], bool):
             continue
         if key not in configured and key not in defaults:
-            raise HTTPException(422, f"Неизвестная настройка мода {acronym} в матче SOMSAI.")
+            raise HTTPException(422, f"Unknown {acronym} mod setting in the SOMSAI match.")
         expected_value = configured.get(key, defaults.get(key))
         submitted_value = submitted.get(key, defaults.get(key))
         if not _same_setting(submitted_value, expected_value):
-            raise HTTPException(422, f"Настройки мода {acronym} не соответствуют карте SOMSAI.")
+            raise HTTPException(422, f"The {acronym} mod settings do not match the SOMSAI beatmap.")
 
 
 async def validate_somsai_score_submission(
@@ -74,12 +74,12 @@ async def validate_somsai_score_submission(
     _, state = snapshot
     _check_member(state, user_id)
     if ruleset_id != item.ruleset_id:
-        raise HTTPException(422, "Режим скора не соответствует карте SOMSAI.")
+        raise HTTPException(422, "The score mode does not match the SOMSAI beatmap.")
     # An issued token may arrive after a round or the match ends. Validate its
     # immutable pool chart, not the current slot/stage. Settled results stay final.
     slot = next((slot for slot in state.get("slots", []) if slot.get("beatmap_id") == item.beatmap_id), None)
     if slot is None:
-        raise HTTPException(422, "Карта не принадлежит пулу этого матча SOMSAI.")
+        raise HTTPException(422, "The beatmap does not belong to this SOMSAI match pool.")
     required: dict[str, APIMod] = {mod["acronym"]: mod for mod in slot.get("mods", [])}
     # Tokens already issued before the update retain their playlist's NF requirement.
     # New playlist items contain only the pool slot's mods.
@@ -90,6 +90,6 @@ async def validate_somsai_score_submission(
         approved.update({acronym: {"acronym": acronym} for acronym in ("HD", "HR")})
     actual = {mod["acronym"]: mod for mod in mods}
     if len(actual) != len(mods) or not required.keys() <= actual.keys() or not actual.keys() <= approved.keys():
-        raise HTTPException(422, "Моды скора не соответствуют выбранному слоту SOMSAI.")
+        raise HTTPException(422, "The score mods do not match the selected SOMSAI slot.")
     for acronym, mod in actual.items():
         _validate_settings(mod, approved[acronym], item.ruleset_id)

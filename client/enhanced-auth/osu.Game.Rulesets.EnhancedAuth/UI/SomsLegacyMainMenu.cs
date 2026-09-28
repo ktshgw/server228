@@ -105,9 +105,9 @@ public sealed partial class SomsLegacyMainMenu : SomsLegacyComponent
                 new Box { RelativeSizeAxes = Axes.Both, Colour = Color4.Black, Alpha = 0.23f },
                 text("SOMS!", 12, 47, 150, 25, true),
                 text("osu!lazer · Legacy interface", 13, 73, 280, 10),
-                footerButton("legacy-menu-account", "Аккаунт", -304, _ => login?.ToggleVisibility()),
-                footerButton("legacy-menu-users", "Игроки в сети", -210, _ => dashboard?.ToggleVisibility(), 124),
-                footerButton("legacy-menu-chat", "Открыть чат  F8", -70, _ => chat?.ToggleVisibility(), 136),
+                footerButton("legacy-menu-account", "Account", -304, _ => login?.ToggleVisibility()),
+                footerButton("legacy-menu-users", "Online players", -210, _ => dashboard?.ToggleVisibility(), 124),
+                footerButton("legacy-menu-chat", "Open chat  F8", -70, _ => chat?.ToggleVisibility(), 136),
             },
         });
 
@@ -117,21 +117,21 @@ public sealed partial class SomsLegacyMainMenu : SomsLegacyComponent
         };
         canvas.Add(centre);
         var main = addPage("main");
-        addButton(main, 0, "menu-play", "menu-button-play", "Играть", FontAwesome.Solid.Play, _ => setPage("play"));
-        addButton(main, 1, "menu-edit", "menu-button-edit", "Редактор", FontAwesome.Solid.PencilAlt, _ => setPage("edit"));
-        addButton(main, 2, "menu-options", "menu-button-options", "Настройки", FontAwesome.Solid.CheckSquare, _ => nativeButtons.OnSettings?.Invoke());
-        addButton(main, 3, "menu-exit", "menu-button-exit", "Выход", FontAwesome.Solid.DoorOpen, e => nativeButtons.OnExit?.Invoke(e));
+        addButton(main, 0, "menu-play", "menu-button-play", "Play", FontAwesome.Solid.Play, _ => setPage("play"));
+        addButton(main, 1, "menu-edit", "menu-button-edit", "Editor", FontAwesome.Solid.PencilAlt, _ => setPage("edit"));
+        addButton(main, 2, "menu-options", "menu-button-options", "Settings", FontAwesome.Solid.CheckSquare, _ => nativeButtons.OnSettings?.Invoke());
+        addButton(main, 3, "menu-exit", "menu-button-exit", "Exit", FontAwesome.Solid.DoorOpen, e => nativeButtons.OnExit?.Invoke(e));
 
         var play = addPage("play");
-        addButton(play, 0, "menu-solo", "menu-button-freeplay", "Одиночная игра", FontAwesome.Solid.User, _ => nativeButtons.OnSolo?.Invoke());
-        addButton(play, 1, "menu-multi", "menu-button-multiplayer", "Мультиплеер", FontAwesome.Solid.Users, _ => openMultiplayer());
-        addButton(play, 2, "menu-direct", "menu-osudirect", "Найти карты", FontAwesome.Solid.Download, _ => nativeButtons.OnBeatmapListing?.Invoke());
-        addButton(play, 3, "menu-back", "menu-button-back", "Назад", FontAwesome.Solid.ArrowLeft, _ => setPage("main"));
+        addButton(play, 0, "menu-solo", "menu-button-freeplay", "Solo", FontAwesome.Solid.User, _ => nativeButtons.OnSolo?.Invoke());
+        addButton(play, 1, "menu-multi", "menu-button-multiplayer", "Multiplayer", FontAwesome.Solid.Users, _ => openMultiplayer());
+        addButton(play, 2, "menu-direct", "menu-osudirect", "Browse beatmaps", FontAwesome.Solid.Download, _ => nativeButtons.OnBeatmapListing?.Invoke());
+        addButton(play, 3, "menu-back", "menu-button-back", "Back", FontAwesome.Solid.ArrowLeft, _ => setPage("main"));
 
         var edit = addPage("edit");
-        addButton(edit, 0, "menu-edit-beatmap", "menu-button-edit", "Редактор карт", FontAwesome.Solid.PencilAlt, _ => nativeButtons.OnEditBeatmap?.Invoke());
-        addButton(edit, 1, "menu-edit-skin", "", "Редактор скина", FontAwesome.Solid.PaintBrush, _ => nativeButtons.OnEditSkin?.Invoke());
-        addButton(edit, 2, "menu-edit-back", "menu-button-back", "Назад", FontAwesome.Solid.ArrowLeft, _ => setPage("main"));
+        addButton(edit, 0, "menu-edit-beatmap", "menu-button-edit", "Beatmap editor", FontAwesome.Solid.PencilAlt, _ => nativeButtons.OnEditBeatmap?.Invoke());
+        addButton(edit, 1, "menu-edit-skin", "", "Skin editor", FontAwesome.Solid.PaintBrush, _ => nativeButtons.OnEditSkin?.Invoke());
+        addButton(edit, 2, "menu-edit-back", "menu-button-back", "Back", FontAwesome.Solid.ArrowLeft, _ => setPage("main"));
 
         cookie = new MenuButton
         {

@@ -31,7 +31,7 @@ namespace osu.Game.Rulesets.EnhancedAuth.UI;
 
 public sealed partial class SomsReplayDuelScreen : OsuScreen
 {
-    public override string Title => "1 на 1 с реплеем";
+    public override string Title => "1v1 with replay";
     public override bool ShowFooter => true;
     public override bool HideOverlaysOnEnter => true;
     public override bool DisallowExternalBeatmapRulesetChanges => true;
@@ -46,7 +46,7 @@ public sealed partial class SomsReplayDuelScreen : OsuScreen
     private readonly CancellationTokenSource lifetime = new();
     private readonly TextFlowContainer status = new(t => t.Font = OsuFont.GetFont(size: 24))
     {
-        RelativeSizeAxes = Axes.X, Width = .8f, AutoSizeAxes = Axes.Y, Text = "Загрузка реплея…",
+        RelativeSizeAxes = Axes.X, Width = .8f, AutoSizeAxes = Axes.Y, Text = "Loading replay…",
     };
     private readonly Container content = new() { RelativeSizeAxes = Axes.Both };
     private Score? replay;
@@ -83,7 +83,7 @@ public sealed partial class SomsReplayDuelScreen : OsuScreen
             var loaded = await Task.Run(() => scores.GetScore(selected)).ConfigureAwait(false);
             if (loaded?.Replay == null)
             {
-                if (selected.OnlineID <= 0) throw new InvalidOperationException("У этого результата нет доступного реплея.");
+                if (selected.OnlineID <= 0) throw new InvalidOperationException("No replay is available for this score.");
                 loaded = await downloadReplay().ConfigureAwait(false);
             }
             ValidateReplay(loaded, selected);
@@ -104,33 +104,33 @@ public sealed partial class SomsReplayDuelScreen : OsuScreen
         }
         catch (OperationCanceledException)
         {
-            Schedule(() => { if (!closed) status.Text = "Время загрузки истекло. Вернитесь к карте и попробуйте ещё раз."; });
+            Schedule(() => { if (!closed) status.Text = "Loading timed out. Return to the beatmap and try again."; });
         }
         catch (Exception exception)
         {
             Schedule(() =>
             {
                 if (!closed) status.Text = exception is LegacyScoreDecoder.BeatmapNotFoundException
-                    ? "Нужна та версия карты, на которой записан реплей. Обновите или импортируйте карту."
-                    : "Не удалось начать дуэль: " + exception.GetBaseException().Message;
+                    ? "The beatmap version used by the replay is required. Update or import the beatmap."
+                    : "Could not start the duel: " + exception.GetBaseException().Message;
             });
         }
     }
 
     public static void ValidateReplay(Score score, ScoreInfo selected)
     {
-        if (score.Replay?.Frames.Count is not > 0) throw new InvalidOperationException("Реплей пуст или недоступен.");
-        if (!score.ScoreInfo.Passed) throw new InvalidOperationException("Для дуэли нужен реплей пройденной карты.");
-        if (score.ScoreInfo.BeatmapInfo == null) throw new InvalidOperationException("Карта для реплея не установлена.");
+        if (score.Replay?.Frames.Count is not > 0) throw new InvalidOperationException("The replay is empty or unavailable.");
+        if (!score.ScoreInfo.Passed) throw new InvalidOperationException("The duel requires a replay of a passed score.");
+        if (score.ScoreInfo.BeatmapInfo == null) throw new InvalidOperationException("The replay beatmap is not installed.");
         if (score.ScoreInfo.Ruleset.OnlineID != selected.Ruleset.OnlineID)
-            throw new InvalidOperationException("Режим игры в реплее отличается от выбранного результата.");
+            throw new InvalidOperationException("The replay ruleset differs from the selected score.");
         if (selected.BeatmapInfo?.OnlineID > 0 && selected.BeatmapInfo.OnlineID != score.ScoreInfo.BeatmapInfo.OnlineID)
-            throw new InvalidOperationException("Реплей записан на другой карте.");
+            throw new InvalidOperationException("The replay was recorded on a different beatmap.");
         if (!string.IsNullOrEmpty(selected.BeatmapInfo?.MD5Hash)
             && !string.Equals(selected.BeatmapInfo.MD5Hash, score.ScoreInfo.BeatmapInfo.MD5Hash, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Версия карты отличается от выбранного результата.");
+            throw new InvalidOperationException("The beatmap version differs from the selected score.");
         if (score.ScoreInfo.Mods.Any(m => m is UnknownMod || m is ICreateReplayData))
-            throw new InvalidOperationException("Реплей содержит неподдерживаемые моды или Autoplay.");
+            throw new InvalidOperationException("The replay contains unsupported mods or Autoplay.");
     }
 
     private async Task<Score> downloadReplay()
@@ -196,7 +196,7 @@ public sealed partial class SomsReplayDuelScreen : OsuScreen
         content.Add(intro);
         content.Add(new OsuSpriteText
         {
-            Text = "1 НА 1 С РЕПЛЕЕМ", Font = OsuFont.GetFont(size: 22, weight: FontWeight.Bold),
+            Text = "1V1 WITH REPLAY", Font = OsuFont.GetFont(size: 22, weight: FontWeight.Bold),
             Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre, Y = 20,
         });
     }

@@ -157,7 +157,7 @@ public sealed partial class SomsAiOutcomeAnimation : Container
             ? scores.ElementAtOrDefault(1) - scores.ElementAtOrDefault(0)
             : scores.ElementAtOrDefault(0) - scores.ElementAtOrDefault(1);
         var colour = won == true ? Colour4.FromHex("6EE6A5") : won == false ? Colour4.FromHex("FF6978") : Colour4.FromHex("9BBBD7");
-        string title = match.Stage == "cancelled" ? "МАТЧ ОТМЕНЁН" : won == true ? "ПОБЕДА" : won == false ? "ПОРАЖЕНИЕ" : "НИЧЬЯ";
+        string title = match.Stage == "cancelled" ? "MATCH CANCELLED" : won == true ? "VICTORY" : won == false ? "DEFEAT" : "DRAW";
         var band = new Container
         {
             RelativeSizeAxes = Axes.X, Height = 210, Anchor = Anchor.Centre, Origin = Anchor.Centre,
@@ -168,7 +168,7 @@ public sealed partial class SomsAiOutcomeAnimation : Container
                 new Box { RelativeSizeAxes = Axes.X, Height = 2, Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, Colour = colour },
                 new OsuSpriteText { Anchor = Anchor.Centre, Origin = Anchor.Centre, Y = -16, Text = title, Font = OsuFont.Torus.With(size: 62, weight: FontWeight.Bold), Colour = colour },
                 new OsuSpriteText { Anchor = Anchor.Centre, Origin = Anchor.Centre, Y = 45,
-                    Text = match.IsFinished ? $"Матч завершён · {match.Wins.ElementAtOrDefault(0)} : {match.Wins.ElementAtOrDefault(1)}" : $"Разница очков · {difference:+#,0;-#,0;+0}",
+                    Text = match.IsFinished ? $"Match finished · {match.Wins.ElementAtOrDefault(0)} : {match.Wins.ElementAtOrDefault(1)}" : $"Score difference · {difference:+#,0;-#,0;+0}",
                     Font = OsuFont.GetFont(size: 22) },
             },
         };

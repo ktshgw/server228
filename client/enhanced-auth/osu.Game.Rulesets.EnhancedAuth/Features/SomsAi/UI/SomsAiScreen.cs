@@ -17,6 +17,7 @@ using osu.Game.Online.Rooms;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Dialog;
 using osu.Game.Rulesets.EnhancedAuth.Online;
+using osu.Game.Screens.OnlinePlay.Multiplayer.Match;
 using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.EnhancedAuth.UI;
@@ -24,7 +25,7 @@ namespace osu.Game.Rulesets.EnhancedAuth.UI;
 /// <summary>A native tournament lobby and draft screen. All authority remains on the server.</summary>
 public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
 {
-    public override string Title => partyOnly ? "Пати SOMS!" : matchOnly ? "SOMSAI · Матч" : "SOMSAI";
+    public override string Title => partyOnly ? "SOMS! Party" : matchOnly ? "SOMSAI · Match" : "SOMSAI";
     private readonly bool partyOnly;
     private readonly bool matchOnly;
     private readonly int? boundMatchId;
@@ -34,9 +35,9 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
     private readonly FillFlowContainer queuePanel = Flow();
     private readonly FillFlowContainer customPanel = Flow();
     private readonly FillFlowContainer recentPanel = Flow();
-    private readonly FormTextBox inviteTarget = new() { Caption = "Ник игрока", PlaceholderText = "Точный ник в SOMS!", LengthLimit = 32 };
-    private readonly FormTextBox customName = new() { Caption = "Название комнаты", PlaceholderText = "Турнир SOMSAI", LengthLimit = 80 };
-    private readonly FormDropdown<int> variant = new() { Caption = "Количество клавиш osu!mania", Items = new[] { 4, 7 }, Current = { Value = 4 } };
+    private readonly FormTextBox inviteTarget = new() { Caption = "Player username", PlaceholderText = "Exact SOMS! username", LengthLimit = 32 };
+    private readonly FormTextBox customName = new() { Caption = "Room name", PlaceholderText = "SOMSAI Tournament", LengthLimit = 80 };
+    private readonly FormDropdown<int> variant = new() { Caption = "osu!mania key count", Items = new[] { 4, 7 }, Current = { Value = 4 } };
     [Resolved] private IDialogOverlay dialogs { get; set; } = null!;
     [Resolved(canBeNull: true)] private PreviewTrackManager? previews { get; set; }
     private SomsAiState state = new();
@@ -54,8 +55,10 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
     private double actionRequestedAt;
     private bool exitConfirmed;
     private int? lastOpenedMatchId;
+    private MultiplayerUserModSelectOverlay userModsSelectOverlay = null!;
     private int variantId => Ruleset.Value.OnlineID == 3 ? variant.Current.Value : 0;
     protected override long? ActiveRoomId => matchOnly ? state.Match?.RoomId : null;
+    protected override bool ShouldDownloadCurrentBeatmap => state.Match is { IsFinished: false, MapSlot: not null };
 
     public SomsAiScreen(bool partyOnly = false) => this.partyOnly = partyOnly;
     protected SomsAiScreen(SomsAiState initial)
@@ -69,6 +72,15 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
     [BackgroundDependencyLoader]
     private void load()
     {
+        if (matchOnly)
+        {
+            AddInternal(userModsSelectOverlay = new MultiplayerUserModSelectOverlay
+            {
+                Beatmap = { BindTarget = Beatmap },
+                Ruleset = { BindTarget = Ruleset },
+                Depth = -2000,
+            });
+        }
         if (matchOnly) buildMatchScreen();
         else buildDashboard();
         // Show usable controls and placeholders immediately, even while the first state request is in flight.
@@ -78,6 +90,7 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
     protected override void LoadComplete()
     {
         base.LoadComplete();
+        initialiseArenaCountdown();
         Client.RoomUpdated += onNativeRoomUpdated;
         polling = (matchOnly ? GlobalScheduler : Scheduler).AddDelayed(refresh, 2000, true);
     }
@@ -132,7 +145,7 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
                 var stalled = stateRequest;
                 stateRequest = null;
                 stalled.Cancel();
-                StatusText.Text = "Сервер не ответил. Повторное подключение…";
+                StatusText.Text = "The server did not respond. Reconnecting…";
             }
             return;
         }
@@ -144,7 +157,7 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
                 actionRequest = null;
                 stalled.Cancel();
                 setCreatingRoom(false);
-                StatusText.Text = "Ответ на действие задержался. Проверяем его результат на сервере…";
+                StatusText.Text = "The action response is delayed. Checking its result on the server…";
             }
             return;
         }
@@ -176,7 +189,9 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
             }
             state = result;
             render();
-            if (!partyOnly && !matchOnly && state.Match is { IsFinished: false } activeMatch && activeMatch.Id != lastOpenedMatchId)
+            if (!partyOnly && !matchOnly && state.Match is { IsFinished: false } activeMatch
+                && activeMatch.Id != lastOpenedMatchId
+                && (!activeMatch.Ranked || activeMatch.Stage != "waiting" || activeMatch.Accepted.Contains(Api.LocalUser.Value.Id)))
             {
                 openMatch();
                 return;
@@ -205,6 +220,7 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
 
     private void render()
     {
+        RefreshBeatmapDownload();
         if (matchOnly)
         {
             string matchSignature = JsonConvert.SerializeObject(state.Match);
@@ -218,9 +234,14 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
             lastParty = partySignature;
             renderParty();
         }
-        if (partyOnly) { StatusText.Text = "Вернитесь в SOMSAI и выберите 2v2. Поиск запускает капитан."; return; }
+        if (partyOnly) { StatusText.Text = "Return to SOMSAI and select 2v2. The captain starts matchmaking."; return; }
         string signature = JsonConvert.SerializeObject(state);
-        if (signature == lastRenderedState) { updateStatus(); return; }
+        if (signature == lastRenderedState)
+        {
+            if (state.Queue != null || state.QueueBan?.ExpiresAt != null) renderSearch();
+            updateStatus();
+            return;
+        }
         lastRenderedState = signature;
         renderRecentMatches();
         renderSearch();
@@ -234,13 +255,13 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
         if (creatingRoom) return;
         if (state.Match is { } match && (matchOnly || !match.IsFinished))
         {
-            string deadline = match.Deadline is { } end ? $" · {Math.Max(0, (int)(end - DateTimeOffset.UtcNow).TotalSeconds)} сек." : "";
+            string deadline = match.Deadline is { } end ? $" · {Math.Max(0, (int)(end - DateTimeOffset.UtcNow).TotalSeconds)} sec." : "";
             StatusText.Text = stageLabel(match.Stage) + deadline;
         }
         else if (state.Queue is { } queue)
         {
             string elapsed = queue.JoinedAt is { } start ? $" · {(DateTimeOffset.UtcNow - start):mm\\:ss}" : "";
-            StatusText.Text = $"Ищем соперников {queue.Format}{elapsed}";
+            StatusText.Text = $"Searching for opponents {queue.Format}{elapsed}";
         }
         else StatusText.Text = "";
     }
@@ -253,7 +274,7 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
             if (state.Match is { IsFinished: false })
             {
                 matchCard.Show();
-                matchPanel.Add(Button("Перейти в матч", openMatch));
+                matchPanel.Add(Button("Open match", openMatch));
             }
             else
                 matchCard.Hide();
@@ -262,32 +283,47 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
         if (state.Match is not { } match) return;
         int localId = Api.LocalUser.Value.OnlineID;
         renderMatchHeader(match);
-        setArenaPrimary("Ожидание");
+        setArenaPrimary("Waiting");
         switch (match.Stage)
         {
             case "pool_select":
                 renderPoolVote(match, localId);
                 break;
             case "waiting":
-                if (match.Ranked) setArenaPrimary("Принять матч", () => action("ready"));
-                else matchPanel.Add(Paragraph("Матч начнётся автоматически, когда обе команды заполнятся."));
+                if (match.Ranked)
+                {
+                    setArenaPrimary(match.Accepted.Contains(localId) ? "Accepted · waiting for players" : "Confirm through the global ready check");
+                }
+                else
+                {
+                    matchPanel.Add(Paragraph("Choose a team before the owner starts the match."));
+                    matchPanel.Add(new DashboardColumns(
+                        Button($"Join red · {match.Teams.ElementAtOrDefault(0)?.Members.Count ?? 0}", () => action("custom_join", new JObject { ["match_id"] = match.Id, ["team"] = 0 })),
+                        Button($"Join blue · {match.Teams.ElementAtOrDefault(1)?.Members.Count ?? 0}", () => action("custom_join", new JObject { ["match_id"] = match.Id, ["team"] = 1 }))));
+                    if (match.OwnerId == localId)
+                        setArenaPrimary("Start match", () => action("custom_start"));
+                    else
+                        setArenaPrimary("Waiting for room owner");
+                }
                 break;
             case "ready":
                 var playlist = Client.Room?.Playlist.FirstOrDefault(p => p.ID == Client.Room.Settings.PlaylistItemId);
                 if (playlist != null && OwnsCurrentRoom && playlist.AllowedMods.Any())
                 {
-                    matchPanel.Add(Text("Ваши FreeMod: " + (Client.LocalUser?.Mods.Any() == true ? string.Join(" + ", Client.LocalUser.Mods.Select(m => m.Acronym)) : "NM"), 18));
-                    var allowed = playlist.AllowedMods.Select(m => m.Acronym).ToHashSet();
-                    foreach (var mods in new[] { Array.Empty<string>(), new[] { "HD" }, new[] { "HR" }, new[] { "HD", "HR" } })
+                    matchPanel.Add(Text("Your mods: " + (Client.LocalUser?.Mods.Any() == true ? string.Join(" + ", Client.LocalUser.Mods.Select(m => m.Acronym)) : "NM"), 18));
+                    matchPanel.Add(new ArenaButton
                     {
-                        if (!mods.All(allowed.Contains)) continue;
-                        var selection = mods.Select(acronym => new APIMod { Acronym = acronym }).ToArray();
-                        matchPanel.Add(new ArenaButton { Text = "FreeMod: " + (mods.Length == 0 ? "NM" : string.Join(" + ", mods)),
-                            Action = () => _ = RunOperation(() => Client.ChangeUserMods(selection)) });
-                    }
+                        Text = "Select mods",
+                        Action = () => userModsSelectOverlay.Show(),
+                    });
+                    string? slot = SelectedSlotId(match);
+                    if (slot?.StartsWith("FM", StringComparison.OrdinalIgnoreCase) == true)
+                        matchPanel.Add(Paragraph(match.Format == "1v1"
+                            ? "FreeMod requires HD or HR from each player."
+                            : "Each team needs one pure HD player (EZ + HD is allowed) and one HR player. HDHR counts only as HR."));
                 }
                 bool ready = match.Teams.SelectMany(t => t.Members).Any(p => p.Id == localId && p.Ready);
-                setArenaPrimary(ready ? "Снять готовность" : pendingReady ? "Отменить ожидание карты" : "Готов к карте", () =>
+                setArenaPrimary(ready ? "Cancel ready" : pendingReady ? "Cancel beatmap wait" : "Ready for beatmap", () =>
                 {
                     if (pendingReady) { pendingReady = false; renderMatch(); return; }
                     if (ready)
@@ -298,28 +334,28 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
                 });
                 break;
             case "results":
-                matchPanel.Add(Text("Результат карты принят. Ожидаем следующий выбор…", 18));
+                matchPanel.Add(Text("Beatmap result accepted. Waiting for the next selection…", 18));
                 break;
             case "ended":
-                setArenaPrimary("Закрыть результат", () => action("leave_match"));
-                matchPanel.Add(Text("Матч завершён", 24));
+                setArenaPrimary("Close result", () => action("leave_match"));
+                matchPanel.Add(Text("Match finished", 24));
                 if (match.WinnerTeamId is { } winner)
                 {
                     var winningTeam = match.Teams.FirstOrDefault(team => team.Id == winner);
-                    matchPanel.Add(Paragraph("Победитель: " + (winningTeam != null ? teamName(winningTeam) : $"команда {winner + 1}"), 25));
+                    matchPanel.Add(Paragraph("Winner: " + (winningTeam != null ? teamName(winningTeam) : $"team {winner + 1}"), 25));
                 }
-                else matchPanel.Add(Text("Ничья", 22));
+                else matchPanel.Add(Text("Draw", 22));
                 foreach (var change in match.RatingChanges.OrderByDescending(change => change.UserId == localId))
                 {
                     var player = match.Teams.SelectMany(team => team.Members).FirstOrDefault(player => player.Id == change.UserId);
-                    var line = Paragraph($"{player?.Username ?? $"#{change.UserId}"}{(change.UserId == localId ? " (вы)" : "")} · {change.Before:0.##} → {change.After:0.##} MMR · {change.Delta:+0.##;-0.##;0} · вклад {change.Impact}/100", 20);
+                    var line = Paragraph($"{player?.Username ?? $"#{change.UserId}"}{(change.UserId == localId ? " (you)" : "")} · {change.Before:0.##} → {change.After:0.##} MMR · {change.Delta:+0.##;-0.##;0} · impact {change.Impact}/100", 20);
                     if (change.UserId == localId) line.Colour = new Color4(123, 224, 208, 255);
                     matchPanel.Add(line);
                 }
                 break;
             case "cancelled":
-                setArenaPrimary("Выйти из матча", () => action("leave_match"));
-                matchPanel.Add(Text("Матч отменён", 24));
+                setArenaPrimary("Leave match", () => action("leave_match"));
+                matchPanel.Add(Text("Match cancelled", 24));
                 break;
         }
         renderRoundHistory(match, localId);
@@ -336,10 +372,15 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
         string? selectedSlot = SelectedSlotId(state.Match);
         var slot = state.Match.Slots.FirstOrDefault(s => s.Id == selectedSlot);
         var playlist = Client.Room?.Playlist.FirstOrDefault(p => p.ID == Client.Room.Settings.PlaylistItemId);
-        if (!OwnsCurrentRoom || !BeatmapReady || playlist == null || (slot != null &&
+        if (!OwnsCurrentRoom)
+        {
+            StatusText.Text = "Connecting to the multiplayer room…";
+            return;
+        }
+        if (!BeatmapReady || playlist == null || (slot != null &&
             (playlist.BeatmapID != slot.BeatmapId || !HasBeatmapRevision(slot.BeatmapId, slot.Checksum))))
         {
-            StatusText.Text = "Загружаем выбранную карту. Готовность отправится автоматически.";
+            StatusText.Text = "Loading the selected beatmap. Ready status will be sent automatically.";
             return;
         }
         pendingReady = false;
@@ -350,14 +391,14 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
     {
         var match = state.Match!;
         if (match.RoomId == null || joiningRoom != null || !Client.IsConnected.Value || Client.Room?.RoomID == match.RoomId) return;
-        if (Client.Room != null) { StatusText.Text = "Сначала выйдите из другой мультиплеерной комнаты."; return; }
+        if (Client.Room != null) { StatusText.Text = "Leave the other multiplayer room first."; return; }
         long roomId = match.RoomId.Value;
         joiningRoom = roomId;
         _ = RunOperation(async () =>
         {
             try
             {
-                await Client.JoinRoom(new Room { RoomID = roomId }, match.Password).ConfigureAwait(false);
+                await Client.JoinRoom(new Room { RoomID = roomId }).ConfigureAwait(false);
                 if ((!Alive || leaving) && Client.Room?.RoomID == roomId)
                     await Client.LeaveRoom().ConfigureAwait(false);
             }
@@ -365,9 +406,18 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
         });
     }
 
-    internal static bool CanJoinNativeMatch(SomsAiMatch? match) => match is { IsFinished: false, RoomId: > 0 }
-        && match.Format is "1v1" or "2v2" or "3v3" or "4v4"
-        && match.Teams.Count == 2 && match.Teams.All(t => t.Members.Count == match.Format[0] - '0');
+    internal static bool CanJoinNativeMatch(SomsAiMatch? match)
+    {
+        if (match is not { IsFinished: false, RoomId: > 0, Stage: not "waiting", Teams.Count: 2 }
+            || match.Format is not ("1v1" or "2v2" or "3v3" or "4v4"))
+            return false;
+
+        if (match.Arbitrary)
+            return match.Teams.All(team => team.Members.Count > 0);
+
+        int teamSize = match.Format[0] - '0';
+        return match.Teams.All(team => team.Members.Count == teamSize);
+    }
 
     internal static string? SelectedSlotId(SomsAiMatch match) => match.MapSlot switch
     {
@@ -379,13 +429,14 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
     private void createCustom(string format)
     {
         if (creatingRoom || actionRequest != null || preparingAction) return;
+        bool arbitrary = format == "Custom";
+        if (arbitrary) format = "4v4";
         string rank = customRankBand.Current.Value == "ARCHSOM"
             ? "ARCHSOM"
             : $"{customRankBand.Current.Value} {customRankDivision.Current.Value}";
-        string[] levels = SomsAiBotSimulation.LevelKeys;
         action("custom_create", new JObject { ["format"] = format, ["name"] = customName.Current.Value, ["target_rank"] = rank,
-                ["with_bots"] = customWithBots.Current.Value,
-                ["bot_level"] = levels[Math.Max(0, Array.IndexOf(SomsAiBotSimulation.Labels, customBotLevel.Current.Value))] },
+                ["private"] = customPrivate.Current.Value, ["arbitrary"] = arbitrary,
+                ["with_bots"] = customWithBots.Current.Value },
             afterSuccess: () => customsOverlay?.HidePanel());
     }
 
@@ -433,7 +484,7 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
         {
             preparingAction = true;
             if (name == "custom_create") setCreatingRoom(true);
-            StatusText.Text = "Закрываем завершённую комнату…";
+            StatusText.Text = "Closing the finished room…";
             _ = RunOperation(async () =>
             {
                 bool completed = false;
@@ -467,11 +518,11 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
             body["variant_id"] = match.VariantId;
         }
         var request = actionRequest = new ApplySomsAiActionRequest(body);
-        if (name == "leave_match") StatusText.Text = "Выходим из матча…";
+        if (name == "leave_match") StatusText.Text = "Leaving match…";
         if (name == "custom_create")
         {
             setCreatingRoom(true);
-            StatusText.Text = customWithBots.Current.Value ? "Создаём комнату и подбираем профили ботов…" : "Создаём комнату…";
+            StatusText.Text = customWithBots.Current.Value ? "Creating room and selecting bot profiles…" : "Creating room…";
         }
         actionRequestedAt = Time.Current;
         request.Success += response => OnUpdateThread(() =>
@@ -490,7 +541,7 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
                 return;
             }
             if (name is "queue_join" or "custom_create" or "custom_join") lastOpenedMatchId = null;
-            StatusText.Text = "Обновление…";
+            StatusText.Text = "Refreshing…";
             refresh();
         });
         request.Failure += error => OnUpdateThread(() =>
@@ -506,14 +557,19 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
 
     public override bool OnExiting(ScreenExitEvent e)
     {
+        if (matchOnly && userModsSelectOverlay.State.Value == Visibility.Visible)
+        {
+            userModsSelectOverlay.Hide();
+            return true;
+        }
         if (actionRequest != null || preparingAction)
         {
-            StatusText.Text = "Дождитесь ответа на действие, затем можно выйти.";
+            StatusText.Text = "Wait for the action response before leaving.";
             return true;
         }
         if (matchOnly && !exitConfirmed && state.Match is { IsFinished: false, Stage: not "waiting" })
         {
-            dialogs.Push(new SomsAiOceanConfirmDialog("Покинуть экран матча? У вас будет 120 секунд, чтобы вернуться через SOMSAI. Затем команда проиграет.", () => { exitConfirmed = true; this.Exit(); }));
+            dialogs.Push(new SomsAiOceanConfirmDialog("Leave the match screen? You will have 120 seconds to return through SOMSAI. After that, your team will forfeit.", () => { exitConfirmed = true; this.Exit(); }));
             return true;
         }
         if (base.OnExiting(e)) return true;
@@ -522,10 +578,8 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
         leaving = true;
         stateRequest?.Cancel();
         stateRequest = null;
-        // The accepted match remains resumable from SOMSAI. Only an explicit "leave match" abandons it.
+        // Queue, party and accepted match state are global. Leaving this screen must not cancel matchmaking.
         if (OwnsCurrentRoom) _ = RunOperation(Client.LeaveRoom);
-        if (!matchOnly && !partyOnly && (state.Match == null || state.Match.IsFinished || state.Queue != null))
-            Api.Queue(new ApplySomsAiActionRequest(new JObject { ["action"] = "queue_leave", ["ruleset_id"] = Ruleset.Value.OnlineID, ["variant_id"] = variantId }));
         return false;
     }
 
@@ -533,7 +587,9 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
     {
         if (!Alive) return;
         stopPreviews();
+        if (matchOnly) userModsSelectOverlay.Hide();
         polling?.Cancel();
+        disposeArenaCountdown();
         if (Client != null) Client.RoomUpdated -= onNativeRoomUpdated;
         stateRequest?.Cancel();
         actionRequest?.Cancel();
@@ -544,16 +600,16 @@ public partial class SomsAiScreen : SomsNativeMatchScreen, IPreviewTrackOwner
 
     private static string stageLabel(string stage) => stage switch
     {
-        "waiting" => "Подтверждение участников",
-        "pool_select" => "Выбор турнирного пула",
-        "banning" => "Баны карт",
-        "picking" => "Выбор карты",
-        "ready" => "Готовность к карте",
-        "playing" => "Идёт игра",
-        "results" => "Результаты карты",
-        "ended" => "Матч завершён",
-        "cancelled" => "Матч отменён",
-        _ => "Обновление матча",
+        "waiting" => "Player confirmation",
+        "pool_select" => "Tournament pool selection",
+        "banning" => "Beatmap bans",
+        "picking" => "Beatmap selection",
+        "ready" => "Ready for beatmap",
+        "playing" => "Match in progress",
+        "results" => "Beatmap results",
+        "ended" => "Match finished",
+        "cancelled" => "Match cancelled",
+        _ => "Updating match",
     };
 
     internal static string SlotCaption(SomsAiSlot slot)

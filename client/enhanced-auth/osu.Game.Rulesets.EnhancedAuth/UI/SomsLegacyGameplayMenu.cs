@@ -50,7 +50,7 @@ public sealed partial class SomsLegacyGameplayMenu : SomsLegacyComponent
                 Origin = Anchor.TopCentre,
                 Position = new Vector2(0, 125),
                 MaxWidth = 720,
-                Text = failed ? "Неудачная попытка" : "Пауза",
+                Text = failed ? "Failed attempt" : "Paused",
                 Font = SomsLegacyFont.Font(50, bold: true),
                 Shadow = true,
             });
@@ -66,16 +66,16 @@ public sealed partial class SomsLegacyGameplayMenu : SomsLegacyComponent
         };
         canvas.Add(flow);
         int index = 0;
-        addButton(owner.OnResume, "pause-continue", "Продолжить", new Color4(106, 216, 134, 255));
-        addButton(owner.OnRetry, "pause-retry", "Повторить", new Color4(250, 211, 98, 255));
-        addButton(owner.OnQuit, "pause-back", "Вернуться к выбору карт", new Color4(241, 102, 144, 255));
+        addButton(owner.OnResume, "pause-continue", "Continue", new Color4(106, 216, 134, 255));
+        addButton(owner.OnRetry, "pause-retry", "Retry", new Color4(250, 211, 98, 255));
+        addButton(owner.OnQuit, "pause-back", "Return to song select", new Color4(241, 102, 144, 255));
 
         // Preserve fail-screen replay saving as well, without exposing the lazer footer layout.
         if (failed && owner.FooterContent != null)
         {
             var save = descendants(owner.FooterContent).OfType<osu.Game.Graphics.Containers.OsuClickableContainer>().FirstOrDefault();
             if (save != null)
-                canvas.Add(new SomsLegacyOverlayButton(skin, "", "Сохранить реплей", () => save.TriggerClickWithSound(), new Color4(132, 195, 243, 255))
+                canvas.Add(new SomsLegacyOverlayButton(skin, "", "Save replay", () => save.TriggerClickWithSound(), new Color4(132, 195, 243, 255))
                 {
                     Anchor = Anchor.BottomCentre,
                     Origin = Anchor.BottomCentre,

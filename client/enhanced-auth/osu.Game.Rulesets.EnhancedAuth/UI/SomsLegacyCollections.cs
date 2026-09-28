@@ -53,17 +53,17 @@ public sealed partial class SomsLegacySongSelect
             Name = "soms-selection-collections-menu";
             RelativeSizeAxes = Axes.Both; Depth = -10;
             Add(new Box { RelativeSizeAxes = Axes.Both, Colour = new Color4(0, 0, 0, .88f) });
-            Add(Text("Коллекции", 4, 4, .98f, 24, true));
+            Add(Text("Collections", 4, 4, .98f, 24, true));
             var panel = new Container { Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre, Y = 36, Size = new Vector2(455, 395) };
             Add(panel);
             panel.Add(Text(map.Metadata.Title + " [" + map.DifficultyName + "]", 0, 0, 455, 12));
             panel.Add(nameInput = new OsuTextBox
             {
                 Name = "soms-collection-name", Y = 23, Width = 345, Height = 22, CornerRadius = 0,
-                PlaceholderText = "Название новой коллекции", LengthLimit = 128,
+                PlaceholderText = "New collection name", LengthLimit = 128,
             });
             nameInput.OnCommit += (_, _) => CommitName();
-            panel.Add(saveName = button("create", "Создать", 350, 23, 105, () => CommitName(), new Color4(113, 163, 10, 255)));
+            panel.Add(saveName = button("create", "Create", 350, 23, 105, () => CommitName(), new Color4(113, 163, 10, 255)));
             panel.Add(scroll = new OsuScrollContainer
             {
                 Name = "soms-collection-scroll", Y = 53, Width = 455, Height = 263,
@@ -74,9 +74,9 @@ public sealed partial class SomsLegacySongSelect
                     Direction = FillDirection.Vertical, Spacing = new Vector2(0, 3),
                 },
             });
-            panel.Add(message = Text("+Set / −Set: весь мапсет    + / −: выбранная сложность", 0, 323, 455, 11));
-            panel.Add(delete = button("delete", "Удалить выбранную коллекцию", 0, 343, 455, deleteSelected, new Color4(165, 30, 10, 255), 22));
-            panel.Add(button("close", "Отмена", 0, 380, 455, close, new Color4(95, 95, 95, 255), 24));
+            panel.Add(message = Text("+Set / −Set: entire beatmap set    + / −: selected difficulty", 0, 323, 455, 11));
+            panel.Add(delete = button("delete", "Delete selected collection", 0, 343, 455, deleteSelected, new Color4(165, 30, 10, 255), 22));
+            panel.Add(button("close", "Cancel", 0, 380, 455, close, new Color4(95, 95, 95, 255), 24));
         }
 
         protected override void LoadComplete()
@@ -110,13 +110,13 @@ public sealed partial class SomsLegacySongSelect
                 row.Add(new Box { RelativeSizeAxes = Axes.Both, Colour = selected == id ? new Color4(40, 65, 78, 235) : Color4.Black });
                 row.Add(button("select-" + id, collection.Name + $" ({collection.BeatmapMD5Hashes.Count})", 2, 0, 270,
                     () => { selected = id; disarmDelete(); refresh(); }, Color4.Transparent, 12));
-                row.Add(button("rename-" + id, "Переим", 274, 1, 47, () =>
+                row.Add(button("rename-" + id, "Rename", 274, 1, 47, () =>
                 {
                     selected = renaming = id; disarmDelete();
                     nameInput.Text = collection.Name; GetContainingFocusManager().ChangeFocus(nameInput);
-                    saveName.TooltipText = "Сохранить новое название";
-                    saveName.SetCaption("Сохранить");
-                    message.Text = "Введите новое название и нажмите Enter или кнопку справа.";
+                    saveName.TooltipText = "Save new name";
+                    saveName.SetCaption("Save");
+                    message.Text = "Enter a new name and press Enter or the button on the right.";
                     refresh();
                 }, new Color4(184, 131, 0, 255), 10));
                 row.Add(membership("add-set-", "+Set", 324, 33, true, true, setCount < hashes.Length));
@@ -131,11 +131,11 @@ public sealed partial class SomsLegacySongSelect
                         () => { if (enabled) changeMembership(id, add, wholeSet); },
                         add ? new Color4(80, 150, 0, 255) : new Color4(171, 65, 0, 255), 11);
                     control.Alpha = enabled ? 1 : .3f;
-                    control.TooltipText = (add ? "Добавить " : "Убрать ") + (wholeSet ? "весь мапсет" : "эту сложность");
+                    control.TooltipText = (add ? "Add " : "Remove ") + (wholeSet ? "the entire beatmap set" : "this difficulty");
                     return control;
                 }
             }
-            if (collections.Length == 0) list.Add(Text("Коллекций пока нет. Создайте первую выше.", 0, 10, 440, 14));
+            if (collections.Length == 0) list.Add(Text("There are no collections yet. Create one above.", 0, 10, 440, 14));
             delete.Alpha = selected.HasValue ? 1 : .4f;
         }
 
@@ -154,7 +154,7 @@ public sealed partial class SomsLegacySongSelect
                 collection.LastModified = DateTimeOffset.UtcNow;
             });
             selected = id; disarmDelete();
-            message.Text = (wholeSet ? "Мапсет" : "Сложность") + (add ? " добавлен в коллекцию." : " удалён из коллекции.");
+            message.Text = (wholeSet ? "Beatmap set" : "Difficulty") + (add ? " added to the collection." : " removed from the collection.");
             refresh();
         }
 
@@ -162,9 +162,9 @@ public sealed partial class SomsLegacySongSelect
         {
             if (!nameInput.HasFocus && string.IsNullOrWhiteSpace(nameInput.Text)) return;
             string value = nameInput.Text.Trim();
-            if (value.Length == 0) { message.Text = "Введите название коллекции."; return; }
+            if (value.Length == 0) { message.Text = "Enter a collection name."; return; }
             if (realm.Realm.All<BeatmapCollection>().AsEnumerable().Any(c => c.ID != renaming && string.Equals(c.Name, value, StringComparison.OrdinalIgnoreCase)))
-            { message.Text = "Коллекция с таким названием уже существует."; return; }
+            { message.Text = "A collection with this name already exists."; return; }
             bool rename = renaming.HasValue;
             realm.Write(r =>
             {
@@ -176,9 +176,9 @@ public sealed partial class SomsLegacySongSelect
                 else { var collection = new BeatmapCollection(value); r.Add(collection); selected = collection.ID; }
             });
             renaming = null; nameInput.Text = ""; disarmDelete();
-            saveName.TooltipText = "Создать коллекцию";
-            saveName.SetCaption("Создать");
-            message.Text = rename ? "Коллекция переименована." : "Коллекция создана. Добавьте сложность кнопкой + или весь мапсет кнопкой +Set.";
+            saveName.TooltipText = "Create collection";
+            saveName.SetCaption("Create");
+            message.Text = rename ? "Collection renamed." : "Collection created. Add a difficulty with + or the entire beatmap set with +Set.";
             refresh();
             ScheduleAfterChildren(() =>
             {
@@ -187,7 +187,7 @@ public sealed partial class SomsLegacySongSelect
             });
         }
 
-        private void disarmDelete() { deleteArmed = false; delete.TooltipText = "Удалить выбранную коллекцию"; }
+        private void disarmDelete() { deleteArmed = false; delete.TooltipText = "Delete selected collection"; }
 
         private void deleteSelected()
         {
@@ -196,11 +196,11 @@ public sealed partial class SomsLegacySongSelect
             {
                 deleteArmed = true;
                 string name = realm.Realm.Find<BeatmapCollection>(selected.Value)?.Name ?? "";
-                message.Text = $"Удалить «{name}»? Нажмите кнопку удаления ещё раз. Карты останутся.";
+                message.Text = $"Delete “{name}”? Press the delete button again. Beatmaps will remain.";
                 return;
             }
             realm.Write(r => { if (r.Find<BeatmapCollection>(selected.Value) is { } collection) r.Remove(collection); });
-            selected = renaming = null; nameInput.Text = ""; disarmDelete(); message.Text = "Коллекция удалена."; refresh();
+            selected = renaming = null; nameInput.Text = ""; disarmDelete(); message.Text = "Collection deleted."; refresh();
         }
 
         private LegacyButton button(string key, string label, float x, float y, float width, Action action, Color4 colour, float fontSize = 12) =>

@@ -28,7 +28,7 @@ public static class SomsMarathonCompiler
     {
         var playable = working.GetPlayableBeatmap(working.BeatmapInfo.Ruleset, Array.Empty<Mod>());
         var objects = playable.HitObjects;
-        if (objects.Count == 0) throw new InvalidOperationException("В карте нет объектов.");
+        if (objects.Count == 0) throw new InvalidOperationException("The beatmap contains no hit objects.");
         double last = objects.Max(hit => hit.GetEndTime());
         // Consecutive effect points can change other effects without ending Kiai.
         var points = playable.ControlPointInfo.EffectPoints.Where((point, index) => index == 0
@@ -75,7 +75,7 @@ public static class SomsMarathonCompiler
         string cacheRoot, Action<string> progress, CancellationToken token)
     {
         if (definition.CompilerVersion != 1 || maps.Count is < 2 or > 20 || maps.Count != definition.Segments.Count)
-            throw new InvalidOperationException("Нужно выбрать от 2 до 20 карт.");
+            throw new InvalidOperationException("Select between 2 and 20 beatmaps.");
         string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
         { definition.CompilerVersion, definition.RulesetId, definition.Name, definition.Segments,
             Revisions = maps.Select(map => map.BeatmapInfo.MD5Hash).ToArray() })))).ToLowerInvariant();
@@ -107,15 +107,15 @@ public static class SomsMarathonCompiler
                 var segment = definition.Segments[i];
                 var map = maps[i];
                 if (segment.BeatmapId > 0 && map.BeatmapInfo.OnlineID != segment.BeatmapId)
-                    throw new InvalidOperationException("Выбрана другая сложность карты: " + segment.Title);
+                    throw new InvalidOperationException("A different beatmap difficulty was selected: " + segment.Title);
                 if (segment.EndMs - segment.StartMs is < 5000 or > 180000 || segment.StartMs < 0)
-                    throw new InvalidOperationException("Фрагмент должен длиться от 5 до 180 секунд.");
-                progress($"Собираем {i + 1}/{maps.Count}: {segment.Title}");
+                    throw new InvalidOperationException("A segment must be between 5 and 180 seconds long.");
+                progress($"Compiling {i + 1}/{maps.Count}: {segment.Title}");
                 var document = new Document(readMap(map));
                 if ((int)document.Number("General", "Mode", 0) != definition.RulesetId)
-                    throw new InvalidOperationException("В одном марафоне должны быть карты одного режима.");
+                    throw new InvalidOperationException("All beatmaps in a marathon must use the same ruleset.");
                 if (definition.RulesetId == 3 && (int)document.Number("Difficulty", "CircleSize", 4) != keys)
-                    throw new InvalidOperationException("Для osu!mania выберите карты с одинаковым количеством клавиш.");
+                    throw new InvalidOperationException("For osu!mania, select beatmaps with the same key count.");
                 double shift = songs[i].Time + Lead - segment.StartMs;
                 int sampleBase = (i + 1) * 10000;
                 var playable = map.GetPlayableBeatmap(map.BeatmapInfo.Ruleset, Array.Empty<Mod>());
@@ -150,7 +150,7 @@ public static class SomsMarathonCompiler
                         parts[samplePosition] = string.Join(':', remapSample(parts[samplePosition].Split(':'), sampleBase, i));
                     hits.Add(string.Join(',', parts));
                 }
-                if (before == hits.Count) throw new InvalidOperationException("В выбранном фрагменте нет целых объектов: " + segment.Title);
+                if (before == hits.Count) throw new InvalidOperationException("The selected segment contains no complete hit objects: " + segment.Title);
                 timing.AddRange(document.Timing(segment.StartMs, segment.EndMs, shift, songs[i].Time,
                     document.Number("Difficulty", "SliderMultiplier", 1.4) / sliderMultiplier, sampleBase));
                 copySamples(map, directory, i, sampleBase, token);
@@ -196,15 +196,15 @@ public static class SomsMarathonCompiler
 
     private static string readMap(WorkingBeatmap map)
     {
-        using var stream = OpenFile(map, map.BeatmapInfo.Path ?? throw new InvalidOperationException("Файл карты не найден."));
+        using var stream = OpenFile(map, map.BeatmapInfo.Path ?? throw new InvalidOperationException("Beatmap file was not found."));
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
 
     public static Stream OpenFile(WorkingBeatmap map, string filename)
     {
-        string path = map.BeatmapSetInfo.GetPathForFile(filename) ?? throw new InvalidOperationException("Не найден файл карты: " + filename);
-        return map.GetStream(path) ?? throw new InvalidOperationException("Не удалось прочитать файл карты: " + filename);
+        string path = map.BeatmapSetInfo.GetPathForFile(filename) ?? throw new InvalidOperationException("Beatmap file was not found: " + filename);
+        return map.GetStream(path) ?? throw new InvalidOperationException("Could not read beatmap file: " + filename);
     }
 
     private static string number(double value) => value.ToString("0.###", culture);

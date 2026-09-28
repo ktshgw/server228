@@ -36,8 +36,8 @@ public sealed partial class SomsRankedQueueControls : CompositeDrawable
         var party = new CompactButton
         {
             Name = "soms-ranked-party",
-            Text = "Пати 2v2",
-            TooltipText = "Пригласить напарника или принять приглашение. Поиск запускает капитан.",
+            Text = "2v2 party",
+            TooltipText = "Invite a teammate or accept an invitation. The captain starts matchmaking.",
             BackgroundColour = idleColour,
             Action = openParty,
         };
@@ -75,10 +75,10 @@ public sealed partial class SomsRankedQueueControls : CompositeDrawable
         choices.Clear();
         var pools = available.Value;
         bool team = selected.Value != null && IsTeamPool(selected.Value);
-        choices.Add(Row(32, formatButton(false, "1v1 · соло"), formatButton(true, "2v2 · команды")));
+        choices.Add(Row(32, formatButton(false, "1v1 · solo"), formatButton(true, "2v2 · teams")));
         if (pools == null || pools.Length == 0)
         {
-            choices.Add(SomsNativeMatchScreen.Text(pools == null ? "Загружаем очереди…" : "Нет доступных очередей", 16));
+            choices.Add(SomsNativeMatchScreen.Text(pools == null ? "Loading queues…" : "No queues available", 16));
             return;
         }
         foreach (var group in pools.Where(p => IsTeamPool(p) == team).OrderBy(p => p.RulesetId).ThenBy(p => p.Variant).Chunk(5))

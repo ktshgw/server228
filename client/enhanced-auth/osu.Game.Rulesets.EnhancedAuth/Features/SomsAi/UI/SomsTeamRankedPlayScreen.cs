@@ -30,6 +30,10 @@ public sealed partial class SomsTeamRankedPlayScreen : SomsNativeMatchScreen
     private readonly long roomId;
     public override string Title => "Ranked 2v2";
     protected override long? ActiveRoomId => roomId;
+    protected override bool ShouldDownloadCurrentBeatmap => Client.Room?.MatchState is RankedPlayRoomState
+    {
+        Stage: RankedPlayStage.GameplayWarmup or RankedPlayStage.Gameplay
+    };
     [Resolved] private UserLookupCache users { get; set; } = null!;
     [Resolved] private IDialogOverlay dialogs { get; set; } = null!;
     [Resolved(canBeNull: true)] private QueueController? queue { get; set; }
@@ -55,14 +59,14 @@ public sealed partial class SomsTeamRankedPlayScreen : SomsNativeMatchScreen
     [BackgroundDependencyLoader]
     private void load()
     {
-        Body.Add(Text("Две команды · 2 000 000 HP · отдельная рука у каждого игрока", 18));
+        Body.Add(Text("Two teams · 2,000,000 HP · each player has a separate hand", 18));
         Body.Add(teamPanel);
         Body.Add(turnText);
         Body.Add(instructions);
         Body.Add(hand);
-        Body.Add(replace = Button("Оставить карты", discardCards));
-        Body.Add(ready = Button("Готов к карте", sendReady));
-        Body.Add(Button("Выйти из матча", () => this.Exit()));
+        Body.Add(replace = Button("Keep cards", discardCards));
+        Body.Add(ready = Button("Ready for beatmap", sendReady));
+        Body.Add(Button("Leave match", () => this.Exit()));
         hand.SelectionChanged += selectionChanged;
         hand.PlayCardAction = playCard;
     }
@@ -104,14 +108,14 @@ public sealed partial class SomsTeamRankedPlayScreen : SomsNativeMatchScreen
         hand.PlayCardAction = state.Stage == RankedPlayStage.CardPlay && state.ActiveUserId == localId ? playCard : null;
         replace.Enabled.Value = state.Stage == RankedPlayStage.CardDiscard && !discarded && !cardAction;
         ready.Enabled.Value = state.Stage == RankedPlayStage.GameplayWarmup && !readySent;
-        StatusText.Text = $"Раунд {state.CurrentRound} · {label(state.Stage)}";
-        turnText.Text = state.ActiveUserId is { } active ? $"Ход: {name(active)}{(active == localId ? " (вы)" : "")}" : "";
+        StatusText.Text = $"Round {state.CurrentRound} · {label(state.Stage)}";
+        turnText.Text = state.ActiveUserId is { } active ? $"Turn: {name(active)}{(active == localId ? " (you)" : "")}" : "";
         instructions.Text = state.Stage switch
         {
-            RankedPlayStage.CardDiscard => discarded ? "Замена подтверждена. Ожидаем остальных игроков." : "Выберите карты для замены или оставьте все. У каждого своя рука.",
-            RankedPlayStage.CardPlay => state.ActiveUserId == localId ? "Выберите карту из своей руки и нажмите Play." : "Дождитесь своей очереди: A1 → B1 → A2 → B2.",
-            RankedPlayStage.GameplayWarmup => "Загрузка выбранной карты. Готовность отправится автоматически.",
-            RankedPlayStage.Ended => teamState?.Value<bool?>("cancelled") == true ? "Матч отменён без изменения рейтинга." : "Матч завершён. Итоговый рейтинг указан у игроков.",
+            RankedPlayStage.CardDiscard => discarded ? "Replacement confirmed. Waiting for the other players." : "Select cards to replace or keep them all. Each player has a separate hand.",
+            RankedPlayStage.CardPlay => state.ActiveUserId == localId ? "Select a card from your hand and press Play." : "Wait for your turn: A1 → B1 → A2 → B2.",
+            RankedPlayStage.GameplayWarmup => "Loading the selected beatmap. Ready status will be sent automatically.",
+            RankedPlayStage.Ended => teamState?.Value<bool?>("cancelled") == true ? "Match cancelled without a rating change." : "Match finished. Final ratings are shown next to the players.",
             _ => "",
         };
         renderTeams(state);
@@ -136,7 +140,7 @@ public sealed partial class SomsTeamRankedPlayScreen : SomsNativeMatchScreen
         teamPanel.Clear();
         if (teamState?["teams"] is not JArray teams)
         {
-            teamPanel.Add(Text("Получаем составы команд…", 18));
+            teamPanel.Add(Text("Loading team rosters…", 18));
             return;
         }
         foreach (JObject team in teams.OfType<JObject>())
@@ -145,21 +149,21 @@ public sealed partial class SomsTeamRankedPlayScreen : SomsNativeMatchScreen
             var ids = (team["user_ids"] as JArray)?.Values<int>().ToArray() ?? Array.Empty<int>();
             // The native room event has the latest HP; the supplementary endpoint supplies membership only.
             int life = ids.Select(userId => state.Users.TryGetValue(userId, out var user) ? (int?)user.Life : null).FirstOrDefault(v => v != null) ?? team.Value<int>("life");
-            teamPanel.Add(Text($"Команда {(id == 0 ? "A" : "B")} · {life:N0} / 2 000 000 HP", 25));
+            teamPanel.Add(Text($"Team {(id == 0 ? "A" : "B")} · {life:N0} / 2 000 000 HP", 25));
             foreach (int userId in ids)
             {
                 if (!state.Users.TryGetValue(userId, out var user)) continue;
                 string rating = state.Stage == RankedPlayStage.Ended ? $"{user.Rating} → {user.RatingAfter}" : user.Rating.ToString();
-                teamPanel.Add(Text($"{name(userId)} · {rating} MMR · {user.Hand.Count} карт", 18));
+                teamPanel.Add(Text($"{name(userId)} · {rating} MMR · {user.Hand.Count} cards", 18));
             }
         }
         if (teamState["turn_order"] is JArray order)
-            teamPanel.Add(Text("Порядок: " + string.Join(" → ", order.Values<int>().Select(name)), 16));
+            teamPanel.Add(Text("Order: " + string.Join(" → ", order.Values<int>().Select(name)), 16));
         if (state.Stage == RankedPlayStage.Ended && teamState.Value<int?>("winning_team_id") is { } winner)
-            teamPanel.Add(Text($"Победила команда {(winner == 0 ? "A" : "B")}", 28));
+            teamPanel.Add(Text($"Team won: {(winner == 0 ? "A" : "B")}", 28));
     }
 
-    private void selectionChanged() => replace.Text = hand.Selection.Any() ? $"Replace · заменить {hand.Selection.Count()} карт" : "Оставить карты";
+    private void selectionChanged() => replace.Text = hand.Selection.Any() ? $"Replace · {hand.Selection.Count()} cards" : "Keep cards";
 
     private void discardCards()
     {
@@ -244,12 +248,12 @@ public sealed partial class SomsTeamRankedPlayScreen : SomsNativeMatchScreen
 
     private static string label(RankedPlayStage stage) => stage switch
     {
-        RankedPlayStage.CardDiscard => "замена карт",
-        RankedPlayStage.CardPlay => "выбор карты",
-        RankedPlayStage.GameplayWarmup => "подготовка к игре",
-        RankedPlayStage.Gameplay => "игра",
-        RankedPlayStage.Results => "результаты",
-        RankedPlayStage.Ended => "матч завершён",
-        _ => "подготовка раунда",
+        RankedPlayStage.CardDiscard => "card replacement",
+        RankedPlayStage.CardPlay => "beatmap selection",
+        RankedPlayStage.GameplayWarmup => "gameplay preparation",
+        RankedPlayStage.Gameplay => "gameplay",
+        RankedPlayStage.Results => "results",
+        RankedPlayStage.Ended => "match finished",
+        _ => "round preparation",
     };
 }

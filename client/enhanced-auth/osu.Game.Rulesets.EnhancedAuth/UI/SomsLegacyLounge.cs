@@ -103,7 +103,7 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
 
         if (advanced)
         {
-            AddInternal(new SomsLegacyOverlayButton(skin, "", "← Классический список комнат", () =>
+            AddInternal(new SomsLegacyOverlayButton(skin, "", "← Classic room list", () =>
             {
                 advanced = false;
                 RequestRefresh();
@@ -128,7 +128,7 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
         var canvas = SomsLegacyOverlayButton.Canvas(this);
         scaling.Add(canvas);
         AddInternal(scaling);
-        canvas.Add(new SomsLegacyOverlayButton(skin, "menu-back", "Назад", () =>
+        canvas.Add(new SomsLegacyOverlayButton(skin, "menu-back", "Back", () =>
         {
             // Lounge is the root of the online subscreen stack. Native Back exits the outer screen.
             if (onlineParent() is { } parent) parent.Exit();
@@ -137,8 +137,8 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
         {
             Name = "soms-legacy-room-back", Position = new Vector2(35, 22), Size = new Vector2(180, 42),
         });
-        canvas.Add(label("Доступные комнаты", 35, 82, 620, 34));
-        canvas.Add(label("Выберите комнату и войдите в неё. Двойное нажатие также запускает вход.", 37, 126, 950, 17));
+        canvas.Add(label("Available rooms", 35, 82, 620, 34));
+        canvas.Add(label("Select a room to join. Double-clicking also joins it.", 37, 126, 950, 17));
 
         if (SomsLegacyInterfacePatch.Member<TextBox>(owner, "searchTextBox") is { } search)
         {
@@ -147,7 +147,7 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
                 Name = "soms-legacy-room-search",
                 Position = new Vector2(35, 168),
                 Size = new Vector2(630, 42),
-                PlaceholderText = "Поиск по названию комнаты…",
+                PlaceholderText = "Search by room name…",
                 Current = search.Current.GetBoundCopy(),
             });
             var freshSearch = searchBox;
@@ -157,7 +157,7 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
                     if (!SomsDrawableLifecycle.IsDisposed(freshSearch)) GetContainingFocusManager()?.ChangeFocus(freshSearch);
                 });
         }
-        canvas.Add(new SomsLegacyOverlayButton(skin, "", "Фильтры", () =>
+        canvas.Add(new SomsLegacyOverlayButton(skin, "", "Filters", () =>
         {
             advanced = true;
             RequestRefresh();
@@ -165,15 +165,15 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
         {
             Name = "soms-legacy-room-filters", Position = new Vector2(682, 168), Size = new Vector2(145, 42),
         });
-        canvas.Add(new SomsLegacyOverlayButton(skin, "", "Обновить", () => owner.RefreshRooms(), new Color4(103, 163, 218, 255))
+        canvas.Add(new SomsLegacyOverlayButton(skin, "", "Refresh", () => owner.RefreshRooms(), new Color4(103, 163, 218, 255))
         {
             Name = "soms-legacy-room-refresh", Position = new Vector2(842, 168), Size = new Vector2(147, 42),
         });
 
         canvas.Add(new Box { Position = new Vector2(35, 225), Size = new Vector2(954, 31), Colour = Color4.Black, Alpha = 0.28f });
-        canvas.Add(label("Название / карта", 48, 231, 510, 16));
-        canvas.Add(label("Игроки", 605, 231, 120, 16));
-        canvas.Add(label("Состояние", 749, 231, 220, 16));
+        canvas.Add(label("Name / beatmap", 48, 231, 510, 16));
+        canvas.Add(label("Players", 605, 231, 120, 16));
+        canvas.Add(label("Status", 749, 231, 220, 16));
 
         var flow = new FillFlowContainer
         {
@@ -205,11 +205,11 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
 
         status = label("", 38, 610, 950, 19);
         canvas.Add(status);
-        canvas.Add(new SomsLegacyOverlayButton(skin, "", "Создать комнату", () => owner.Open(), new Color4(230, 165, 86, 255))
+        canvas.Add(new SomsLegacyOverlayButton(skin, "", "Create room", () => owner.Open(), new Color4(230, 165, 86, 255))
         {
             Name = "soms-legacy-room-create", Position = new Vector2(35, 654), Size = new Vector2(355, 58),
         });
-        canvas.Add(joinButton = new SomsLegacyOverlayButton(skin, "", "Войти в комнату", requestJoin, new Color4(133, 217, 123, 255))
+        canvas.Add(joinButton = new SomsLegacyOverlayButton(skin, "", "Join room", requestJoin, new Color4(133, 217, 123, 255))
         {
             Name = "soms-legacy-room-join", Position = new Vector2(410, 654), Size = new Vector2(579, 58),
         });
@@ -224,17 +224,17 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
                 Size = new Vector2(600, 175),
                 Children = new Drawable[] { new Box { RelativeSizeAxes = Axes.Both, Colour = new Color4(26, 36, 56, 255) } },
             };
-            dialog.Add(label("Пароль комнаты: " + lockedRoom.Name, 20, 18, 560, 22));
+            dialog.Add(label("Room password: " + lockedRoom.Name, 20, 18, 560, 22));
             var password = new OsuPasswordTextBox
             {
-                Position = new Vector2(20, 62), Size = new Vector2(560, 40), PlaceholderText = "Пароль",
+                Position = new Vector2(20, 62), Size = new Vector2(560, 40), PlaceholderText = "Password",
             };
             dialog.Add(password);
-            dialog.Add(new SomsLegacyOverlayButton(skin, "", "Отмена", () => { passwordPrompt = false; RequestRefresh(); }, new Color4(167, 158, 180, 255))
+            dialog.Add(new SomsLegacyOverlayButton(skin, "", "Cancel", () => { passwordPrompt = false; RequestRefresh(); }, new Color4(167, 158, 180, 255))
             {
                 Position = new Vector2(20, 117), Size = new Vector2(180, 42),
             });
-            dialog.Add(new SomsLegacyOverlayButton(skin, "", "Войти", () => join(lockedRoom, password.Current.Value), new Color4(133, 217, 123, 255))
+            dialog.Add(new SomsLegacyOverlayButton(skin, "", "Join", () => join(lockedRoom, password.Current.Value), new Color4(133, 217, 123, 255))
             {
                 Position = new Vector2(220, 117), Size = new Vector2(360, 42),
             });
@@ -261,7 +261,7 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
             {
                 if (SomsDrawableLifecycle.IsDisposed(this)) return;
                 passwordPrompt = false;
-                error = "Не удалось войти: " + message;
+                error = "Could not join: " + message;
                 RequestRefresh();
             });
         });
@@ -282,7 +282,7 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
         bool joining = busy?.Value == true;
         if (joinButton != null) joinButton.Enabled.Value = selected?.Value != null && !joining;
         int count = rooms?.Count(matches) ?? 0;
-        status.Text = error.Length > 0 ? error : joining ? "Подключаемся к комнате…" : hasResults?.Value == false ? "Обновляем список комнат…" : count == 0 ? "Комнат по текущим фильтрам нет. Создайте свою или измените фильтры." : "Комнат: " + count;
+        status.Text = error.Length > 0 ? error : joining ? "Joining room…" : hasResults?.Value == false ? "Refreshing room list…" : count == 0 ? "No rooms match the current filters. Create one or change the filters." : "Rooms: " + count;
     }
 
     private bool matches(Room room)
@@ -377,10 +377,10 @@ public sealed partial class SomsLegacyLounge : SomsLegacyComponent
         protected override void Update()
         {
             base.Update();
-            title.Text = (room.HasPassword ? "[Пароль] " : "") + room.Name;
-            subtitle.Text = "Хост: " + (room.Host?.Username ?? "—") + " · " + (room.CurrentPlaylistItem?.Beatmap?.Metadata?.Title ?? "Выбор карты");
+            title.Text = (room.HasPassword ? "[Password] " : "") + room.Name;
+            subtitle.Text = "Host: " + (room.Host?.Username ?? "—") + " · " + (room.CurrentPlaylistItem?.Beatmap?.Metadata?.Title ?? "Beatmap selection");
             players.Text = room.ParticipantCount + " / " + (room.MaxParticipants?.ToString() ?? "—");
-            state.Text = room.Status == RoomStatus.Playing ? "Идёт игра" : "Ожидание";
+            state.Text = room.Status == RoomStatus.Playing ? "Playing" : "Waiting";
         }
     }
 }

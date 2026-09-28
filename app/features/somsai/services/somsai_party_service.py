@@ -52,7 +52,47 @@ async def lock_somsai(session: AsyncSession) -> None:
     row = (await session.exec(select(SomsaiLock).where(SomsaiLock.id == 1).with_for_update())).first()
     if row is None:
         raise RuntimeError("SOMSAI schema has not been migrated")
+    await expire_stale_parties(session)
     await expire_reservations(session)
+
+
+async def expire_stale_parties(session: AsyncSession) -> None:
+    """Drop party membership after the client heartbeat disappears."""
+    # The global client presence polls every two seconds. A short grace absorbs
+    # transient request loss, while ensuring a closed game cannot resurrect a
+    # phantom party on the next launch.
+    cutoff = utcnow() - timedelta(seconds=15)
+    parties = (await session.exec(select(SomsaiParty).where(col(SomsaiParty.active).is_(True)))).all()
+    if not parties:
+        return
+    member_ids = {uid for party in parties for uid in party.members}
+    states = {
+        state.user_id: state
+        for state in (
+            await session.exec(select(SomsaiActivity).where(col(SomsaiActivity.user_id).in_(member_ids)))
+        ).all()
+    }
+    for party in parties:
+        retained = []
+        for uid in party.members:
+            state = states.get(uid)
+            if state and (
+                state.reservation_id
+                or state.match_id
+                or aware(state.last_seen_at) >= cutoff
+            ):
+                retained.append(uid)
+            elif state and state.party_id == party.id:
+                state.party_id = None
+                session.add(state)
+        if retained == party.members:
+            continue
+        party.members = retained
+        party.active = bool(retained)
+        if retained and party.captain_id not in retained:
+            party.captain_id = retained[0]
+        party.revision += 1
+        session.add(party)
 
 
 async def active_user(session: AsyncSession, user_id: int) -> User:
@@ -69,7 +109,7 @@ async def active_user(session: AsyncSession, user_id: int) -> User:
         )
     ).first()
     if user is None:
-        reject("Игрок недоступен для матчей.", 403)
+        reject("This player is unavailable for matches.", 403)
     return user
 
 
@@ -155,7 +195,7 @@ async def party_snapshot(session: AsyncSession, user_id: int, *, public: bool = 
 async def assert_party_idle(session: AsyncSession, party: SomsaiParty) -> None:
     for uid in party.members:
         if (await activity(session, uid)).reservation_id:
-            reject("Сначала завершите матч или отмените поиск.")
+            reject("Finish the match or cancel matchmaking first.")
 
 
 async def leave_party(session: AsyncSession, user_id: int) -> None:
@@ -188,7 +228,7 @@ async def assert_not_blocked(session: AsyncSession, inviter_id: int, target_id: 
         )
     ).first()
     if blocked is not None:
-        reject("Нельзя присоединиться к пати этого игрока.", 403)
+        reject("You cannot join this player's party.", 403)
 
 
 async def party_action(
@@ -203,13 +243,13 @@ async def party_action(
     await active_user(session, user_id)
     if action == "party_invite" and target_username is not None:
         if target_id is not None:
-            reject("Укажите ник или ID, но не оба сразу.", 422)
+            reject("Specify either a username or an ID, not both.", 422)
         username = target_username.strip().removeprefix("@").lower()
         if not username:
-            reject("Введите ник игрока.", 422)
+            reject("Enter a player username.", 422)
         target_id = (await session.exec(select(User.id).where(func.lower(User.username) == username))).first()
         if target_id is None:
-            reject("Игрок с таким ником не найден.", 404)
+            reject("No player with this username was found.", 404)
     if action == "party_leave":
         await leave_party(session, user_id)
         return
@@ -221,18 +261,18 @@ async def party_action(
             or invite.status != "pending"
             or aware(invite.expires_at) <= utcnow()
         ):
-            reject("Приглашение уже недоступно.")
+            reject("This invitation is no longer available.")
         if action == "party_accept":
             party = await session.get(SomsaiParty, invite.party_id)
             if party is None or not party.active or len(party.members) >= 2:
-                reject("В пати больше нет свободного места.")
+                reject("The party has no free slots left.")
             if party.captain_id != invite.inviter_id:
-                reject("Пригласивший капитан уже покинул пати.")
+                reject("The inviting captain has already left the party.")
             await assert_not_blocked(session, invite.inviter_id, user_id)
             await assert_party_idle(session, party)
             await active_user(session, party.captain_id)
             if (await activity(session, user_id)).reservation_id:
-                reject("Сначала завершите матч или поиск.")
+                reject("Finish the match or matchmaking first.")
             await leave_party(session, user_id)
             party.members = [*party.members, user_id]
             party.revision += 1
@@ -244,7 +284,7 @@ async def party_action(
     party = await get_party(session, user_id)
     if party is None:
         if (await activity(session, user_id)).reservation_id:
-            reject("Сначала завершите матч или поиск.")
+            reject("Finish the match or matchmaking first.")
         party = SomsaiParty(captain_id=user_id, members=[user_id])
         session.add(party)
         await session.flush()
@@ -252,12 +292,12 @@ async def party_action(
     if action == "party_create":
         return
     if action != "party_invite" or target_id is None or target_id == user_id:
-        reject("Укажите другого игрока.", 422)
+        reject("Specify another player.", 422)
     if party.captain_id != user_id:
-        reject("Приглашать может капитан пати.", 403)
+        reject("Only the party captain can invite players.", 403)
     await assert_party_idle(session, party)
     if len(party.members) >= 2:
-        reject("В пати уже два игрока.")
+        reject("The party already has two players.")
     target = await active_user(session, target_id)
     blocked = (
         await session.exec(
@@ -271,7 +311,7 @@ async def party_action(
         )
     ).first()
     if blocked is not None:
-        reject("Нельзя пригласить этого игрока.", 403)
+        reject("This player cannot be invited.", 403)
     if target.pm_friends_only:
         follows = (
             await session.exec(
@@ -283,7 +323,7 @@ async def party_action(
             )
         ).first()
         if follows is None:
-            reject("Игрок принимает приглашения только от друзей.", 403)
+            reject("This player accepts invitations from friends only.", 403)
     previous = (
         await session.exec(
             select(SomsaiPartyInvite).where(
@@ -297,7 +337,7 @@ async def party_action(
     if previous is not None:
         return
     if (await activity(session, target_id)).reservation_id:
-        reject("Игрок сейчас в матче или поиске.")
+        reject("This player is currently in a match or matchmaking.")
     session.add(
         SomsaiPartyInvite(
             party_id=int(party.id or 0),
@@ -317,14 +357,14 @@ async def reserve_members(
     reservation_id: str | None = None,
 ) -> SomsaiReservation:
     if not members or captain_id not in members or len(set(members)) != len(members):
-        reject("Некорректный состав команды.", 422)
+        reject("Invalid team composition.", 422)
     for uid in sorted(members):
         await active_user(session, uid)
         native = await session.get(SomsaiNativeRoom, uid)
         if native and aware(native.expires_at) > utcnow():
-            reject("Один из игроков находится в обычной комнате мультиплеера.")
+            reject("One of the players is in a regular multiplayer room.")
         if (await activity(session, uid)).reservation_id:
-            reject("Один из игроков уже участвует в поиске или матче.")
+            reject("One of the players is already in matchmaking or a match.")
     reservation = SomsaiReservation(
         id=reservation_id or str(uuid4()),
         captain_id=captain_id,
@@ -341,30 +381,30 @@ async def reserve_members(
 
 
 async def native_reserve(session: AsyncSession, user_id: int, pool_id: int, request_id: str) -> dict:  # noqa: ARG001
-    reject("Иди в обычный лазер", 403)
+    reject("Use official osu!lazer.", 403)
 
 
 async def _legacy_native_reserve(session: AsyncSession, user_id: int, pool_id: int, request_id: str) -> dict:
     pool = await session.get(MatchmakingPool, pool_id)
     if pool is None or not pool.active or pool.type != "ranked_play" or pool.lobby_size not in (2, 4):
-        reject("Очередь Ranked недоступна.")
+        reject("The Ranked queue is unavailable.")
     party = await get_party(session, user_id)
     members = [user_id]
     if pool.lobby_size == 4 and party:
         if party.captain_id != user_id:
-            reject("Поиск запускает капитан пати.", 403)
+            reject("Only the party captain can start matchmaking.", 403)
         members = list(party.members)
     kind = f"ranked:{pool_id}"
     reservation = await session.get(SomsaiReservation, request_id)
     if reservation is not None:
         if reservation.captain_id != user_id or reservation.kind != kind or reservation.members != members:
-            reject("Идентификатор запроса уже использован другим составом или очередью.")
+            reject("This request ID was already used by another lineup or queue.")
         if reservation.released or aware(reservation.expires_at) <= utcnow():
-            reject("Резервирование очереди истекло. Начните новый поиск.", 404)
+            reject("The queue reservation expired. Start a new search.", 404)
         for uid in members:
             await active_user(session, uid)
             if (await activity(session, uid)).reservation_id != reservation.id:
-                reject("Резервирование очереди больше не действует.", 404)
+                reject("The queue reservation is no longer valid.", 404)
     else:
         reservation = await reserve_members(
             session, user_id, members, kind, party.id if party else None, reservation_id=request_id
@@ -410,7 +450,7 @@ async def expire_reservations(session: AsyncSession) -> None:
 async def renew_reservation(session: AsyncSession, reservation_id: str) -> None:
     reservation = await session.get(SomsaiReservation, reservation_id)
     if reservation is None or reservation.released or aware(reservation.expires_at) <= utcnow():
-        reject("Резервирование очереди истекло.", 404)
+        reject("The queue reservation expired.", 404)
     reservation.expires_at = utcnow() + timedelta(minutes=10)
     session.add(reservation)
 
@@ -423,10 +463,10 @@ async def claim_native_room(session: AsyncSession, user_id: int, room_id: int) -
         # Lease renewals for the room backing this exact SOMSAI match are not
         # conflicting multiplayer activity.
         if match is None or match.room_id != room_id or match.stage in {"ended", "cancelled"}:
-            reject("Игрок уже участвует в очереди или матче SOMSAI/Ranked.")
+            reject("The player is already in a SOMSAI/Ranked queue or match.")
     row = await session.get(SomsaiNativeRoom, user_id)
     if row and row.room_id != room_id and aware(row.expires_at) > utcnow():
-        reject("Игрок уже находится в другой комнате.")
+        reject("The player is already in another room.")
     row = row or SomsaiNativeRoom(user_id=user_id, room_id=room_id, expires_at=utcnow())
     row.room_id = room_id
     row.expires_at = utcnow() + timedelta(seconds=45)

@@ -13,7 +13,6 @@ from app.features.somsai.services.soms_activity_service import (
     eligible_recipient,
     notification_preferences,
     stage_first_place,
-    stage_friend_notification,
 )
 
 from fastapi import HTTPException, Response
@@ -109,30 +108,16 @@ class ActivityTests(unittest.IsolatedAsyncioTestCase):
     async def test_defaults_and_explicit_opt_out(self):
         db = self.session()
         db.get.return_value = None
-        assert await notification_preferences(db, 9) == {
-            "rank_lost": True,
-            "friend_added": True,
-            "friend_removed": True,
-        }
+        assert await notification_preferences(db, 9) == {"rank_lost": True}
         db.get.return_value = UserPreference(user_id=9, extra={"soms_notifications": {"rank_lost": False}})
-        assert await notification_preferences(db, 9) == {
-            "rank_lost": False,
-            "friend_added": True,
-            "friend_removed": True,
-        }
+        assert await notification_preferences(db, 9) == {"rank_lost": False}
 
     async def test_supporter_and_preference_required_for_recipient(self):
         db = self.session()
         db.get.return_value = self.user(False)
-        assert await eligible_recipient(db, 9, "rank_lost") is None
+        assert await eligible_recipient(db, 9) is None
         db.get.side_effect = [self.user(), None]
-        assert await eligible_recipient(db, 9, "rank_lost") == 9
-        db.get.side_effect = [
-            self.user(),
-            UserPreference(user_id=9, extra={"soms_notifications": {"friend_added": False}}),
-        ]
-        assert await eligible_recipient(db, 9, "friend_added") is None
-
+        assert await eligible_recipient(db, 9) == 9
     async def test_new_first_place_announced_with_previous_holder_at_end(self):
         db = self.session()
         with (
@@ -190,16 +175,6 @@ class ActivityTests(unittest.IsolatedAsyncioTestCase):
         assert event.recipient_id is None
         assert "забрано у" not in event.announcement
 
-    async def test_friend_outbox_is_unique_per_relationship(self):
-        db = self.session()
-        with patch("app.features.somsai.services.soms_activity_service.eligible_recipient", new=AsyncMock(return_value=9)):
-            await stage_friend_notification(db, Obj(id=7, username="friend"), 9, 66)
-            assert db.add.call_args.args[0].event_key == "friend:66"
-            db.add.reset_mock()
-            db.exec.return_value = Obj(first=lambda: 1)
-            await stage_friend_notification(db, Obj(id=7, username="friend"), 9, 66)
-            db.add.assert_not_called()
-
     async def test_non_supporter_cannot_read_inbox_or_other_users_items(self):
         db = self.session()
         db.get.return_value = None
@@ -207,61 +182,11 @@ class ActivityTests(unittest.IsolatedAsyncioTestCase):
         assert result["items"] == []
         assert result["unread"] == 0
         db.exec.assert_not_awaited()
-        db.get.return_value = SomsActivity(event_key="test", kind="friend_added", recipient_id=8)
+        db.get.return_value = SomsActivity(event_key="test", kind="rank_lost", recipient_id=8)
         with patch("app.router.private.web_notifications._require_csrf"):
             with self.assertRaises(HTTPException) as caught:  # noqa: PT027
                 await read_one(1, Obj(), Obj(user=self.user()), db)
             assert caught.exception.status_code == 404
-
-    async def test_removed_friend_has_independent_preference_and_deduplication(self):
-        db = self.session()
-        db.get.side_effect = [
-            self.user(),
-            UserPreference(user_id=9, extra={"soms_notifications": {"friend_added": False, "friend_removed": True}}),
-        ]
-        await stage_friend_notification(db, Obj(id=7, username="former friend"), 9, 66, removed=True)
-        event = db.add.call_args.args[0]
-        assert event.kind == "friend_removed"
-        assert event.event_key == "unfriend:66"
-        assert event.recipient_id == 9
-        assert event.payload == {"username": "former friend", "user_id": 7}
-        db.commit.assert_not_awaited()
-        db.add.reset_mock()
-        db.get.side_effect = [self.user(), None]
-        db.exec.return_value = Obj(first=lambda: event)
-        await stage_friend_notification(db, Obj(id=7), 9, 66, removed=True)
-        db.add.assert_not_called()
-        db.get.side_effect = [
-            self.user(),
-            UserPreference(user_id=9, extra={"soms_notifications": {"friend_added": True, "friend_removed": False}}),
-        ]
-        await stage_friend_notification(db, Obj(id=7), 9, 67, removed=True)
-        db.add.assert_not_called()
-        db.get.side_effect = [self.user(False)]
-        await stage_friend_notification(db, Obj(id=7), 9, 68, removed=True)
-        db.add.assert_not_called()
-
-    async def test_native_unfriend_notifies_but_unblock_does_not(self):
-        from app.database.relationship import Relationship, RelationshipType
-        from app.router.v2.relationship import delete_relationship
-
-        for kind, path in [(RelationshipType.FOLLOW, "/friends/9"), (RelationshipType.BLOCK, "/blocks/9")]:
-            db = self.session()
-            db.delete = AsyncMock()
-            relationship = Relationship(id=66, user_id=7, target_id=9, type=kind)
-            db.exec.side_effect = [Obj(first=lambda: True), Obj(), Obj(first=lambda: relationship)]
-            actor = Obj(id=7, username="actor", is_restricted=AsyncMock(return_value=False))
-            with (
-                patch("app.features.somsai.services.soms_activity_service.stage_friend_notification", new=AsyncMock()) as notify,
-                patch("app.router.v2.relationship.hub.emit"),
-            ):
-                await delete_relationship(db, Obj(url=Obj(path=path)), 9, actor)
-                if kind == RelationshipType.FOLLOW:
-                    notify.assert_awaited_once_with(db, actor, 9, 66, removed=True)
-                else:
-                    notify.assert_not_awaited()
-            db.delete.assert_awaited_once_with(relationship)
-            db.commit.assert_awaited_once()
 
     async def test_preferences_preserve_unrelated_data_and_read_all_is_bounded(self):
         db = self.session()
@@ -270,7 +195,7 @@ class ActivityTests(unittest.IsolatedAsyncioTestCase):
             await save_preferences(NotificationPreferences(rank_lost=False), Obj(), Obj(user=self.user()), db)
             assert db.add.call_args.args[0].extra == {
                 "other_feature": 42,
-                "soms_notifications": {"rank_lost": False, "friend_added": True, "friend_removed": True},
+                "soms_notifications": {"rank_lost": False},
             }
             await mark_read(Obj(), Obj(user=self.user()), db, through=123)
         assert csrf.call_count == 2

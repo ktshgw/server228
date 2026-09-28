@@ -5,6 +5,7 @@ using System.Linq;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Sprites;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
@@ -32,17 +33,14 @@ public sealed partial class SomsLegacyMultiplayerHub : FillFlowContainer
         var somsai = native.FirstOrDefault(button => button.Name == "somsai-menu-button");
 
         if (lounge != null)
-            add("menu-multi", "Лобби", "Открытые комнаты и командная игра", new Color4(91, 82, 159, 255), () => lounge.TriggerClick());
-
-        // Ranked is intentionally unavailable on SOMS!, in either interface mode.
-        add("", "Ranked", "Иди в обычный лазер", new Color4(74, 77, 91, 255), null);
+            add("menu-multi", "Lounge", "Open rooms and team play", new Color4(91, 82, 159, 255), () => lounge.TriggerClick());
 
         if (somsai != null)
-            add("menu-somsai", "SOMSAI", "1v1 · 2v2 · турнирные кастомы", new Color4(57, 146, 160, 255), () => somsai.TriggerClick());
+            add("", "SOMSAI", "1v1 / 2v2 / tournament customs", new Color4(94, 63, 186, 255), () => somsai.TriggerClick(), FontAwesome.Solid.Crown);
 
-        add("menu-back", "Назад", "Выбор режима игры", new Color4(90, 95, 111, 255), back);
+        add("menu-back", "Back", "Select a game mode", new Color4(90, 95, 111, 255), back);
 
-        void add(string asset, string title, string description, Color4 colour, Action? action)
+        void add(string asset, string title, string description, Color4 colour, Action? action, IconUsage? icon = null)
         {
             var button = new OsuClickableContainer
             {
@@ -63,6 +61,16 @@ public sealed partial class SomsLegacyMultiplayerHub : FillFlowContainer
             else
             {
                 button.Add(new Box { RelativeSizeAxes = Axes.Both, Colour = colour });
+                if (icon.HasValue)
+                {
+                    button.Add(new SpriteIcon
+                    {
+                        Position = new Vector2(34, 20),
+                        Size = new Vector2(30),
+                        Icon = icon.Value,
+                        Shadow = true,
+                    });
+                }
                 button.Add(new TruncatingSpriteText
                 {
                     Position = new Vector2(98, 8),

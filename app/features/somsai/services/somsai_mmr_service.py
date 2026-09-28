@@ -19,7 +19,7 @@ MAX_ADMIN_MMR = 5000
 
 def validate_mode(ruleset_id: int, variant_id: int, format: str) -> None:
     if (ruleset_id, variant_id) not in MODES or format not in ("1v1", "2v2"):
-        reject("Неизвестный режим SOMSAI", 422)
+        reject("Unknown SOMSAI mode", 422)
 
 
 def mmr_version(row: SomsaiRating | None) -> str:
@@ -54,7 +54,7 @@ async def change_somsai_mmr(
 ) -> tuple[dict, dict]:
     validate_mode(ruleset_id, variant_id, format)
     if type(mmr) is not int or not 0 <= mmr <= MAX_ADMIN_MMR:
-        reject("MMR SOMSAI должен быть целым числом от 0 до 5000", 422)
+        reject("SOMSAI MMR must be an integer between 0 and 5000", 422)
     await lock_somsai(session)
     state = (
         await session.exec(
@@ -67,7 +67,7 @@ async def change_somsai_mmr(
     if state is not None:
         match = await session.get(SomsaiMatch, state.match_id) if state.match_id else None
         if state.reservation_id or (match and match.stage not in ("ended", "cancelled")):
-            reject("Игрок должен выйти из поиска или матча перед изменением MMR SOMSAI")
+            reject("The player must leave matchmaking or the match before changing SOMSAI MMR")
     row = (
         await session.exec(
             select(SomsaiRating)
@@ -82,7 +82,7 @@ async def change_somsai_mmr(
         )
     ).first()
     if mmr_version(row) != expected_version:
-        reject("MMR SOMSAI изменился. Обновите данные игрока")
+        reject("SOMSAI MMR changed. Refresh the player data")
     before = admin_payload(row, ruleset_id, variant_id, format)
     row = row or await ensure_rating(session, user_id, ruleset_id, variant_id, format)
     row.rating = mmr

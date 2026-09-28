@@ -75,7 +75,7 @@ public partial class SomsAiScreen
             var scores = round["team_scores"] as JArray;
             long a = scores?.ElementAtOrDefault(0)?.Value<long>() ?? 0, b = scores?.ElementAtOrDefault(1)?.Value<long>() ?? 0;
             long difference = localTeam == 1 ? b - a : a - b;
-            string totals = ban ? "Бан" : round.Value<bool?>("forfeit") == true ? "Технический результат · " + round.Value<string>("reason")
+            string totals = ban ? "Ban" : round.Value<bool?>("forfeit") == true ? "Forfeit result · " + round.Value<string>("reason")
                 : $"{a:N0} : {b:N0}   ·   Δ {difference:+#,0;-#,0;0}";
             var card = new OsuClickableContainer
             {
@@ -88,13 +88,13 @@ public partial class SomsAiScreen
             card.Add(new Box { RelativeSizeAxes = Axes.Both, Colour = Color4.Black.Opacity(.72f) });
             card.Add(new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding(10), Children = new Drawable[]
             {
-                new TruncatingSpriteText { RelativeSizeAxes = Axes.X, Text = $"{(ban ? "БАН" : round["round"]?.ToString())} · {slot.Label} · {slot.Title}", Font = OsuFont.GetFont(size: 15) },
+                new TruncatingSpriteText { RelativeSizeAxes = Axes.X, Text = $"{(ban ? "BAN" : round["round"]?.ToString())} · {slot.Label} · {slot.Title}", Font = OsuFont.GetFont(size: 15) },
                 new TruncatingSpriteText { RelativeSizeAxes = Axes.X, Y = 25, Text = totals, Font = OsuFont.GetFont(size: 14), Colour = colour },
-                new TruncatingSpriteText { RelativeSizeAxes = Axes.X, Y = 48, Text = pickedBy.HasValue ? $"{(ban ? "Забанил" : "Пик")}: {pickerName}" : "Тайбрейкер", Font = OsuFont.GetFont(size: 13), Colour = pickedBy is { } owner ? teamColour(owner) : Color4.White },
+                new TruncatingSpriteText { RelativeSizeAxes = Axes.X, Y = 48, Text = pickedBy.HasValue ? $"{(ban ? "Banned by" : "Pick")}: {pickerName}" : "Tiebreaker", Font = OsuFont.GetFont(size: 13), Colour = pickedBy is { } owner ? teamColour(owner) : Color4.White },
             } });
             battleFooter.Add(card);
         }
-        if (match.History.Count == 0 && bans.Count == 0) battleFooter.Add(Paragraph("Здесь появятся баны и результаты сыгранных карт.", 15));
+        if (match.History.Count == 0 && bans.Count == 0) battleFooter.Add(Paragraph("Bans and played beatmap results will appear here.", 15));
     }
 
     private void showConfirmedMatchOutcome(SomsAiMatch match, int localId)
@@ -126,7 +126,8 @@ public partial class SomsAiScreen
 
     private void playMatchIntro()
     {
-        if (introPlayed || state.Match is not { } match || match.IsFinished || match.Teams.Count != 2 || match.Teams.Any(t => t.Members.Count == 0)) return;
+        if (introPlayed || state.Match is not { Stage: not "waiting" } match || match.IsFinished
+            || match.Teams.Count != 2 || match.Teams.Any(t => t.Members.Count == 0)) return;
         introPlayed = true;
         APIUser identity(SomsAiTeam team)
         {
@@ -297,7 +298,7 @@ public partial class SomsAiScreen
             {
                 rosterKey = roster; members.Clear(); readyLabels.Clear(); rosterRows.Clear();
                 members.Add(arenaLabel(teamName(team).ToUpperInvariant(), 12, colour));
-                if (team.Members.Count == 0) members.Add(Paragraph("Ожидаем игроков…", 15));
+                if (team.Members.Count == 0) members.Add(Paragraph("Waiting for players…", 15));
                 foreach (var player in team.Members)
                 {
                     var label = Paragraph("", 14); readyLabels.Add(player.Id, label);
@@ -319,10 +320,11 @@ public partial class SomsAiScreen
             foreach (var player in team.Members)
             {
                 rosterRows[player.Id].Action = () => openProfile(player);
-                readyLabels[player.Id].Text = $"{player.OfficialUsername ?? player.Username}{(player.Id == localId ? " (вы)" : "")}" + (player.IsBot ? " · бот" : "") + $"\n{(player.Ready ? "✓ Готов" : "○ Не готов")}";
+                string botTag = player.IsBot ? $" · BOT [{player.BotSkillset ?? "Unknown"}]" : "";
+                readyLabels[player.Id].Text = $"{player.OfficialUsername ?? player.Username}{(player.Id == localId ? " (you)" : "")}{botTag}" + $"\n{(player.Ready ? "✓ Ready" : "○ Not ready")}";
                 readyLabels[player.Id].Colour = player.Ready ? SomsAiOceanTheme.Aqua : SomsAiOceanTheme.Cream;
             }
-            readiness.Text = $"ГОТОВЫ {team.Members.Count(p => p.Ready)}/{team.Members.Count}";
+            readiness.Text = $"READY {team.Members.Count(p => p.Ready)}/{team.Members.Count}";
         }
 
         protected override void Update()
@@ -372,7 +374,7 @@ public partial class SomsAiScreen
             if (!mapCards.TryGetValue(slot.Id, out var card)) continue;
             bool canChoose = match.TurnUserId == localId && slot.Status == "available" && match.Stage is "banning" or "picking";
             card.SetState(slot, currentSlot == slot.Id, canChoose,
-                match.Stage == "banning" ? "Забанить" : "Выбрать",
+                match.Stage == "banning" ? "Ban" : "Select",
                 () => { inspectedSlotId = slot.Id; renderMatch(); });
             card.SetInspected(inspectedSlotId == slot.Id);
             if (slot.Status is "banned" or "played")
@@ -482,7 +484,7 @@ public partial class SomsAiScreen
             };
             Add(new Container { RelativeSizeAxes = Axes.X, Height = 21, Y = 8, Padding = new MarginPadding { Left = 52, Right = 34 },
                 Child = new OsuClickableContainer { RelativeSizeAxes = Axes.Both, Action = open, Child = line(slot.Title, 16) } });
-            info.Add(statsLine = line("Расчёт характеристик…", 13));
+            info.Add(statsLine = line("Calculating attributes…", 13));
             info.Add(timingLine = line("", 12));
             Add(info);
             // Dim the entire card, including text and preview, while keeping the team
@@ -510,10 +512,10 @@ public partial class SomsAiScreen
             string team = slot.SelectedByTeam is { } teamId ? $" · {(teamId == 0 ? "A" : "B")}" : "";
             status.Text = slot.Status switch
             {
-                "banned" => "БАН" + team,
-                "picked" => (current ? "ТЕКУЩАЯ КАРТА" : "СЫГРАНО") + team,
+                "banned" => "BAN" + team,
+                "picked" => (current ? "CURRENT BEATMAP" : "PLAYED") + team,
                 "tiebreaker" => "TIEBREAKER",
-                _ => canChoose ? (chooseCaption == "Забанить" ? "Выбрать для бана" : "Выбрать для пика") : "Доступна",
+                _ => canChoose ? (chooseCaption == "Ban" ? "Select to ban" : "Select to pick") : "Available",
             };
             status.Colour = slot.SelectedByTeam is { } selectedTeam ? teamColour(selectedTeam) : current ? SomsAiOceanTheme.Gold : arenaMuted;
             BorderColour = slot.SelectedByTeam is { } id ? teamColour(id) : current ? SomsAiOceanTheme.Gold : new Color4(52, 66, 84, 255);

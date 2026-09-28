@@ -27,23 +27,20 @@ public partial class SomsAiScreen
     private readonly FillFlowContainer customForm = Flow();
     private readonly FormDropdown<string> customFormat = new()
     {
-        Caption = "Размер команд", Items = new[] { "1v1", "2v2", "3v3", "4v4" }, Current = { Value = "3v3" },
+        Caption = "Team size", Items = new[] { "1v1", "2v2", "3v3", "4v4", "Custom" }, Current = { Value = "3v3" },
     };
     private static readonly string[] customRankBands = { "ARCHSOM", "DIAMOND", "PLATINUM", "GOLD", "SILVER", "BRONZE" };
     private static readonly string[] customRankDivisions = { "I", "II", "III", "IV", "V" };
     private readonly FormDropdown<string> customRankBand = new()
     {
-        Caption = "Ранг пула", Items = customRankBands, Current = { Value = "GOLD" },
+        Caption = "Pool rank", Items = customRankBands, Current = { Value = "GOLD" },
     };
     private readonly FormDropdown<string> customRankDivision = new()
     {
-        Caption = "Ступень", Items = customRankDivisions, Current = { Value = "III" },
+        Caption = "Division", Items = customRankDivisions, Current = { Value = "III" },
     };
-    private readonly FormCheckBox customWithBots = new() { Caption = "С ботами", HintText = "Синяя команда будет полностью заполнена ботами. Ваши друзья могут вступить в красную команду." };
-    private readonly FormDropdown<string> customBotLevel = new()
-    {
-        Caption = "Сложность ботов", Items = SomsAiBotSimulation.Labels, Current = { Value = SomsAiBotSimulation.Labels[1] },
-    };
+    private readonly FormCheckBox customWithBots = new() { Caption = "With bots", HintText = "The blue team will be filled with freshly rolled bots at the selected pool rank. Your friends can join the red team." };
+    private readonly FormCheckBox customPrivate = new() { Caption = "Private", HintText = "Hidden from SOMS lounge. Players can join only through an invitation." };
     private DashboardCard matchCard = null!;
     private SomsAiOceanButton? createRoomButton;
     private osu.Game.Graphics.UserInterface.LoadingSpinner? createRoomSpinner;
@@ -62,14 +59,14 @@ public partial class SomsAiScreen
         party.Add(partyPanel);
         party.Add(partyChat = new SomsAiPartyChat { RelativeSizeAxes = Axes.X, Height = 142 });
         inviteForm.Add(inviteTarget);
-        inviteForm.Add(PrimaryButton("Отправить приглашение", invitePlayer));
-        inviteForm.Add(Button("Отмена", () => inviteForm.Hide()));
+        inviteForm.Add(PrimaryButton("Send invitation", invitePlayer));
+        inviteForm.Add(Button("Cancel", () => inviteForm.Hide()));
         inviteForm.Hide();
         party.Add(inviteForm);
 
         if (partyOnly)
         {
-            party.Insert(0, Heading("Ваша команда"));
+            party.Insert(0, Heading("Your team"));
             Body.Add(new DashboardCard(party));
             return;
         }
@@ -90,17 +87,16 @@ public partial class SomsAiScreen
         customForm.Add(new DashboardColumns(customFormat, customRankBand));
         customForm.Add(customRankDivision);
         customRankBand.Current.BindValueChanged(_ => updateCustomRankDivision(), true);
+        customForm.Add(customPrivate);
         customForm.Add(customWithBots);
-        customForm.Add(customBotLevel);
-        customWithBots.Current.BindValueChanged(e => { if (e.NewValue) customBotLevel.Show(); else customBotLevel.Hide(); }, true);
-        customForm.Add(Paragraph("Пул собирается автоматически по MMR SOMSAI. После заполнения слотов матч сразу переходит к банам и пикам."));
+        customForm.Add(Paragraph("The pool is generated automatically from SOMSAI MMR. The room owner assigns teams and starts the draft. Custom allows uneven teams from 1v1 up to 4v4 capacity."));
         customForm.Add(new Container
         {
             RelativeSizeAxes = Axes.X,
             Height = 50,
             Children = new Drawable[]
             {
-                createRoomButton = PrimaryButton("Создать комнату", () => createCustom(customFormat.Current.Value)),
+                createRoomButton = PrimaryButton("Create room", () => createCustom(customFormat.Current.Value)),
                 createRoomSpinner = new osu.Game.Graphics.UserInterface.LoadingSpinner
                 {
                     Size = new Vector2(26), Anchor = Anchor.CentreLeft, Origin = Anchor.CentreLeft, X = 18, Colour = SomsAiOceanTheme.Ink,
@@ -108,7 +104,7 @@ public partial class SomsAiScreen
             },
         });
         createRoomSpinner.OnLoadComplete += _ => { if (creatingRoom) createRoomSpinner.Show(); else createRoomSpinner.Hide(); };
-        customForm.Add(Button("Отмена", () => customsOverlay?.HideCreate()));
+        customForm.Add(Button("Cancel", () => customsOverlay?.HideCreate()));
         customsOverlay = new SomsAiCustomsOverlay(customPanel, customForm, () =>
         {
             setCustomRank(state.Ratings.GetValueOrDefault(selectedFormat)?.Rating ?? 1500);
@@ -129,12 +125,12 @@ public partial class SomsAiScreen
     private void buildLegacyDashboard()
     {
         var party = Flow();
-        party.Add(Heading("Ваша пати"));
-        party.Add(Paragraph("Пригласите напарника для SOMSAI 2v2."));
+        party.Add(Heading("Your party"));
+        party.Add(Paragraph("Invite a teammate for SOMSAI 2v2."));
         party.Add(partyPanel);
         inviteForm.Add(inviteTarget);
-        inviteForm.Add(PrimaryButton("Отправить приглашение", invitePlayer));
-        inviteForm.Add(Button("Отмена", () => inviteForm.Hide()));
+        inviteForm.Add(PrimaryButton("Send invitation", invitePlayer));
+        inviteForm.Add(Button("Cancel", () => inviteForm.Hide()));
         inviteForm.Hide();
         party.Add(inviteForm);
 
@@ -142,7 +138,7 @@ public partial class SomsAiScreen
         else
         {
             var search = Flow();
-            search.Add(Heading("Рейтинговый матч"));
+            search.Add(Heading("Ranked match"));
             if (Ruleset.Value.OnlineID == 3) search.Add(variant);
             search.Add(ratingPanel);
             search.Add(queuePanel);
@@ -152,9 +148,9 @@ public partial class SomsAiScreen
 
             var customs = Flow();
             var heading = Flow();
-            heading.Add(Heading("Кастомные матчи"));
-            heading.Add(Paragraph("1v1–4v4 · без изменения рейтинга"));
-            customs.Add(new DashboardColumns(heading, Button("+  Создать кастом", () =>
+            heading.Add(Heading("Custom matches"));
+            heading.Add(Paragraph("1v1–4v4 · no rating changes"));
+            customs.Add(new DashboardColumns(heading, Button("+  Create custom", () =>
             {
                 if (customForm.Alpha > 0) customForm.Hide();
                 else
@@ -168,21 +164,19 @@ public partial class SomsAiScreen
             customForm.Add(customRankDivision);
             customRankBand.Current.BindValueChanged(_ => updateCustomRankDivision(), true);
             customForm.Add(customWithBots);
-            customForm.Add(customBotLevel);
-            customWithBots.Current.BindValueChanged(e => { if (e.NewValue) customBotLevel.Show(); else customBotLevel.Hide(); }, true);
-            customForm.Add(Paragraph("Пул собирается автоматически по MMR SOMSAI: каждый слот получает случайную карту из подходящих турниров. Затем — баны и пики."));
+            customForm.Add(Paragraph("The pool is generated automatically from SOMSAI MMR: each slot receives a random beatmap from suitable tournaments. Bans and picks follow."));
             customForm.Add(new Container
             {
                 RelativeSizeAxes = Axes.X, Height = 50,
                 Children = new Drawable[]
                 {
-                    createRoomButton = PrimaryButton("Создать комнату", () => createCustom(customFormat.Current.Value)),
+                    createRoomButton = PrimaryButton("Create room", () => createCustom(customFormat.Current.Value)),
                     createRoomSpinner = new osu.Game.Graphics.UserInterface.LoadingSpinner
                     { Size = new Vector2(26), Anchor = Anchor.CentreLeft, Origin = Anchor.CentreLeft, X = 18, Colour = SomsAiOceanTheme.Ink },
                 },
             });
             createRoomSpinner.OnLoadComplete += _ => { if (creatingRoom) createRoomSpinner.Show(); };
-            customForm.Add(Button("Отмена", () => customForm.Hide()));
+            customForm.Add(Button("Cancel", () => customForm.Hide()));
             customForm.Hide();
             customs.Add(customForm);
             customs.Add(customPanel);
@@ -195,18 +189,18 @@ public partial class SomsAiScreen
         creatingRoom = value;
         if (createRoomButton == null) return;
         createRoomButton.Enabled.Value = !value;
-        createRoomButton.Text = value ? "Создаём комнату…" : "Создать комнату";
+        createRoomButton.Text = value ? "Creating room…" : "Create room";
         if (value) createRoomSpinner?.Show(); else createRoomSpinner?.Hide();
         customName.ReadOnly = value;
         customRankBand.Current.Disabled = value;
         customRankDivision.Current.Disabled = value || customRankBand.Current.Value == "ARCHSOM";
-        customFormat.Current.Disabled = customWithBots.Current.Disabled = customBotLevel.Current.Disabled = value;
+        customFormat.Current.Disabled = customPrivate.Current.Disabled = customWithBots.Current.Disabled = value;
     }
 
     private void invitePlayer()
     {
         string username = inviteTarget.Current.Value.Trim();
-        if (username.Length == 0) { StatusText.Text = "Введите точный ник игрока."; return; }
+        if (username.Length == 0) { StatusText.Text = "Enter the player's exact username."; return; }
         action("party_invite", new JObject { ["target_username"] = username }, afterSuccess: () =>
         {
             inviteTarget.Current.Value = "";
@@ -228,7 +222,7 @@ public partial class SomsAiScreen
             caption.Spacing = new Vector2(0, 2);
             caption.Padding = new MarginPadding { Left = 60 };
             caption.Add(Paragraph(member.Username, 18));
-            if (members.Count > 1 && member.Id == state.Party?.CaptainId) caption.Add(Paragraph("Капитан", 13));
+            if (members.Count > 1 && member.Id == state.Party?.CaptainId) caption.Add(Paragraph("Captain", 13));
             double mmr = member.Id == localId ? state.Ratings.GetValueOrDefault(selectedFormat)?.Rating ?? member.Rating : member.Ratings.GetValueOrDefault(selectedFormat)?.Rating ?? member.Rating;
             var rank = SomsAiRank.FromRating(mmr);
             var ratingText = Text($"{mmr:N0} MMR", 16);
@@ -256,23 +250,23 @@ public partial class SomsAiScreen
             partyPanel.Add(new Container { RelativeSizeAxes = Axes.X, Height = 52, Children = new Drawable[]
             {
                 new SomsAiOceanButton { RelativeSizeAxes = Axes.None, Size = new Vector2(52), Text = "+", Action = openPartyFriends },
-                new Container { RelativeSizeAxes = Axes.X, AutoSizeAxes = Axes.Y, Padding = new MarginPadding { Left = 64, Top = 15 }, Child = Paragraph("Пригласить друга", 16) },
+                new Container { RelativeSizeAxes = Axes.X, AutoSizeAxes = Axes.Y, Padding = new MarginPadding { Left = 64, Top = 15 }, Child = Paragraph("Invite friend", 16) },
             } });
         else inviteForm.Hide();
         partyChat?.SetParty(state.Party?.Id);
         if (state.Party?.Id != null)
         {
-            if (state.Party.Busy) partyPanel.Add(Paragraph("Пати участвует в поиске или матче."));
-            else partyPanel.Add(Button("Выйти из пати", () => action("party_leave")));
+            if (state.Party.Busy) partyPanel.Add(Paragraph("The party is matchmaking or playing a match."));
+            else partyPanel.Add(Button("Leave party", () => action("party_leave")));
         }
         foreach (var outgoing in state.Party?.OutgoingInvites ?? Enumerable.Empty<SomsPartyInvite>())
-            partyPanel.Add(Paragraph("Ожидаем ответа: " + outgoing.Target?.Username));
+            partyPanel.Add(Paragraph("Waiting for response: " + outgoing.Target?.Username));
         foreach (var invite in (state.Party?.Invites ?? Enumerable.Empty<SomsPartyInvite>()).Concat(state.Invites).DistinctBy(i => i.Id))
         {
-            partyPanel.Add(Paragraph("Приглашает " + (invite.Captain?.Username ?? "игрок")));
+            partyPanel.Add(Paragraph("Invitation from " + (invite.Captain?.Username ?? "player")));
             partyPanel.Add(new DashboardColumns(
-                Button("Принять", () => action("party_accept", new JObject { ["invitation_id"] = invite.Id })),
-                Button("Отклонить", () => action("party_decline", new JObject { ["invitation_id"] = invite.Id }))));
+                Button("Accept", () => action("party_accept", new JObject { ["invitation_id"] = invite.Id })),
+                Button("Decline", () => action("party_decline", new JObject { ["invitation_id"] = invite.Id }))));
         }
     }
 
@@ -312,19 +306,29 @@ public partial class SomsAiScreen
         if (state.Queue != null)
         {
             queuePanel.Add(new OceanSearchIndicator());
-            if (captain) queuePanel.Add(Button("Отменить поиск", () => action("queue_leave")));
+            if (captain) queuePanel.Add(Button("Cancel matchmaking", () => action("queue_leave")));
         }
-        else if (active) queuePanel.Add(Paragraph("Матч найден. Перейдите в него, чтобы продолжить."));
-        else if (!captain) queuePanel.Add(Paragraph("Поиск запускает капитан пати."));
+        else if (active) queuePanel.Add(Paragraph("Match found. Open it to continue."));
+        else if (!captain) queuePanel.Add(Paragraph("The party captain starts matchmaking."));
         else if (selectedFormat == "1v1" && state.Party?.Members.Count > 1)
-            queuePanel.Add(Paragraph("Для поиска с напарником выберите 2v2. Для 1v1 выйдите из пати."));
-        else queuePanel.Add(PrimaryButton("Начать поиск " + selectedFormat, () => action("queue_join", new JObject { ["format"] = selectedFormat })));
+            queuePanel.Add(Paragraph("Select 2v2 to matchmake with a teammate. Leave the party for 1v1."));
+        else if (state.QueueBan?.AccountBanned == true || state.QueueBan?.ExpiresAt > DateTimeOffset.UtcNow)
+        {
+            string remaining = state.QueueBan?.AccountBanned == true
+                ? "account blocked"
+                : ((state.QueueBan?.ExpiresAt ?? DateTimeOffset.UtcNow) - DateTimeOffset.UtcNow).ToString(@"hh\:mm\:ss");
+            var blocked = PrimaryButton("Matchmaking blocked · " + remaining, () => { });
+            blocked.BackgroundColour = new Color4(176, 51, 66, 255);
+            blocked.Enabled.Value = false;
+            queuePanel.Add(blocked);
+        }
+        else queuePanel.Add(PrimaryButton("Start matchmaking " + selectedFormat, () => action("queue_join", new JObject { ["format"] = selectedFormat })));
     }
 
     private void renderCustoms()
     {
         customPanel.Clear();
-        if (state.Customs.Count == 0) customPanel.Add(Paragraph("Открытых комнат пока нет. Создайте свою и пригласите друзей.", 16));
+        if (state.Customs.Count == 0) customPanel.Add(Paragraph("There are no open rooms yet. Create one and invite friends.", 16));
         foreach (var custom in state.Customs)
         {
             customPanel.Add(new CustomRoomRow(custom, team =>
@@ -338,7 +342,7 @@ public partial class SomsAiScreen
         recentPanel.Clear();
         if (state.RecentMatches.Count == 0)
         {
-            recentPanel.Add(Paragraph("Здесь появятся последние сыгранные матчи.", 16));
+            recentPanel.Add(Paragraph("Recently played matches will appear here.", 16));
             return;
         }
 
@@ -349,18 +353,18 @@ public partial class SomsAiScreen
     private void renderPoolVote(SomsAiMatch match, int localId)
     {
         var team = match.Teams.FirstOrDefault(t => t.CaptainId == localId);
-        matchPanel.Add(Paragraph($"Пулы для {match.TargetMmr:0} MMR. У каждой команды один голос. Если выборы разные, турнир определится случайно между ними."));
-        if (team == null) matchPanel.Add(Paragraph("Турнир выбирают капитаны команд."));
-        else matchPanel.Add(Paragraph(match.PoolVotes.ContainsKey(team.Id) ? "Ваш голос принят. Ждём другую команду; выбор можно изменить." : "Выберите турнир для своей команды."));
+        matchPanel.Add(Paragraph($"Pools for {match.TargetMmr:0} MMR. Each team has one vote. If the votes differ, the tournament will be chosen randomly between them."));
+        if (team == null) matchPanel.Add(Paragraph("Team captains select the tournament."));
+        else matchPanel.Add(Paragraph(match.PoolVotes.ContainsKey(team.Id) ? "Your vote was accepted. Waiting for the other team; you can change your selection." : "Select a tournament for your team."));
         var candidates = new List<Drawable>();
         foreach (var candidate in match.PoolCandidates)
         {
             bool voted = team != null && match.PoolVotes.GetValueOrDefault(team.Id) == candidate.Id;
             var details = Flow();
             details.Add(Paragraph(candidate.Name, 20));
-            details.Add(Paragraph($"{candidate.AverageStars:0.00}★ · BO{candidate.BestOf} · {candidate.MapCount} карт", 16));
-            Drawable choice = team == null ? Paragraph(match.PoolVotes.Values.Contains(candidate.Id) ? "Есть голос команды" : "Ожидание выбора")
-                : new ArenaButton(true) { Text = voted ? "✓  Ваш выбор" : "Выбрать турнир", Action = () => action("pool_vote", new JObject { ["pool_id"] = candidate.Id }) };
+            details.Add(Paragraph($"{candidate.AverageStars:0.00}★ · BO{candidate.BestOf} · {candidate.MapCount} cards", 16));
+            Drawable choice = team == null ? Paragraph(match.PoolVotes.Values.Contains(candidate.Id) ? "A team has voted" : "Waiting for selection")
+                : new ArenaButton(true) { Text = voted ? "✓  Your selection" : "Select tournament", Action = () => action("pool_vote", new JObject { ["pool_id"] = candidate.Id }) };
             details.Add(choice);
             candidates.Add(new ArenaPanel(details));
         }
@@ -404,7 +408,7 @@ public partial class SomsAiScreen
                     new SomsAiOceanButton
                     {
                         Position = new Vector2(24, 62), RelativeSizeAxes = Axes.None, Size = new Vector2(190, 50),
-                        Text = "+  Создать комнату", Action = showCreate,
+                        Text = "+  Create room", Action = showCreate,
                     },
                     new Container
                     {
@@ -458,7 +462,7 @@ public partial class SomsAiScreen
                     new SomsAiOceanButton
                     {
                         Anchor = Anchor.TopRight, Origin = Anchor.TopRight, Position = new Vector2(-24, 18),
-                        RelativeSizeAxes = Axes.None, Size = new Vector2(120, 44), Text = "Закрыть", Action = HidePanel,
+                        RelativeSizeAxes = Axes.None, Size = new Vector2(120, 44), Text = "Close", Action = HidePanel,
                     },
                     lobbyPage,
                     createPanel,
@@ -561,7 +565,7 @@ public partial class SomsAiScreen
                     actions.Add(new SomsAiOceanButton(team == 0)
                     {
                         RelativeSizeAxes = Axes.None, Size = new Vector2(155, 44),
-                        Text = $"{(team == 0 ? "Красные" : "Синие")} {occupied}/{room.Capacity / 2}",
+                        Text = $"{(team == 0 ? "Red" : "Blue")} {occupied}/{room.Capacity / 2}",
                         Action = () => join(selectedTeam),
                     });
             }
@@ -576,7 +580,7 @@ public partial class SomsAiScreen
                 },
                 new OsuSpriteText
                 {
-                    Position = new Vector2(20, 51), Text = $"{room.Format}  ·  {room.Participants}/{room.Capacity} игроков  ·  {room.TargetMmr:0} MMR",
+                    Position = new Vector2(20, 51), Text = $"{room.Format}  ·  {room.Participants}/{room.Capacity} players  ·  {room.TargetMmr:0} MMR",
                     Font = OsuFont.GetFont(size: 16), Colour = new Color4(209, 193, 215, 255),
                 },
                 actions,
@@ -644,7 +648,7 @@ public partial class SomsAiScreen
         {
             Name = "somsai-search-indicator";
             RelativeSizeAxes = Axes.X; Height = 36;
-            var caption = Paragraph("Ищем соперников…", 19);
+            var caption = Paragraph("Searching for opponents…", 19);
             caption.Padding = new MarginPadding { Left = 65, Top = 4 };
             Add(caption);
             for (int i = 0; i < dots.Length; i++)

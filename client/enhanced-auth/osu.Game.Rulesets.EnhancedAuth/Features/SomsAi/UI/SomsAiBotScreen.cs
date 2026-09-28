@@ -22,17 +22,17 @@ namespace osu.Game.Rulesets.EnhancedAuth.UI;
 
 public sealed partial class SomsAiBotScreen : OsuScreen
 {
-    public override string Title => "SOMSAI · 1v1 с ботом";
+    public override string Title => "SOMSAI · 1v1 vs bot";
     public override bool ShowFooter => true;
     [Cached] private readonly OverlayColourProvider colours = new(190);
     private readonly FillFlowContainer body = SomsNativeMatchScreen.Flow();
     private readonly FillFlowContainer resultPanel = SomsNativeMatchScreen.Flow();
     private readonly FormDropdown<string> difficulty = new()
     {
-        Caption = "Сложность соперника", Items = SomsAiBotSimulation.Labels,
+        Caption = "Opponent difficulty", Items = SomsAiBotSimulation.Labels,
         Current = { Value = SomsAiBotSimulation.Labels[1] },
     };
-    private readonly TextFlowContainer mapText = text("Выберите карту и моды", 21);
+    private readonly TextFlowContainer mapText = text("Select a beatmap and mods", 21);
     private readonly TextFlowContainer opponent = text("", 24);
     private readonly TextFlowContainer status = text("", 18);
     private bool playing;
@@ -43,14 +43,14 @@ public sealed partial class SomsAiBotScreen : OsuScreen
     private void load()
     {
         body.Spacing = new Vector2(0, 14);
-        body.Add(new SomsAiOceanHeader(true, "ТРЕНИРОВКА · 1v1 С БОТОМ"));
-        body.Add(text("Дуэль без изменения MMR и без отправки результатов в рейтинги.", 20));
+        body.Add(new SomsAiOceanHeader(true, "PRACTICE · 1v1 VS BOT"));
+        body.Add(text("A duel without MMR changes or leaderboard submission.", 20));
         body.Add(difficulty);
         body.Add(opponent);
-        body.Add(text("Digit — условный уровень игры. Реальные результаты зависят от карты и модов.", 17));
+        body.Add(text("Digit is an approximate skill level. Actual performance depends on the beatmap and mods.", 17));
         body.Add(mapText);
-        body.Add(button("Выбрать карту и моды", chooseMap));
-        body.Add(button("Начать дуэль 1v1", start, true));
+        body.Add(button("Select beatmap and mods", chooseMap));
+        body.Add(button("Start 1v1 duel", start, true));
         body.Add(status);
         body.Add(resultPanel);
         InternalChild = new Container
@@ -84,8 +84,8 @@ public sealed partial class SomsAiBotScreen : OsuScreen
             resultPanel.Clear();
             opponent.Text = SomsAiBotSimulation.NameFor(level) + " · BOT";
             status.Text = level == SomsAiBotLevel.Mrekk
-                ? "mrekk всегда держит FC. Победитель определяется по точности."
-                : "Победитель определяется по счёту. Можно доиграть даже с промахами.";
+                ? "mrekk always holds an FC. The winner is determined by accuracy."
+                : "The winner is determined by score. You can finish even after misses.";
         }, true);
         renderMap();
     }
@@ -98,7 +98,7 @@ public sealed partial class SomsAiBotScreen : OsuScreen
     private void renderMap()
     {
         var b = Beatmap.Value.BeatmapInfo;
-        mapText.Text = Beatmap.Value is DummyWorkingBeatmap || b.ID == Guid.Empty ? "Выберите карту и моды" :
+        mapText.Text = Beatmap.Value is DummyWorkingBeatmap || b.ID == Guid.Empty ? "Select a beatmap and mods" :
             $"{b.Metadata.Artist} — {b.Metadata.Title}\n[{b.DifficultyName}] · {Ruleset.Value.ShortName} · " +
             (Mods.Value.Count == 0 ? "NM" : string.Join(" ", Mods.Value.Select(m => m.Acronym)));
     }
@@ -108,12 +108,12 @@ public sealed partial class SomsAiBotScreen : OsuScreen
         if (playing || !this.IsCurrentScreen()) return;
         if (Beatmap.Value is DummyWorkingBeatmap || Beatmap.Value.BeatmapInfo.ID == Guid.Empty)
         {
-            status.Text = "Сначала выберите установленную карту.";
+            status.Text = "Select an installed beatmap first.";
             return;
         }
         if (Mods.Value.Any(m => m is ICreateReplayData))
         {
-            status.Text = "Отключите Autoplay перед дуэлью с ботом.";
+            status.Text = "Disable Autoplay before starting a bot duel.";
             return;
         }
         playing = true;
@@ -125,10 +125,10 @@ public sealed partial class SomsAiBotScreen : OsuScreen
             if (!playing) return;
             if (result.Winner > 0) wins++;
             else if (result.Winner < 0) losses++;
-            resultPanel.Add(text(result.Winner > 0 ? "Победа!" : result.Winner < 0 ? "Бот победил" : "Ничья", 30));
-            resultPanel.Add(text($"Вы: {result.PlayerScore:N0} · {result.PlayerAccuracy:P2} · {result.PlayerCombo}x", 22));
+            resultPanel.Add(text(result.Winner > 0 ? "Victory!" : result.Winner < 0 ? "Bot won" : "Draw", 30));
+            resultPanel.Add(text($"You: {result.PlayerScore:N0} · {result.PlayerAccuracy:P2} · {result.PlayerCombo}x", 22));
             resultPanel.Add(text($"{SomsAiBotSimulation.NameFor(selected)}: {result.BotScore:N0} · {result.BotAccuracy:P2} · {result.BotCombo}x", 22));
-            resultPanel.Add(text($"Счёт встреч: {wins} : {losses}", 21));
+            resultPanel.Add(text($"Match score: {wins} : {losses}", 21));
             this.MakeCurrent();
         })));
     }

@@ -86,34 +86,58 @@ def collector_preview(data: dict[str, Any], provenance: dict[str, Any], request:
             warnings.append("В коллекции есть неопубликованные карты без ID: они не импортированы")
     slots = []
     counts: dict[str, int] = {}
-    for group in groups:
+    seen_beatmaps: set[int] = set()
+    skipped = 0
+    for group_index, group in enumerate(groups, start=1):
+        if not isinstance(group, dict):
+            warnings.append(f"Группа #{group_index} имеет неизвестный формат и пропущена")
+            skipped += 1
+            continue
         category = str(group.get("mod", "")).upper()
+        maps = group.get("maps", [])
+        if not isinstance(maps, list):
+            warnings.append(f"Категория {category or group_index}: список карт повреждён и пропущен")
+            skipped += 1
+            continue
         if category not in {"NM", "HD", "HR", "DT", "FM", "TB"}:
-            raise HTTPException(422, f"Категория {category[:40]} не поддерживается; импортируйте её вручную")
-        for beatmap in group.get("maps", []):
+            warnings.append(f"Категория {category[:40] or group_index} не поддерживается и пропущена")
+            skipped += max(1, len(maps))
+            continue
+        for beatmap in maps:
             counts[category] = counts.get(category, 0) + 1
             label = "TB" if category == "TB" else f"{category}{counts[category]}"
-            checksum = beatmap.get("checksum")
-            if checksum is None:
-                warnings.append(f"{label}: исходная контрольная сумма отсутствует; проверьте карту {beatmap.get('id')}")
+            if category == "TB" and counts[category] > 1:
+                warnings.append(f"{label}: лишний тайбрейкер пропущен")
+                skipped += 1
+                continue
             try:
+                if not isinstance(beatmap, dict):
+                    raise ValueError("unknown beatmap format")
+                checksum = beatmap.get("checksum")
+                if checksum is None:
+                    warnings.append(f"{label}: исходная контрольная сумма отсутствует; проверьте карту {beatmap.get('id')}")
                 slot = SomsaiSlotSpec(
                     id=label, beatmap_id=beatmap.get("id"), checksum=checksum, source_url=provenance["source_url"]
                 )
-            except ValueError as exc:
-                raise HTTPException(422, f"Некорректная карта в слоте {label}") from exc
+                if slot.beatmap_id in seen_beatmaps:
+                    warnings.append(f"{label}: карта {slot.beatmap_id} уже встречалась и пропущена")
+                    skipped += 1
+                    continue
+            except (TypeError, ValueError, AttributeError):
+                beatmap_id = beatmap.get("id") if isinstance(beatmap, dict) else "?"
+                warnings.append(f"{label}: некорректная карта {beatmap_id} пропущена")
+                skipped += 1
+                continue
+            seen_beatmaps.add(slot.beatmap_id)
             slots.append(slot.model_dump())
     if len(slots) > 64:
         raise HTTPException(422, "В одном пуле не больше 64 карт; выберите меньшую коллекцию")
-    if len({slot["beatmap_id"] for slot in slots}) != len(slots):
-        raise HTTPException(422, "Источник содержит одну сложность в нескольких слотах")
-    if counts.get("TB", 0) > 1:
-        raise HTTPException(422, "В пуле может быть только один TB")
     return {
         **provenance,
         "rounds": rounds,
         "slots": slots,
         "warnings": warnings,
+        "skipped": skipped,
         "name": f"{data.get('name', '')}{' — ' + request.round if request.round else ''}"[:160],
     }
 

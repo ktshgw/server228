@@ -84,7 +84,7 @@ public sealed partial class SomsLegacyMods : SomsLegacyComponent, IKeyBindingHan
         Alpha = 1;
         if (advanced)
         {
-            AddInternal(new SomsLegacyOverlayButton(skin, "", "← Классический выбор модов", () =>
+            AddInternal(new SomsLegacyOverlayButton(skin, "", "← Classic mod selection", () =>
             {
                 owner.SearchTextBox.Current.Value = string.Empty;
                 advanced = false;
@@ -110,33 +110,33 @@ public sealed partial class SomsLegacyMods : SomsLegacyComponent, IKeyBindingHan
         };
         scaling.Add(canvas);
         AddInternal(scaling);
-        canvas.Add(label("Моды влияют на процесс игры. Некоторые из них изменяют количество получаемых", 8, 4, 1264, 30));
-        canvas.Add(label("очков, а некоторые придуманы просто так, для развлечения.", 8, 39, 1264, 30));
+        canvas.Add(label("Mods affect gameplay. Some of them change the amount of score you receive,", 8, 4, 1264, 30));
+        canvas.Add(label("while others are included purely for fun.", 8, 39, 1264, 30));
         canvas.Add(multiplierText = label("Score Multiplier: 1.00x", 0, 102, 720, 38));
         multiplierText.Anchor = Anchor.TopCentre;
         multiplierText.Origin = Anchor.TopCentre;
 
-        addRow(canvas, skin, "Упрощение игры", reducingColour, 178,
+        addRow(canvas, skin, "Difficulty reduction", reducingColour, 178,
             new[] { "EZ" }, new[] { "NF" }, new[] { "HT", "DC" });
-        addRow(canvas, skin, "Усложнение игры", increasingColour, 268,
+        addRow(canvas, skin, "Difficulty increase", increasingColour, 268,
             new[] { "HR" }, new[] { "SD", "PF" }, new[] { "DT", "NC" }, new[] { "HD" }, new[] { "FL" }, new[] { "FI" });
-        addRow(canvas, skin, "Особые", Color4.White, 358,
+        addRow(canvas, skin, "Special", Color4.White, 358,
             new[] { "RX" }, new[] { "AP" }, new[] { "SO" }, new[] { "AT", "AU", "CN", "CM" }, new[] { "V2" }, new[] { "MR" }, new[] { "RD" });
 
         canvas.Add(selectionText = label("", 290, 437, 960, 17, new Color4(190, 190, 190, 255)));
-        canvas.Add(new ActionBar("1. Сбросить все моды", clearSelection, new Color4(238, 46, 0, 255))
+        canvas.Add(new ActionBar("1. Clear all mods", clearSelection, new Color4(238, 46, 0, 255))
         {
             Name = "soms-legacy-clear-mods",
             Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre,
             Position = new Vector2(0, 482), Size = new Vector2(680, 52),
         });
-        canvas.Add(new ActionBar("2. Отмена", owner.Hide, new Color4(98, 98, 98, 255))
+        canvas.Add(new ActionBar("2. Cancel", owner.Hide, new Color4(98, 98, 98, 255))
         {
             Name = "soms-legacy-accept-mods",
             Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre,
             Position = new Vector2(0, 558), Size = new Vector2(680, 52),
         });
-        canvas.Add(new ActionBar("Дополнительные моды и настройки", showAdvanced, new Color4(56, 52, 70, 255), 22)
+        canvas.Add(new ActionBar("Additional mods and settings", showAdvanced, new Color4(56, 52, 70, 255), 22)
         {
             Name = "soms-legacy-advanced-mod-settings",
             Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre,
@@ -168,7 +168,7 @@ public sealed partial class SomsLegacyMods : SomsLegacyComponent, IKeyBindingHan
             index++;
         }
         if (index == 0)
-            row.Add(label("Нет доступных модов", 316, 22, 700, 20, new Color4(160, 160, 160, 255)));
+            row.Add(label("No mods available", 316, 22, 700, 20, new Color4(160, 160, 160, 255)));
         animatedRows.Add(row);
         canvas.Add(row);
     }
@@ -302,7 +302,7 @@ public sealed partial class SomsLegacyMods : SomsLegacyComponent, IKeyBindingHan
         base.Update();
         if (selectionText == null || !LegacyEnabled) return;
         var selected = owner.ActiveMods.Value;
-        selectionText.Text = selected.Count == 0 ? "" : "Выбрано: " + string.Join(" · ", selected.Select(mod => mod.Acronym));
+        selectionText.Text = selected.Count == 0 ? "" : "Selected: " + string.Join(" · ", selected.Select(mod => mod.Acronym));
         if (Time.Current < nextMultiplierUpdate) return;
         nextMultiplierUpdate = Time.Current + 100;
         if (owner.Ruleset.Value == null || owner.Beatmap.Value == null || multiplierText == null) return;
@@ -436,7 +436,7 @@ public sealed partial class SomsLegacyMods : SomsLegacyComponent, IKeyBindingHan
                 for (int i = 0; i < art.Length; i++) art[i].Alpha = i == variant ? 1 : 0;
                 previousVariant = variant;
                 TooltipText = family[variant].Mod.Name + " (" + family[variant].Mod.Acronym + ")"
-                    + (family.Length > 1 ? " — повторное нажатие: " + string.Join(" → ", family.Select(mod => mod.Mod.Acronym)) + " → выкл." : "");
+                    + (family.Length > 1 ? " — press again: " + string.Join(" → ", family.Select(mod => mod.Mod.Acronym)) + " → off" : "");
             }
             if (previousActive != active || previousHovered != IsHovered)
             {

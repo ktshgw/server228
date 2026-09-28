@@ -48,7 +48,7 @@ public partial class SomsMapPerformance : CompositeDrawable
     private readonly OsuSpriteText[] accuracyLabels = new[] { "95%", "98%", "99%", "100%" }.Select(text => new OsuSpriteText
     { Text = text, Anchor = Anchor.Centre, Origin = Anchor.Centre, Font = OsuFont.GetFont(size: 13, weight: FontWeight.Bold) }).ToArray();
     private readonly OsuSpriteText[] values = Enumerable.Range(0, 4).Select(_ => new OsuSpriteText { Text = "—", Font = OsuFont.GetFont(size: 18, weight: FontWeight.Bold) }).ToArray();
-    private readonly OsuSpriteText caption = new() { Text = "pp за FC · оценка", Font = OsuFont.GetFont(size: 13) };
+    private readonly OsuSpriteText caption = new() { Text = "FC · Acc", Font = OsuFont.GetFont(size: 13) };
 
     [BackgroundDependencyLoader]
     private void load(OverlayColourProvider colours)
@@ -121,7 +121,7 @@ public partial class SomsMapPerformance : CompositeDrawable
             Schedule(() =>
             {
                 if (disposed || version != generation) return;
-                caption.Text = info.ShortName == "fruits" ? "pp · оценка" : "pp за FC · оценка";
+                caption.Text = info.ShortName == "fruits" ? "FC · Acc" : "FC · Acc";
                 for (int i = 0; i < values.Length; i++) values[i].Text = double.IsFinite(result[i]) ? $"{result[i]:0}" : "—";
             });
         }

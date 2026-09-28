@@ -65,7 +65,7 @@ public static class MatchmakingEmptyPoolsPatch
         var message = new OsuSpriteText
         {
             Name = message_name,
-            Text = "Нет доступных Ranked-пулов. Попробуйте зайти снова чуть позже.",
+            Text = "No ranked pools are available. Please try again later.",
             Anchor = Anchor.Centre,
             Origin = Anchor.Centre,
             Alpha = 0,

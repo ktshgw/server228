@@ -18,14 +18,12 @@ from app.database.beatmap_ranking import (
     RankingPolicyScope,
 )
 from app.features.somsai.database.somsai import SomsaiMatch
-from app.helpers import utcnow
-from app.models.beatmap import BeatmapRankStatus
 from app.features.somsai.models.somsai import SomsaiBotResults, SomsaiBotScore
 from app.features.somsai.routers.somsai_lio import internal_bot_results
-from app.service.home_activity_service import local_releases, online_history, real_online_count
 from app.features.somsai.services.somsai_match_service import (
     finish_match,
     match_action,
+    match_payload,
     members_of,
     room_event,
     settle_round,
@@ -33,7 +31,10 @@ from app.features.somsai.services.somsai_match_service import (
 )
 from app.features.somsai.services.somsai_party_service import active_user, activity
 from app.features.somsai.services.somsai_service import create_custom, join_custom
-from tests.test_somsai_core import SomsaiCoreTests
+from app.helpers import utcnow
+from app.models.beatmap import BeatmapRankStatus
+from app.service.home_activity_service import local_releases, online_history, real_online_count
+from tests.somsai.test_somsai_core import SomsaiCoreTests
 
 from fastapi import HTTPException
 from sqlmodel import SQLModel, select
@@ -53,9 +54,9 @@ class BotCustomTests(unittest.IsolatedAsyncioTestCase):
             0,
             None,
             "Bots",
-            1500,
-            "mrekk",
-            [
+            target_mmr=1500,
+            bot_level="mrekk",
+            bot_profiles=[
                 {
                     "username": "mrekk",
                     "official_id": 7562902,
@@ -69,12 +70,23 @@ class BotCustomTests(unittest.IsolatedAsyncioTestCase):
             await join_custom(self.session, uid, match.id, 0)
         return match
 
+    async def test_public_match_payload_exposes_bot_skillset_without_internal_profile(self):
+        match = await self.create()
+        match.state["bots"][0]["ai_profile"] = {"archetype": "precision", "weakness": "anti_stream"}
+        payload = await match_payload(self.session, match)
+        bot = next(player for team in payload["teams"] for player in team["members"] if player.get("is_bot"))
+        assert bot["bot_skillset"]
+        assert bot["bot_skillset"] == "Precision / Anti Stream"
+        assert "ai_profile" not in bot
+
     async def test_all_custom_sizes_fill_only_opponent_team_and_keep_profiles(self):
         for size in range(1, 5):
             match = await self.create(size)
             assert [len(team) for team in match.state["teams"]] == [size, size]
             assert not match.ranked
-            assert match.stage != "waiting", "A full custom roster starts without an owner action"
+            assert match.stage == "waiting", "The owner explicitly starts every custom match"
+            await match_action(self.session, match, 10, "custom_start")
+            assert match.stage != "waiting"
             for uid in match.state["teams"][1]:
                 user = await self.session.get(User, uid)
                 assert user.is_bot
@@ -100,9 +112,9 @@ class BotCustomTests(unittest.IsolatedAsyncioTestCase):
             0,
             None,
             "Auto start",
-            1500,
-            "mrekk",
-            [
+            target_mmr=1500,
+            bot_level="mrekk",
+            bot_profiles=[
                 {
                     "username": "mrekk",
                     "official_id": 7562902,
@@ -114,10 +126,12 @@ class BotCustomTests(unittest.IsolatedAsyncioTestCase):
         match = await self.session.get(SomsaiMatch, (await activity(self.session, 10)).match_id)
         assert match.stage == "waiting"
         await join_custom(self.session, 11, match.id, 0)
+        assert match.stage == "waiting"
+        await match_action(self.session, match, 10, "custom_start")
         assert match.stage == "banning"
         revision = match.revision
         await match_action(self.session, match, 10, "custom_start")
-        assert match.revision == revision, "Legacy start must not reset the draft"
+        assert match.revision == revision, "Repeated start must not reset the draft"
 
     async def test_bot_drafts_readies_and_result_cannot_be_overwritten_or_claim_human(self):
         match = await self.create()

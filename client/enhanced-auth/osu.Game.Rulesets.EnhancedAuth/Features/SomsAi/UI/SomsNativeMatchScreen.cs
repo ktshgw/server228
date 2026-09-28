@@ -46,7 +46,7 @@ public abstract partial class SomsNativeMatchScreen : OsuScreen
     private Sample? startSample;
     private bool returningForNextMap;
     [Cached] private readonly OverlayColourProvider colourProvider = new(OverlayColourScheme.Plum);
-    protected readonly OsuSpriteText StatusText = Text("Подключение…", 17);
+    protected readonly OsuSpriteText StatusText = Text("Connecting…", 17);
     protected readonly FillFlowContainer Body = Flow();
     protected readonly CancellationTokenSource Lifetime = new();
     private SomsMatchBeatmapTracker? tracker;
@@ -55,6 +55,7 @@ public abstract partial class SomsNativeMatchScreen : OsuScreen
     protected bool Alive => !closed && !SomsDrawableLifecycle.IsDisposed(this);
     protected Scheduler GlobalScheduler => gameHost.UpdateThread.Scheduler;
     protected abstract long? ActiveRoomId { get; }
+    protected virtual bool ShouldDownloadCurrentBeatmap => true;
     protected bool OwnsCurrentRoom => ActiveRoomId.HasValue && Client.Room?.RoomID == ActiveRoomId;
     public override bool ShowFooter => true;
     public override bool? ApplyModTrackAdjustments => false;
@@ -106,7 +107,7 @@ public abstract partial class SomsNativeMatchScreen : OsuScreen
         catch (OperationCanceledException) { }
         catch (Exception exception)
         {
-            OnUpdateThread(() => StatusText.Text = "Не удалось выполнить действие: " + exception.GetBaseException().Message);
+            OnUpdateThread(() => StatusText.Text = "Action failed: " + exception.GetBaseException().Message);
         }
     }
 
@@ -114,8 +115,10 @@ public abstract partial class SomsNativeMatchScreen : OsuScreen
     {
         if (!Alive || !OwnsCurrentRoom) return;
         if (tracker == null)
-            AddInternal(tracker = new SomsMatchBeatmapTracker(() => OwnsCurrentRoom && Alive));
+            AddInternal(tracker = new SomsMatchBeatmapTracker(() => OwnsCurrentRoom && Alive, () => ShouldDownloadCurrentBeatmap));
     }
+
+    protected void RefreshBeatmapDownload() => tracker?.RefreshDownload();
 
     protected bool BeatmapReady => tracker?.Availability.Value.State == DownloadState.LocallyAvailable;
     protected bool HasBeatmapRevision(int beatmapId, string checksum) => FindBeatmapRevision(beatmaps, beatmapId, checksum) != null;
@@ -143,16 +146,17 @@ public abstract partial class SomsNativeMatchScreen : OsuScreen
         }
         if (loadingGameplay) return;
         var item = room.Playlist.FirstOrDefault(p => p.ID == room.Settings.PlaylistItemId);
-        if (item == null) { StatusText.Text = "Ожидание выбранной карты…"; return; }
+        if (item == null) { StatusText.Text = "Waiting for the selected beatmap…"; return; }
         var localBeatmap = FindBeatmapRevision(beatmaps, item.BeatmapID, item.BeatmapChecksum);
         var ruleset = rulesets.GetRuleset(item.RulesetID);
-        if (localBeatmap == null || ruleset == null) { StatusText.Text = "Выбранная карта ещё не загружена."; return; }
+        if (localBeatmap == null || ruleset == null) { StatusText.Text = "The selected beatmap has not been downloaded yet."; return; }
         Ruleset.Value = ruleset;
         Beatmap.Value = beatmaps.GetWorkingBeatmap(localBeatmap);
         var rulesetInstance = ruleset.CreateInstance();
         Mods.Value = item.RequiredMods.Concat(Client.LocalUser?.Mods ?? Array.Empty<APIMod>())
             .DistinctBy(mod => mod.Acronym).Select(mod => mod.ToMod(rulesetInstance)).ToArray();
         loadingGameplay = true;
+        SomsAiScoreMultiplierContext.Active = this is SomsAiScreen;
         returningForNextMap = false;
         startSample?.Play();
         var users = room.Users.ToArray();
@@ -172,6 +176,7 @@ public abstract partial class SomsNativeMatchScreen : OsuScreen
 
     public override void OnResuming(ScreenTransitionEvent e)
     {
+        SomsAiScoreMultiplierContext.Active = false;
         base.OnResuming(e);
         if (returningForNextMap) { loadingGameplay = false; return; }
         // Player and loader both become invalid after completion. A results screen
@@ -195,6 +200,7 @@ public abstract partial class SomsNativeMatchScreen : OsuScreen
         // An async load failure can dispose a screen before its parent releases it.
         if (closed) return;
         closed = true;
+        if (this is SomsAiScreen) SomsAiScoreMultiplierContext.Active = false;
         Lifetime.Cancel();
         if (Client != null)
         {
@@ -228,6 +234,7 @@ public abstract partial class SomsNativeMatchScreen : OsuScreen
 public sealed partial class SomsMatchBeatmapTracker : OnlinePlayBeatmapAvailabilityTracker
 {
     private readonly Func<bool> isOwnedRoom;
+    private readonly Func<bool> shouldDownload;
     [Resolved] private MultiplayerClient client { get; set; } = null!;
     [Resolved] private BeatmapLookupCache lookup { get; set; } = null!;
     [Resolved] private BeatmapManager manager { get; set; } = null!;
@@ -244,7 +251,11 @@ public sealed partial class SomsMatchBeatmapTracker : OnlinePlayBeatmapAvailabil
     private double nextRevisionCheck;
     private bool disposed;
 
-    public SomsMatchBeatmapTracker(Func<bool> isOwnedRoom) => this.isOwnedRoom = isOwnedRoom;
+    public SomsMatchBeatmapTracker(Func<bool> isOwnedRoom, Func<bool> shouldDownload)
+    {
+        this.isOwnedRoom = isOwnedRoom;
+        this.shouldDownload = shouldDownload;
+    }
     protected override void LoadComplete()
     {
         base.LoadComplete();
@@ -304,9 +315,17 @@ public sealed partial class SomsMatchBeatmapTracker : OnlinePlayBeatmapAvailabil
         PlaylistItem.Value = new PlaylistItem(item);
         lookupCancellation?.Cancel();
         lookupCancellation?.Dispose();
+        lookupCancellation = null;
+        RefreshDownload();
+    }
+
+    public void RefreshDownload()
+    {
+        if (disposed || !isOwnedRoom() || !shouldDownload() || selectedBeatmapId <= 0 || hasExpectedRevision() || lookupCancellation != null)
+            return;
+
         lookupCancellation = new CancellationTokenSource();
-        if (!hasExpectedRevision())
-            _ = download(item.BeatmapID, lookupCancellation.Token);
+        _ = download(selectedBeatmapId, lookupCancellation.Token);
     }
 
     private async Task download(int beatmapId, CancellationToken cancellation)
@@ -325,6 +344,14 @@ public sealed partial class SomsMatchBeatmapTracker : OnlinePlayBeatmapAvailabil
         }
         catch (OperationCanceledException) { }
         catch (Exception) { /* Native availability remains visible; reconnecting can retry the selected map. */ }
+        finally
+        {
+            Schedule(() =>
+            {
+                lookupCancellation?.Dispose();
+                lookupCancellation = null;
+            });
+        }
     }
 
     private static async void observe(Task task)

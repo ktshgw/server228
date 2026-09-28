@@ -8,7 +8,7 @@ from app.helpers import utcnow
 
 from sqlmodel import col, select
 
-DEFAULT_PREFERENCES = {"rank_lost": True, "friend_added": True, "friend_removed": True}
+DEFAULT_PREFERENCES = {"rank_lost": True}
 ANNOUNCE_CHANNEL = "#announce"
 
 
@@ -23,7 +23,7 @@ def stage_local_map_release(
         return
     category = "loved" if status == BeatmapRankStatus.LOVED else "ranked"
     target = f"beatmaps/{beatmap_id}" if beatmap_id is not None else f"beatmapsets/{beatmapset_id}"
-    prefix = "Новая Loved-карта на SOMS!" if category == "loved" else "Новая рейтинговая карта на SOMS!"
+    prefix = "New Loved beatmap on SOMS!" if category == "loved" else "New ranked beatmap on SOMS!"
     session.add(
         SomsActivity(
             event_key=f"local-{category}:{beatmapset_id}:{beatmap_id or 0}:{changed_at.isoformat()}",
@@ -43,7 +43,7 @@ async def notification_preferences(session, user_id):
     return {key: saved.get(key, default) is not False for key, default in DEFAULT_PREFERENCES.items()}
 
 
-async def eligible_recipient(session, user_id, kind):
+async def eligible_recipient(session, user_id):
     from app.database.user import User
 
     user = await session.get(User, user_id)
@@ -51,27 +51,7 @@ async def eligible_recipient(session, user_id, kind):
         return None
     if await user.is_restricted(session):
         return None
-    return user_id if (await notification_preferences(session, user_id))[kind] else None
-
-
-async def stage_friend_notification(session, actor, target_id, relationship_id, *, removed=False):
-    kind = "friend_removed" if removed else "friend_added"
-    recipient = await eligible_recipient(session, target_id, kind)
-    if recipient is None:
-        return
-    key = f"{'unfriend' if removed else 'friend'}:{relationship_id}"
-    if (await session.exec(select(SomsActivity.id).where(SomsActivity.event_key == key))).first():
-        return
-    session.add(
-        SomsActivity(
-            event_key=key,
-            kind=kind,
-            actor_id=actor.id,
-            recipient_id=recipient,
-            payload={"username": actor.username, "user_id": actor.id},
-            delivered=True,
-        )
-    )
+    return user_id if (await notification_preferences(session, user_id))["rank_lost"] else None
 
 
 async def current_winner(session, beatmap_id, mode):
@@ -149,13 +129,13 @@ async def stage_first_place(session, score, previous):
     # APIMod is stored as JSON dictionaries, including after ORM reloads.
     mods = ", ".join(str(mod.get("acronym", "?")) for mod in score.mods) or "NM"
     message = (
-        f"{chat_link(f'users/{score.user_id}', score.user.username)} занял #1 на "
+        f"{chat_link(f'users/{score.user_id}', score.user.username)} reached #1 on "
         f"{chat_link(f'beatmaps/{score.beatmap_id}', title[:250])} "
         f"({score.gamemode.readable()}, {mods}, {score.accuracy * 100:.2f}%, {score.pp or 0:.2f}pp)."
     )
     if previous:
-        message += f" Первое место забрано у {previous[2]}."
-    recipient = await eligible_recipient(session, previous[1], "rank_lost") if previous else None
+        message += f" The previous #1 was held by {previous[2]}."
+    recipient = await eligible_recipient(session, previous[1]) if previous else None
     session.add(
         SomsActivity(
             event_key=key,
@@ -188,7 +168,7 @@ async def ensure_announce_channel(session):
         channel = ChatChannel(
             channel_name=ANNOUNCE_CHANNEL,
             type=ChannelType.PUBLIC,
-            description="SOMSBot: новые Ranked/Loved-карты и первые места SOMS!",
+            description="SOMSBot: new Ranked/Loved beatmaps and SOMS! first places",
         )
         session.add(channel)
         await session.flush()

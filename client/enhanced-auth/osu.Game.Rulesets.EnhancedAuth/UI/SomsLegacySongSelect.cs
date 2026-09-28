@@ -138,8 +138,8 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         var grouping = new Container { RelativeSizeAxes = Axes.X, Width = .49f, Height = 18 };
         var sorting = new Container { RelativeSizeAxes = Axes.X, RelativePositionAxes = Axes.X, X = .51f, Width = .49f, Height = 18 };
         controls.Add(grouping); controls.Add(sorting);
-        grouping.Add(Text("Группировать", 0, 0, .5f, 16, true, new Color4(151, 208, 238, 255)));
-        sorting.Add(Text("Сортировать", 0, 0, .5f, 16, true, new Color4(182, 216, 143, 255)));
+        grouping.Add(Text("Group", 0, 0, .5f, 16, true, new Color4(151, 208, 238, 255)));
+        sorting.Add(Text("Sort", 0, 0, .5f, 16, true, new Color4(182, 216, 143, 255)));
         var group = new LegacyButton(skin, "", "", () => toggleFilterMenu(true), Color4.Black)
         { Name = "soms-selection-group", RelativeSizeAxes = Axes.X, RelativePositionAxes = Axes.X, X = .5f, Width = .5f, Height = 16, Masking = true, CornerRadius = 3, BorderThickness = .5f, BorderColour = new Color4(151, 208, 238, 255) };
         group.Add(groupText = Text("", 3, 1, .86f, 11, true));
@@ -153,7 +153,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
 
         var tabs = new Container { RelativeSizeAxes = Axes.X, Y = 19, Height = 14 };
         controls.Add(tabs);
-        var tabNames = new[] { "Коллекции", "По дате игры", "По артисту", "По сложности", "Всё вместе" };
+        var tabNames = new[] { "Collections", "By last played", "By artist", "By difficulty", "All together" };
         var tabGroups = new[] { "Collections", "LastPlayed", "Artist", "Difficulty", "None" };
         for (int i = 0; i < tabNames.Length; i++)
         {
@@ -164,11 +164,11 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         var searchArea = new Container { RelativeSizeAxes = Axes.X, RelativePositionAxes = Axes.X, X = .55f, Width = .45f, Y = 51, Height = 23 };
         scene.Add(searchArea);
         searchArea.Add(new Box { RelativeSizeAxes = Axes.Both, Colour = new Color4(130, 35, 95, 170) });
-        searchArea.Add(Text("Поиск:", 8, 3, 45, 13, colour: new Color4(180, 255, 50, 255)));
+        searchArea.Add(Text("Search:", 8, 3, 45, 13, colour: new Color4(180, 255, 50, 255)));
         searchArea.Add(search = new LegacySearchBox
         {
             RelativeSizeAxes = Axes.X, X = 50, Width = 1, Height = 23, Text = query,
-            PlaceholderText = "введите название", CornerRadius = 0,
+            PlaceholderText = "enter a title", CornerRadius = 0,
         });
         // Reserve the label's width without letting the textbox extend past the viewport.
         searchArea.Padding = new MarginPadding { Right = 50 };
@@ -181,8 +181,8 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         scopes.Add(scopeText = Text(scopeName(), 3, 1, 168, 12));
         scopes.Add(new SpriteIcon { Icon = FontAwesome.Solid.ChevronDown, Anchor = Anchor.CentreRight, Origin = Anchor.CentreRight, X = -4, Size = new Vector2(10) });
         left.Add(scopes);
-        left.Add(new LegacyButton(skin, "", "М", () => { exactMods = !exactMods; fetchScores(); }, Color4.Black)
-        { TooltipText = "Рекорды с выбранными модами", X = 207, Width = 16, Height = 15 });
+        left.Add(new LegacyButton(skin, "", "M", () => { exactMods = !exactMods; fetchScores(); }, Color4.Black)
+        { TooltipText = "Scores with selected mods", X = 207, Width = 16, Height = 15 });
         left.Add(scores = new ScrollSurface(delta =>
         {
             if (!canBrowse || (leaderboard?.Scores.Value?.AllScores.Count() ?? 0) <= 6) return false;
@@ -191,7 +191,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         { RelativeSizeAxes = Axes.X, Y = 25, Height = 317, Masking = true });
         scene.Add(rows = new BrowserSurface(scrollBrowser, quickBrowse, () => canBrowse)
         { RelativeSizeAxes = Axes.X, RelativePositionAxes = Axes.X, X = .55f, Width = .45f, Y = 76, Height = 348, Masking = true });
-        scene.Add(status = Text("Загрузка карт…", 7, 402, 235, 9));
+        scene.Add(status = Text("Loading beatmaps…", 7, 402, 235, 9));
         var footer = new Container { RelativeSizeAxes = Axes.X, Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, Height = 56 };
         scene.Add(footer);
         footer.Add(new Box { RelativeSizeAxes = Axes.Both, Colour = Color4.Black });
@@ -202,21 +202,21 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         // The x142 mode-button position is also visible in the local stable screenshots
         // (screenshot009/010): the Fumo 1142x944 decoration starts at x319.5 at 1080p.
         // Asset pixels are x768; this browser's coordinates are x480 (see LegacySkin).
-        footer.Add(new LegacyButton(skin, "menu-back", "Назад", () => owner.Exit(), naturalSize: true)
+        footer.Add(new LegacyButton(skin, "menu-back", "Back", () => owner.Exit(), naturalSize: true)
         { Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, Size = new Vector2(140, 56) });
-        footer.Add(new LegacyButton(skin, "selection-mode", "Режим", toggleModeMenu, naturalSize: true)
+        footer.Add(new LegacyButton(skin, "selection-mode", "Mode", toggleModeMenu, naturalSize: true)
         { Name = "soms-selection-mode", Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, X = 142, Size = new Vector2(92, 90) * skin_scale });
         footer.Add(modeIcon = new Container { X = 160, Y = 10, Size = new Vector2(20) });
-        footer.Add(new LegacyButton(skin, "selection-mods", "Моды · F1", toggleMods, naturalSize: true)
+        footer.Add(new LegacyButton(skin, "selection-mods", "Mods · F1", toggleMods, naturalSize: true)
         { Name = "soms-selection-mods", Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, X = 199.5f, Size = new Vector2(77, 90) * skin_scale });
-        footer.Add(new LegacyButton(skin, "selection-random", "Случайно · F2", () => carousel.NextRandom(), naturalSize: true)
+        footer.Add(new LegacyButton(skin, "selection-random", "Random · F2", () => carousel.NextRandom(), naturalSize: true)
         { Name = "soms-selection-random", Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, X = 247.625f, Size = new Vector2(77, 90) * skin_scale });
-        footer.Add(new LegacyButton(skin, "selection-options", "Настройки · F3", toggleOptions, naturalSize: true)
+        footer.Add(new LegacyButton(skin, "selection-options", "Settings · F3", toggleOptions, naturalSize: true)
         { Name = "soms-selection-options", Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, X = 295.75f, Size = new Vector2(77, 90) * skin_scale });
         footer.Add(userPanel = new SomsLegacyUserPanel { X = 392, Y = 6, Size = new Vector2(200, 49) });
         footer.Add(modsText = Text("", 7, -13, 240, 9));
         var play = new LegacyButton(skin, "", "", start, Color4.Transparent)
-        { Name = "soms-selection-play", Anchor = Anchor.BottomRight, Origin = Anchor.BottomRight, Size = new Vector2(104, 96), TooltipText = "Играть · Enter" };
+        { Name = "soms-selection-play", Anchor = Anchor.BottomRight, Origin = Anchor.BottomRight, Size = new Vector2(104, 96), TooltipText = "Play · Enter" };
         var cookie = SpriteFor(skin, "menu-osu");
         if (cookie != null) play.Add(new Container { Anchor = Anchor.Centre, Origin = Anchor.Centre, Position = new Vector2(29, 22), Size = new Vector2(156), Child = cookie });
         else play.Add(Text("osu!", 12, 43, 86, 36));
@@ -234,7 +234,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         selectedId = beatmap.Value.BeatmapInfo.ID; scoreOffset = 0;
         drawSummary(); rebuildRows(changed); fetchScores();
         if (modsText != null) modsText.Text = (ruleset?.Value.Name ?? "osu!") + " · " +
-            (mods?.Value.Count > 0 ? string.Join(" ", mods.Value.Select(m => m.Acronym)) : "Без модов");
+            (mods?.Value.Count > 0 ? string.Join(" ", mods.Value.Select(m => m.Acronym)) : "No mods");
         if (modeIcon != null && Skin != null)
         {
             modeIcon.Clear();
@@ -247,7 +247,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         if (!LegacyEnabled || scene == null) return;
         updateAttributes();
         if (modsText != null) modsText.Text = (ruleset?.Value.Name ?? "osu!") + " · " +
-            (mods?.Value.Count > 0 ? string.Join(" ", mods.Value.Select(m => m.Acronym)) : "Без модов");
+            (mods?.Value.Count > 0 ? string.Join(" ", mods.Value.Select(m => m.Acronym)) : "No mods");
         if (exactMods)
         {
             scoreRefresh?.Cancel();
@@ -266,10 +266,10 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         {
             X = 20, Y = 15, RelativeSizeAxes = Axes.X, Width = .38f, Height = 12,
             Action = () => game?.ShowUser(author),
-            Child = Text("Автор: " + author.Username, 0, 0, 1, 10, true)
+            Child = Text("Creator: " + author.Username, 0, 0, 1, 10, true)
         });
         summary.Add(timingText = Text("", 0, 27, .41f, 10, true));
-        summary.Add(Text(b.OnlineInfo is { } online ? $"Ноты: {online.CircleCount}  Слайдеры: {online.SliderCount}  Спиннеры: {online.SpinnerCount}" : "Сложность: " + b.DifficultyName, 0, 39, .41f, 9, true));
+        summary.Add(Text(b.OnlineInfo is { } online ? $"Circles: {online.CircleCount}  Sliders: {online.SliderCount}  Spinners: {online.SpinnerCount}" : "Difficulty: " + b.DifficultyName, 0, 39, .41f, 9, true));
         summary.Add(difficultyText = Text("", 0, 50, .41f, 7, true));
         summaryDifficultyCancellation?.Cancel(); summaryDifficultyCancellation?.Dispose();
         summaryDifficulty?.UnbindAll();
@@ -294,7 +294,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         difficultyText.Text = $"{attributes}  Star Rating: {summaryDifficulty?.Value.Stars ?? b.StarRating:0.##}★";
         double rate = ModUtils.CalculateRateWithMods(selected);
         if (!double.IsFinite(rate) || rate <= 0) rate = 1;
-        timingText.Text = $"Длина: {TimeSpan.FromMilliseconds(Math.Max(0, b.Length) / rate):m\\:ss}  BPM: {b.BPM * rate:0.##}  Объекты: {(b.TotalObjectCount >= 0 ? b.TotalObjectCount.ToString() : "—")}";
+        timingText.Text = $"Length: {TimeSpan.FromMilliseconds(Math.Max(0, b.Length) / rate):m\\:ss}  BPM: {b.BPM * rate:0.##}  Objects: {(b.TotalObjectCount >= 0 ? b.TotalObjectCount.ToString() : "—")}";
     }
 
     protected override void Update()
@@ -319,7 +319,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
             rebuildIndex();
             rebuildRows();
         }
-        if (status != null) status.Text = carousel.IsFiltering ? "Поиск…" : $"Доступно сложностей: {filtered.Count:N0}";
+        if (status != null) status.Text = carousel.IsFiltering ? "Searching…" : $"Available difficulties: {filtered.Count:N0}";
         if (carousel.CurrentBeatmap is { } current && current.ID != selectedId) { selectedId = current.ID; rebuildRows(); }
     }
 
@@ -378,11 +378,11 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
                 visibleKeys.Add(key);
                 if (!rowDrawables.TryGetValue(key, out var folder))
                 {
-                    folder = new LegacyMapRow(Skin, name + $" ({groupCounts[name]:N0} карт)", () => { selectedGroup = name; rebuildRows(); });
+                    folder = new LegacyMapRow(Skin, name + $" ({groupCounts[name]:N0} beatmaps)", () => { selectedGroup = name; rebuildRows(); });
                     rowDrawables.Add(key, folder); rows.Add(folder);
                     folder.Position = new Vector2(50, index * 49 + 20); folder.FadeInFromZero(160);
                 }
-                folder.SetFolderTitle(name + $" ({groupCounts[name]:N0} карт)");
+                folder.SetFolderTitle(name + $" ({groupCounts[name]:N0} beatmaps)");
                 float distance = index - (groupOffset - first);
                 folder.MoveTo(new Vector2(18 + Math.Abs(distance - 3) * Math.Abs(distance - 3) * 2, distance * 49), animate ? 220 : 0, Easing.OutQuint);
             }
@@ -393,7 +393,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         {
             removeOldRows();
             if (!rows.Children.Any(d => d.Name == "soms-selection-no-maps"))
-                rows.Add(new TruncatingSpriteText { Name = "soms-selection-no-maps", Text = "Нет подходящих карт", Position = new Vector2(25, 145), Font = SomsLegacyFont.Font(16) });
+                rows.Add(new TruncatingSpriteText { Name = "soms-selection-no-maps", Text = "No matching beatmaps", Position = new Vector2(25, 145), Font = SomsLegacyFont.Font(16) });
             return;
         }
         // Bounded drawable count, including on large libraries.
@@ -557,7 +557,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
     private void setGroup(string value)
     {
         selectedGroup = null; groupOffset = 0;
-        if (status != null) status.Text = "Группировка карт…";
+        if (status != null) status.Text = "Grouping beatmaps…";
         config.GetBindable<GroupMode>(setting("SongSelectGroupMode")).Value = Enum.Parse<GroupMode>(value);
         updateFilterLabels(); closeMenu(ref filterMenu);
     }
@@ -589,9 +589,9 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
 
     private static string filterLabel(string value) => value switch
     {
-        "None" => "Всё вместе", "Collections" => "Коллекции", "Artist" => "По артисту", "Author" => "По автору",
-        "Title" => "По названию", "Difficulty" => "По сложности", "DateAdded" => "По дате добавления",
-        "LastPlayed" => "По дате игры", "RankAchieved" => "По результатам", "RankedStatus" => "По статусу", "BPM" => "По BPM", "Length" => "По длине", _ => value,
+        "None" => "All together", "Collections" => "Collections", "Artist" => "By artist", "Author" => "By creator",
+        "Title" => "By title", "Difficulty" => "By difficulty", "DateAdded" => "By date added",
+        "LastPlayed" => "By last played", "RankAchieved" => "By grade", "RankedStatus" => "By status", "BPM" => "By BPM", "Length" => "By length", _ => value,
     };
 
     private void cycleSort()
@@ -617,8 +617,8 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
 
     private string scopeName() => scope switch
     {
-        BeatmapLeaderboardScope.Local => "Локальный топ", BeatmapLeaderboardScope.Global => "Топ мира",
-        BeatmapLeaderboardScope.Country => "Топ страны", _ => "Топ друзей"
+        BeatmapLeaderboardScope.Local => "Local ranking", BeatmapLeaderboardScope.Global => "Global ranking",
+        BeatmapLeaderboardScope.Country => "Country ranking", _ => "Friends ranking"
     };
 
     private void cycleScope()
@@ -637,11 +637,11 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
     {
         if (scores == null || Skin == null || !LegacyEnabled) return;
         scores.Clear(); var result = leaderboard?.Scores.Value;
-        string? hint = result == null ? "Загрузка рекордов…" : result.FailState switch
+        string? hint = result == null ? "Loading scores…" : result.FailState switch
         {
-            LeaderboardFailState.NotSupporter => "Нужен supporter", LeaderboardFailState.NotLoggedIn => "Войдите в аккаунт",
-            LeaderboardFailState.BeatmapUnavailable => "Нет онлайн-рейтинга", LeaderboardFailState.NetworkFailure => "Ошибка загрузки. Повторить?",
-            not null => "Рейтинг недоступен", _ => result.TopScores.Count == 0 ? "Рекордов пока нет" : null
+            LeaderboardFailState.NotSupporter => "Supporter required", LeaderboardFailState.NotLoggedIn => "Sign in",
+            LeaderboardFailState.BeatmapUnavailable => "No online ranking", LeaderboardFailState.NetworkFailure => "Loading failed. Retry?",
+            not null => "Ranking unavailable", _ => result.TopScores.Count == 0 ? "No scores yet" : null
         };
         if (hint != null)
         {
@@ -679,20 +679,20 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         options = new Surface { Name = "soms-selection-options-menu", RelativeSizeAxes = Axes.Both, Depth = -10 };
         options.Add(new Box { RelativeSizeAxes = Axes.Both, Colour = new Color4(0, 0, 0, .85f) });
         string title = b == null ? "" : b.Metadata.Artist + " - " + b.Metadata.Title;
-        options.Add(Text("Выбрана: " + title, 4, 4, .98f, 20, true));
-        options.Add(Text("Что вы хотите сделать с этой картой?", 4, 28, .98f, 20, true));
+        options.Add(Text("Selected: " + title, 4, 4, .98f, 20, true));
+        options.Add(Text("What would you like to do with this beatmap?", 4, 28, .98f, 20, true));
         var panel = new Container { Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre, Y = 106, Size = new Vector2(455, 290) };
         options.Add(panel); optionActions.Clear();
-        add("Управление коллекциями", b == null ? null : () => showCollections(b), new Color4(135, 182, 20, 255));
-        add("Удалить…", b?.BeatmapSet is { } set ? () => owner.Delete(set) : null, new Color4(224, 53, 0, 255));
-        add(b?.LastPlayed == null ? "Убрать из несыгранных" : "Отметить как несыгранную", b == null ? null : () =>
+        add("Manage collections", b == null ? null : () => showCollections(b), new Color4(135, 182, 20, 255));
+        add("Delete…", b?.BeatmapSet is { } set ? () => owner.Delete(set) : null, new Color4(224, 53, 0, 255));
+        add(b?.LastPlayed == null ? "Remove from unplayed" : "Mark as unplayed", b == null ? null : () =>
         {
             if (b.LastPlayed == null) beatmaps.MarkPlayed(b); else beatmaps.MarkNotPlayed(b);
         }, new Color4(167, 88, 182, 255));
-        add("Очистить локальный топ", b == null || dialogs == null ? null : () => dialogs.Push(new BeatmapClearScoresDialog(b, () => Schedule(fetchScores))), new Color4(167, 88, 182, 255));
-        add("Редактировать", b != null && owner is SoloSongSelect solo ? () => solo.Edit(b) : null, new Color4(224, 53, 0, 255));
-        add("Отмена", () => { }, new Color4(105, 105, 105, 255));
-        options.Add(new LegacyButton(Skin, "", "Другие действия и фильтры…", showOtherOptions, new Color4(0, 0, 0, .3f))
+        add("Clear local ranking", b == null || dialogs == null ? null : () => dialogs.Push(new BeatmapClearScoresDialog(b, () => Schedule(fetchScores))), new Color4(167, 88, 182, 255));
+        add("Edit", b != null && owner is SoloSongSelect solo ? () => solo.Edit(b) : null, new Color4(224, 53, 0, 255));
+        add("Cancel", () => { }, new Color4(105, 105, 105, 255));
+        options.Add(new LegacyButton(Skin, "", "More actions and filters…", showOtherOptions, new Color4(0, 0, 0, .3f))
         { Anchor = Anchor.BottomCentre, Origin = Anchor.BottomCentre, Y = -39, Size = new Vector2(260, 22) });
         scene.Add(options); options.FadeInFromZero(150); panel.MoveToY(116).MoveToY(106, 220, Easing.OutQuint);
 
@@ -717,10 +717,10 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
         if (scene == null || Skin == null) return;
         options = new Surface { RelativeSizeAxes = Axes.Both, Depth = -10 };
         options.Add(new Box { RelativeSizeAxes = Axes.Both, Colour = new Color4(0, 0, 0, .9f) });
-        options.Add(Text("Другие действия и фильтры", 8, 14, .95f, 24, true));
+        options.Add(Text("More actions and filters", 8, 14, .95f, 24, true));
         var panel = new Container { Anchor = Anchor.Centre, Origin = Anchor.Centre, Size = new Vector2(455, 340) };
         options.Add(panel); optionActions.Clear();
-        add("Сбросить поиск и фильтры", () =>
+        add("Reset search and filters", () =>
         {
             filter?.Search(""); query = ""; if (search != null) search.Text = "";
             config.GetBindable<double>(setting("DisplayStarsMinimum")).SetDefault();
@@ -728,11 +728,11 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
             if (filter != null) SomsLegacyInterfacePatch.Member<Bindable<string>>(filter, "configCollectionFilter")?.SetDefault();
             setGroup("None"); owner.UnscopeBeatmapSet();
         });
-        add("Конверты: " + (config.Get<bool>(setting("ShowConvertedBeatmaps")) ? "показывать" : "скрывать"), () =>
+        add("Converted beatmaps: " + (config.Get<bool>(setting("ShowConvertedBeatmaps")) ? "show" : "hide"), () =>
         { var value = config.GetBindable<bool>(setting("ShowConvertedBeatmaps")); value.Value = !value.Value; });
         if (beatmap?.Value.BeatmapInfo is { } b)
             foreach (var item in owner.GetForwardActions(b).Where(i => i.Action.Value != null).Take(5)) add(item.Text.Value.ToString(), item.Action.Value!);
-        add("Назад", toggleOptions);
+        add("Back", toggleOptions);
         scene.Add(options); options.FadeInFromZero(150);
         void add(string label, Action action)
         {
@@ -948,7 +948,7 @@ public sealed partial class SomsLegacySongSelect : SomsLegacyComponent, IKeyBind
             Add(labels = new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding { Left = 80, Right = 4 }, Masking = true });
             labels.Add(title = Text(map.Metadata.Title, 0, 3, 1, 14, true));
             labels.Add(Text(map.Metadata.Artist + " // " + map.Metadata.Author.Username, 0, 18, 1, 10, true));
-            if (set) labels.Add(Text($"{setCount} сложности", 0, 33, 1, 9, true));
+            if (set) labels.Add(Text($"{setCount} difficulties", 0, 33, 1, 9, true));
             else
             {
                 labels.Add(new TruncatingSpriteText

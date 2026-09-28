@@ -61,12 +61,6 @@ namespace osu.Server.Spectator.Tests.Multiplayer
                 await c.HostChanged(userId);
         }
 
-        public virtual async Task UserRoleChanged(int userId, MultiplayerRoomUserRole role)
-        {
-            foreach (var c in Clients.OfType<IMultiplayerClient>())
-                await c.UserRoleChanged(userId, role);
-        }
-
         public virtual async Task SettingsChanged(MultiplayerRoomSettings newSettings)
         {
             foreach (var c in Clients.OfType<IMultiplayerClient>())

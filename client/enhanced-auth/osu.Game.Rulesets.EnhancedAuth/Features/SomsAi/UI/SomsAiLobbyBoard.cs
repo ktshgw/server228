@@ -36,7 +36,7 @@ internal sealed partial class SomsAiLobbyBoard : Container
         RelativeSizeAxes = Axes.X;
 
         var leftFlow = SomsNativeMatchScreen.Flow();
-        leftFlow.Add(sectionTitle("Команда", ""));
+        leftFlow.Add(sectionTitle("Team", ""));
         leftFlow.Add(party);
 
         var tabs = new Container
@@ -45,12 +45,12 @@ internal sealed partial class SomsAiLobbyBoard : Container
             Height = 44,
             Children = new Drawable[]
             {
-                tab("Рейтинг", showRating).With(button =>
+                tab("Ranked", showRating).With(button =>
                 {
                     button.RelativeSizeAxes = Axes.X;
                     button.Width = .49f;
                 }),
-                tab("Кастомки", showCustoms).With(button =>
+                tab("Customs", showCustoms).With(button =>
                 {
                     button.RelativeSizeAxes = Axes.X;
                     button.Width = .49f;
@@ -71,7 +71,7 @@ internal sealed partial class SomsAiLobbyBoard : Container
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
-                    sectionTitle("Последние матчи", "20 последних сыгранных встреч"),
+                    sectionTitle("Recent matches", "20 most recently played matches"),
                     new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding { Top = 55 },
                         Child = new OsuScrollContainer { RelativeSizeAxes = Axes.Both, ScrollbarVisible = false, Child = recentMatches } },
                 },
@@ -197,15 +197,15 @@ internal sealed partial class SomsAiRecentMatchRow : osu.Game.Graphics.Container
             "cancelled" => SomsAiOceanTheme.Muted,
             _ => SomsAiOceanTheme.Gold,
         };
-        string opponent = match.Opponents.Count == 0 ? "соперник" : string.Join(" + ", match.Opponents.Select(SomsAiRank.DisplayName));
+        string opponent = match.Opponents.Count == 0 ? "opponent" : string.Join(" + ", match.Opponents.Select(SomsAiRank.DisplayName));
         string result = match.Outcome switch
         {
-            "win" => "ПОБЕДА",
-            "loss" => "ПОРАЖЕНИЕ",
-            "cancelled" => "ОТМЕНЁН",
-            _ => "НИЧЬЯ",
+            "win" => "VICTORY",
+            "loss" => "DEFEAT",
+            "cancelled" => "CANCELLED",
+            _ => "DRAW",
         };
-        string delta = match.Ranked ? $" · {match.RatingDelta:+0;-0;0} MMR" : " · кастом";
+        string delta = match.Ranked ? $" · {match.RatingDelta:+0;-0;0} MMR" : " · custom";
         string playedAt = match.EndedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "";
 
         Children = new Drawable[]
@@ -223,7 +223,7 @@ internal sealed partial class SomsAiRecentMatchRow : osu.Game.Graphics.Container
                     new TruncatingSpriteText
                     {
                         RelativeSizeAxes = Axes.X,
-                        Text = $"{match.Format}  ·  против {opponent}",
+                        Text = $"{match.Format}  ·  vs {opponent}",
                         Font = OsuFont.GetFont(size: 16, weight: FontWeight.SemiBold),
                         Colour = SomsAiOceanTheme.Cream,
                     },
@@ -260,7 +260,7 @@ internal sealed partial class SomsAiInteractiveReef : Container
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
                 Y = 8,
-                Text = "Пока ищется матч",
+                Text = "While matchmaking",
                 Font = OsuFont.GetFont(size: 22, weight: FontWeight.Bold),
                 Colour = SomsAiOceanTheme.Cream,
             },
@@ -269,11 +269,11 @@ internal sealed partial class SomsAiInteractiveReef : Container
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
                 Y = 38,
-                Text = "нажимайте на предметы и пузыри",
+                Text = "click the objects and bubbles",
                 Font = OsuFont.GetFont(size: 14),
                 Colour = SomsAiOceanTheme.Muted,
             },
-            new InteractiveToy("interactive-jelly-lantern", "Медуза-светильник", ToyReaction.Pulse)
+            new InteractiveToy("interactive-jelly-lantern", "Jellyfish lamp", ToyReaction.Pulse)
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.Centre,
@@ -281,7 +281,7 @@ internal sealed partial class SomsAiInteractiveReef : Container
                 Position = new Vector2(.28f, .34f),
                 Size = new Vector2(150, 205),
             },
-            new InteractiveToy("interactive-shell-box", "Жемчужная шкатулка", ToyReaction.Bounce)
+            new InteractiveToy("interactive-shell-box", "Pearl box", ToyReaction.Bounce)
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.Centre,
@@ -289,7 +289,7 @@ internal sealed partial class SomsAiInteractiveReef : Container
                 Position = new Vector2(.68f, .42f),
                 Size = new Vector2(185),
             },
-            new InteractiveToy("interactive-coral-game", "Коралловый автомат", ToyReaction.Shake)
+            new InteractiveToy("interactive-coral-game", "Coral arcade", ToyReaction.Shake)
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.Centre,

@@ -19,8 +19,8 @@ using SomsLauncher;
 [assembly: AssemblyDescription("Safe private-server launcher for the official osu!lazer client")]
 [assembly: AssemblyCompany("SOMS!")]
 [assembly: AssemblyProduct("SOMS! switcher")]
-[assembly: AssemblyVersion("1.1.4.0")]
-[assembly: AssemblyFileVersion("1.1.4.0")]
+[assembly: AssemblyVersion("1.1.7.0")]
+[assembly: AssemblyFileVersion("1.1.7.0")]
 
 namespace SomsSwitcher
 {
@@ -62,6 +62,7 @@ namespace SomsSwitcher
         private string storagePath;
         private string osuVersion;
         private Dictionary<string, object> manifest;
+        private bool launchAllowed;
         private bool busy;
 
         [DllImport("user32.dll")]
@@ -227,7 +228,7 @@ namespace SomsSwitcher
             busy = value;
             RunOnUi(delegate
             {
-                privateButton.Enabled = !value;
+                privateButton.Enabled = !value && launchAllowed;
                 refreshButton.Enabled = !value;
                 browseButton.Enabled = !value;
                 siteButton.Enabled = !value;
@@ -237,6 +238,7 @@ namespace SomsSwitcher
 
         private void RefreshState()
         {
+            launchAllowed = false;
             osuPath = FindOsuExecutable();
             osuVersion = File.Exists(osuPath) ? ReadOsuVersion(osuPath) : null;
             storagePath = ResolveStoragePath();
@@ -254,11 +256,21 @@ namespace SomsSwitcher
                 manifest = DownloadManifest();
                 Dictionary<string, object> compatibility = Dict(manifest, "compatibility");
                 bool supported = !string.IsNullOrEmpty(osuVersion) && compatibility.ContainsKey(osuVersion);
+                string latestLauncher = RequiredString(Dict(manifest, "launcher"), "version");
+                bool launcherCurrent = IsCurrentLauncher(latestLauncher);
+                launchAllowed = File.Exists(osuPath) && supported && launcherCurrent;
                 string product = OptionalString(manifest, "product_name", "SOMS!");
-                RunOnUi(delegate { serverValue.Text = product + " — доступен"; serverValue.ForeColor = Color.FromArgb(139, 235, 171); });
+                RunOnUi(delegate
+                {
+                    serverValue.Text = product + " — доступен";
+                    serverValue.ForeColor = Color.FromArgb(139, 235, 171);
+                    privateButton.Enabled = !busy && launchAllowed;
+                });
 
                 if (!File.Exists(osuPath))
                     SetStatus("osu!lazer не найден. Нажми «Выбрать osu!.exe».", Color.FromArgb(255, 188, 112));
+                else if (!launcherCurrent)
+                    SetStatus("Свитчер устарел. Установлена версия " + CurrentLauncherVersion() + ", доступна " + latestLauncher + ". Скачай новый свитчер с сайта — запуск заблокирован.", Color.FromArgb(255, 130, 150));
                 else if (!supported)
                     SetStatus("Версия " + osuVersion + " пока не поддерживается. Подожди обновление модуля SOMS!.", Color.FromArgb(255, 188, 112));
                 else
@@ -267,6 +279,7 @@ namespace SomsSwitcher
             catch
             {
                 manifest = null;
+                launchAllowed = false;
                 RunOnUi(delegate { serverValue.Text = "SOMS! — недоступен"; serverValue.ForeColor = Color.FromArgb(255, 130, 150); });
                 if (File.Exists(osuPath))
                     SetStatus("Сервер сейчас не отвечает. Попробуй нажать «Обновить» чуть позже.", Color.FromArgb(255, 188, 112));
@@ -292,7 +305,10 @@ namespace SomsSwitcher
 
             VerifyOfficialExecutable(osuPath);
             osuVersion = ReadOsuVersion(osuPath);
+            // Always re-check immediately before launch. A switcher superseded
+            // after the window opened must not start an incompatible client.
             manifest = DownloadManifest();
+            EnsureCurrentLauncher(manifest);
             Dictionary<string, object> compatibility = Dict(manifest, "compatibility");
             if (!compatibility.ContainsKey(osuVersion))
                 throw new InvalidOperationException("Версия lazer " + osuVersion + " пока не поддерживается. Подожди обновление модуля на сервере.");
@@ -307,11 +323,6 @@ namespace SomsSwitcher
                     true
                 );
             }
-
-            string healthUrl = RequiredString(manifest, "health_url");
-            RequireTrustedUrl(new Uri(ManifestUrl), new Uri(healthUrl, UriKind.Absolute));
-            using (WebClient healthClient = NewWebClient())
-                healthClient.DownloadString(healthUrl);
 
             Dictionary<string, object> endpoints = Dict(manifest, "endpoints");
             Dictionary<string, object> client = Dict(manifest, "client");
@@ -347,8 +358,36 @@ namespace SomsSwitcher
             start.EnvironmentVariables["PRIVATE_OSU_ENHANCED_AUTH_PATH"] = enhancedAuthPath;
             start.EnvironmentVariables["PRIVATE_OSU_CREDENTIAL_TARGET"] = credentialTarget;
             EnsureStartupHooksEnabled(osuPath);
-            Process.Start(start);
+            Process process = Process.Start(start);
+            if (process == null)
+                throw new InvalidOperationException("Windows не смог запустить osu!lazer.");
+            if (process.WaitForExit(5000))
+                throw new InvalidOperationException("osu!lazer закрылся сразу после запуска. Свитчер оставлен открытым для повторной попытки.");
             SetStatus("osu! запущен на SOMS!. Вводи данные аккаунта SOMS!.", Color.FromArgb(139, 235, 171));
+            RunOnUi(delegate { Close(); });
+        }
+
+        private static string CurrentLauncherVersion()
+        {
+            Version version = Assembly.GetExecutingAssembly().GetName().Version;
+            return version == null ? "0.0.0" : version.ToString(3);
+        }
+
+        private static bool IsCurrentLauncher(string latest)
+        {
+            Version expected;
+            Version current;
+            return Version.TryParse(latest, out expected)
+                && Version.TryParse(CurrentLauncherVersion(), out current)
+                && current >= expected;
+        }
+
+        private static void EnsureCurrentLauncher(Dictionary<string, object> currentManifest)
+        {
+            string latest = RequiredString(Dict(currentManifest, "launcher"), "version");
+            if (!IsCurrentLauncher(latest))
+                throw new InvalidOperationException("Свитчер устарел. Установлена версия " + CurrentLauncherVersion()
+                    + ", доступна " + latest + ". Скачай новую версию с сайта — запуск заблокирован.");
         }
 
         private ProcessStartInfo NewOsuStartInfo(string path)
@@ -370,9 +409,7 @@ namespace SomsSwitcher
         {
             Uri manifestUri = new Uri(ManifestUrl, UriKind.Absolute);
             RequireTrustedUrl(manifestUri, manifestUri);
-            string json;
-            using (WebClient client = NewWebClient())
-                json = client.DownloadString(manifestUri);
+            string json = Encoding.UTF8.GetString(DownloadHttps(manifestUri, 1024 * 1024, 20));
             if (Encoding.UTF8.GetByteCount(json) > 1024 * 1024)
                 throw new InvalidDataException("Манифест сервера слишком большой.");
 
@@ -524,9 +561,7 @@ namespace SomsSwitcher
             Uri manifestUri = new Uri(ManifestUrl, UriKind.Absolute);
             Uri moduleUri = new Uri(manifestUri, relativeUrl);
             RequireTrustedUrl(manifestUri, moduleUri);
-            byte[] bytes;
-            using (WebClient client = NewWebClient())
-                bytes = client.DownloadData(moduleUri);
+            byte[] bytes = DownloadHttps(moduleUri, MaxModuleBytes, 90);
             if (bytes.Length != expectedSize || bytes.Length > MaxModuleBytes)
                 throw new InvalidDataException("Размер скачанного модуля не совпал с манифестом.");
             string actualHash = HashBytes(bytes);
@@ -560,12 +595,45 @@ namespace SomsSwitcher
             return destination;
         }
 
-        private WebClient NewWebClient()
+        private byte[] DownloadHttps(Uri uri, int maximumBytes, int timeoutSeconds)
         {
-            WebClient client = new WebClient();
-            client.Encoding = Encoding.UTF8;
-            client.Headers[HttpRequestHeader.UserAgent] = "SOMS-switcher/1.1.4 Windows";
-            return client;
+            RequireTrustedUrl(new Uri(ManifestUrl, UriKind.Absolute), uri);
+            string curl = Path.Combine(Environment.SystemDirectory, "curl.exe");
+            if (!File.Exists(curl))
+                throw new IOException("Windows curl.exe is missing. Install current Windows updates and try again.");
+            string temporary = Path.Combine(Path.GetTempPath(), "soms-download-" + Guid.NewGuid().ToString("N") + ".tmp");
+            try
+            {
+                ProcessStartInfo start = new ProcessStartInfo();
+                start.FileName = curl;
+                start.Arguments = "--fail --silent --show-error --proto =https --connect-timeout 8 --max-time "
+                    + timeoutSeconds + " --user-agent \"SOMS-switcher/1.1.7 Windows\" --output \""
+                    + temporary + "\" \"" + uri.AbsoluteUri + "\"";
+                start.UseShellExecute = false;
+                start.CreateNoWindow = true;
+                start.RedirectStandardError = true;
+                using (Process process = Process.Start(start))
+                {
+                    string error = process.StandardError.ReadToEnd();
+                    if (!process.WaitForExit((timeoutSeconds + 5) * 1000))
+                    {
+                        process.Kill();
+                        throw new WebException("SOMS download timed out.");
+                    }
+                    if (process.ExitCode != 0)
+                        throw new WebException("SOMS download failed: " + error.Trim());
+                }
+                if (!File.Exists(temporary))
+                    throw new IOException("SOMS download produced no file.");
+                long length = new FileInfo(temporary).Length;
+                if (length <= 0 || length > maximumBytes)
+                    throw new InvalidDataException("SOMS download has an invalid size.");
+                return File.ReadAllBytes(temporary);
+            }
+            finally
+            {
+                if (File.Exists(temporary)) File.Delete(temporary);
+            }
         }
 
         private string TrustedEndpoint(Dictionary<string, object> endpoints, string name)

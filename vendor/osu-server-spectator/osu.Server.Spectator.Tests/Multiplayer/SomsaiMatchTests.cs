@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Moq;
 using osu.Game.Online.Multiplayer;
+using osu.Game.Online.Multiplayer.Countdown;
 using osu.Game.Online.Multiplayer.MatchTypes.TeamVersus;
 using osu.Game.Online.Rooms;
 using osu.Server.Spectator.Database.Models;
@@ -65,6 +66,11 @@ namespace osu.Server.Spectator.Tests.Multiplayer
             await readyAll();
             await controller.PollOnce();
             await controller.PollOnce();
+            var countdown = room.FindCountdownOfType<MatchStartCountdown>();
+            Assert.NotNull(countdown);
+            Assert.Equal(SomsaiMatchController.MatchStartDelay, countdown!.TimeRemaining);
+            Assert.Equal(MultiplayerRoomState.Open, room.State);
+            await room.SkipToEndOfCountdown(countdown);
             Assert.Equal(MultiplayerRoomState.WaitingForLoad, room.State);
         }
 
@@ -101,6 +107,10 @@ namespace osu.Server.Spectator.Tests.Multiplayer
             Assert.Equal("playing", interop.Stage);
             Assert.Equal(MultiplayerRoomState.Open, room.State);
             await controller.PollOnce();
+            var countdown = room.FindCountdownOfType<MatchStartCountdown>();
+            Assert.NotNull(countdown);
+            Assert.Equal(MultiplayerRoomState.Open, room.State);
+            await room.SkipToEndOfCountdown(countdown);
             Assert.Equal(MultiplayerRoomState.WaitingForLoad, room.State);
             await controller.PollOnce();
             Assert.Equal(2, interop.Events.Count(kind => kind == "started"));
@@ -156,6 +166,22 @@ namespace osu.Server.Spectator.Tests.Multiplayer
             Assert.Null(room.EndDate);
             Assert.Null(room.Host);
         }
+
+        [Theory]
+        [InlineData("SOMSAI 12 | Ranked 1v1")]
+        [InlineData("SOMSAI · 12 · Ranked 1v1")]
+        [InlineData("SOMSAI В· 12 В· Ranked 1v1")]
+        [InlineData("somsai 12 | custom")]
+        public void ManagedRoomPrefixMatchesLegacyAndAsciiNames(string name)
+            => Assert.True(SomsaiMatchController.IsManagedRoomName(name));
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("My lobby")]
+        [InlineData("Team versus")]
+        public void ManagedRoomPrefixIgnoresOrdinaryRooms(string? name)
+            => Assert.False(SomsaiMatchController.IsManagedRoomName(name));
 
         [Fact]
         public async Task RefereeAssociationCannotBypassManagedRoomControls()

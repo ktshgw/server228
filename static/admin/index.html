@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <meta name="theme-color" content="#111522">
-    <title>Панель управления — private osu!</title>
+    <meta name="theme-color" content="#8b3bb7">
+    <title>SOMS! — панель управления</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="./styles.css?v=negative-pp-1">
+    <link rel="stylesheet" href="./styles.css?v=admin-console-8">
 </head>
 <body>
     <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -16,8 +16,8 @@
     <main id="login-screen" class="login-screen">
         <section class="login-card" aria-labelledby="login-title">
             <div class="brand brand-login">
-                <span class="brand-mark" aria-hidden="true">o!</span>
-                <span><strong>private</strong><small>control room</small></span>
+                <span class="brand-mark" aria-hidden="true">S!</span>
+                <span><strong>SOMS!</strong><small>control room</small></span>
             </div>
             <div class="login-copy">
                 <p class="eyebrow">Закрытая зона</p>
@@ -51,9 +51,10 @@
     <div id="admin-app" class="app-shell" hidden>
         <aside class="sidebar">
             <div class="brand">
-                <span class="brand-mark" aria-hidden="true">o!</span>
-                <span><strong>private</strong><small>control room</small></span>
+                <span class="brand-mark" aria-hidden="true">S!</span>
+                <span><strong>SOMS!</strong><small>control room</small></span>
             </div>
+            <div id="sidebar-server-status" class="server-pill server-pill-primary"><span class="status-dot"></span><span>Проверяем сервер…</span></div>
 
             <nav class="nav" aria-label="Основная навигация">
                 <button class="nav-item is-active" type="button" data-view="dashboard" data-capability="staff">
@@ -65,10 +66,10 @@
                 <button class="nav-item" type="button" data-view="imports" data-capability="owner">
                     <span class="nav-icon" aria-hidden="true">⇧</span><span>Импорт score</span>
                 </button>
-                <button class="nav-item" type="button" data-view="beatmaps" data-capability="ranker">
+                <button class="nav-item" type="button" data-view="beatmaps" data-capability="administrator">
                     <span class="nav-icon" aria-hidden="true">◇</span><span>Карты</span>
                 </button>
-                <button class="nav-item" type="button" data-view="inbox" data-capability="ranker">
+                <button class="nav-item" type="button" data-view="inbox" data-capability="administrator">
                     <span class="nav-icon" aria-hidden="true">◌</span><span>Уведомления</span>
                     <span id="nav-inbox-badge" class="nav-badge" hidden>0</span>
                 </button>
@@ -88,7 +89,6 @@
 
             <div class="sidebar-footer">
                 <a class="site-return-link" href="/site/">← На сайт SOMS!</a>
-                <div id="sidebar-server-status" class="server-pill"><span class="status-dot"></span><span>Проверяем сервер…</span></div>
                 <button id="logout-button" class="logout-button" type="button">Выйти</button>
             </div>
         </aside>
@@ -111,30 +111,36 @@
             <div id="page-loading" class="page-loading" aria-live="polite" hidden><span></span><span>Загрузка…</span></div>
 
             <section id="view-dashboard" class="page is-active" data-page="dashboard" aria-labelledby="dashboard-heading">
-                <div class="welcome-panel">
-                    <div>
-                        <p class="eyebrow">Всё под контролем</p>
-                        <h2 id="dashboard-heading">Привет, <span id="welcome-name">администратор</span></h2>
-                        <p>Здесь видно состояние сервера, активность игроков и события, требующие внимания.</p>
+                <div class="command-hero">
+                    <div class="command-copy">
+                        <p class="eyebrow">Live infrastructure</p>
+                        <h2 id="dashboard-heading">Состояние сервера</h2>
+                        <p>Игровые сервисы, активность игроков и задачи, которые требуют внимания.</p>
+                        <div class="operations-meta"><span id="dashboard-server-url">—</span><span id="dashboard-uptime">—</span></div>
                     </div>
-                    <div class="welcome-orbit" aria-hidden="true"><span>o!</span></div>
+                    <div id="dashboard-health" class="operations-services"></div>
+                    <div class="command-live"><span class="pulse-orbit"><i></i></span><strong id="dashboard-online-now">0</strong><small>игроков онлайн</small></div>
                 </div>
-
                 <div id="dashboard-metrics" class="metrics-grid" aria-live="polite"></div>
-
-                <div class="dashboard-grid">
-                    <article class="panel">
-                        <div class="panel-header">
-                            <div><p class="eyebrow">Сервисы</p><h3>Состояние системы</h3></div>
-                            <button class="text-button" type="button" data-go="system">Подробнее</button>
-                        </div>
-                        <div id="dashboard-health" class="health-list"></div>
+                <div class="dashboard-visual-grid">
+                    <article class="panel chart-panel chart-panel-wide">
+                        <div class="panel-header"><div><span class="panel-kicker">24 часа</span><h3>Онлайн игроков</h3></div><strong id="dashboard-online-peak" class="chart-summary">—</strong></div>
+                        <div id="dashboard-online-chart" class="admin-chart"></div>
                     </article>
-                    <article class="panel">
-                        <div class="panel-header">
-                            <div><p class="eyebrow">Карты</p><h3>Требуют внимания</h3></div>
-                            <button class="text-button" type="button" data-go="inbox" data-capability="ranker">Открыть все</button>
-                        </div>
+                    <article class="panel chart-panel">
+                        <div class="panel-header"><div><span class="panel-kicker">24 часа</span><h3>Результаты</h3></div><strong id="dashboard-score-total" class="chart-summary">—</strong></div>
+                        <div id="dashboard-score-chart" class="admin-chart is-compact"></div>
+                    </article>
+                    <article class="panel chart-panel">
+                        <div class="panel-header"><div><span class="panel-kicker">14 дней</span><h3>Новые игроки</h3></div><strong id="dashboard-user-total" class="chart-summary">—</strong></div>
+                        <div id="dashboard-user-chart" class="admin-chart is-compact"></div>
+                    </article>
+                    <article class="panel somsai-ops-card">
+                        <div class="panel-header"><div><span class="panel-kicker">SOMSAI</span><h3>Игровой контур</h3></div><button class="text-button" type="button" data-go="somsai">Открыть</button></div>
+                        <div id="dashboard-somsai-status" class="ops-stat-list"></div>
+                    </article>
+                    <article class="panel event-card">
+                        <div class="panel-header"><div><span class="panel-kicker">Bancho sync</span><h3>Требуют внимания</h3></div><button class="text-button" type="button" data-go="inbox" data-capability="administrator">Все события</button></div>
                         <div id="dashboard-inbox" class="empty-state compact"><span class="empty-icon">✓</span><strong>Пока всё спокойно</strong><p>Новых событий нет.</p></div>
                     </article>
                 </div>
@@ -342,7 +348,7 @@
                     <button class="button button-primary is-active" type="button" data-somsai-page="storage">Хранилище карт</button>
                     <button class="button button-secondary" type="button" data-somsai-page="add">Добавить карту</button>
                     <button class="button button-secondary" type="button" data-somsai-page="import">Импорт маппула</button>
-                    <button id="somsai-refresh" class="button button-secondary" type="button">Обновить базу</button>
+                    <button id="somsai-refresh" class="button button-secondary somsai-refresh-control" type="button">Обновить базу</button>
                 </div>
                 <article id="somsai-storage-page" class="panel stack somsai-subpage">
                     <div class="somsai-category-tabs">
@@ -351,6 +357,25 @@
                         <button type="button" data-somsai-category="FM">Freemode</button><button type="button" data-somsai-category="TB">Tiebreaker</button>
                     </div>
                     <div id="somsai-slot-tabs" class="somsai-slot-tabs"></div>
+                    <div class="somsai-map-filters" role="search" aria-label="Фильтры хранилища карт">
+                        <label class="field somsai-map-search"><span>Поиск</span><input id="somsai-map-search" type="search" maxlength="100" placeholder="Название, исполнитель, сложность или ID"></label>
+                        <label class="field"><span>Ранг</span><select id="somsai-map-rank"><option value="">Все ранги</option></select></label>
+                        <label class="field"><span>Источник</span><select id="somsai-map-source"><option value="">Все источники</option><option value="manual">Добавлено вручную</option><option value="collector_tournament">osu!Collector · турнир</option><option value="collector_collection">osu!Collector · коллекция</option></select></label>
+                        <button id="somsai-map-advanced-toggle" class="button button-secondary" type="button" aria-expanded="false">Расширенный поиск</button>
+                        <button id="somsai-map-filters-clear" class="button button-secondary" type="button">Сбросить</button>
+                    </div>
+                    <div class="somsai-filter-actions">
+                        <button id="somsai-refresh-category" class="button button-secondary somsai-refresh-control" type="button">Обновить NM1</button>
+                    </div>
+                    <div id="somsai-map-advanced" class="somsai-map-advanced" hidden>
+                        <div class="somsai-range"><span>Звёзды</span><input data-somsai-filter="stars_min" type="number" min="0" step="0.01" placeholder="от"><input data-somsai-filter="stars_max" type="number" min="0" step="0.01" placeholder="до"></div>
+                        <div class="somsai-range"><span>BPM</span><input data-somsai-filter="bpm_min" type="number" min="0" step="1" placeholder="от"><input data-somsai-filter="bpm_max" type="number" min="0" step="1" placeholder="до"></div>
+                        <div class="somsai-range"><span>Длина, сек.</span><input data-somsai-filter="length_min" type="number" min="0" step="1" placeholder="от"><input data-somsai-filter="length_max" type="number" min="0" step="1" placeholder="до"></div>
+                        <div class="somsai-range"><span>CS</span><input data-somsai-filter="cs_min" type="number" min="0" max="10" step="0.1" placeholder="от"><input data-somsai-filter="cs_max" type="number" min="0" max="10" step="0.1" placeholder="до"></div>
+                        <div class="somsai-range"><span>AR</span><input data-somsai-filter="ar_min" type="number" min="0" max="12" step="0.1" placeholder="от"><input data-somsai-filter="ar_max" type="number" min="0" max="12" step="0.1" placeholder="до"></div>
+                        <div class="somsai-range"><span>OD</span><input data-somsai-filter="od_min" type="number" min="0" max="12" step="0.1" placeholder="от"><input data-somsai-filter="od_max" type="number" min="0" max="12" step="0.1" placeholder="до"></div>
+                        <div class="somsai-range"><span>HP</span><input data-somsai-filter="hp_min" type="number" min="0" max="10" step="0.1" placeholder="от"><input data-somsai-filter="hp_max" type="number" min="0" max="10" step="0.1" placeholder="до"></div>
+                    </div>
                     <div class="panel-header"><div><h3 id="somsai-storage-title">NM1</h3><p id="somsai-storage-count" class="muted"></p></div><div class="pagination"><button id="somsai-maps-prev" class="button button-secondary" type="button">Назад</button><span id="somsai-maps-page"></span><button id="somsai-maps-next" class="button button-secondary" type="button">Дальше</button></div></div>
                     <div id="somsai-map-grid" class="somsai-map-grid" aria-live="polite"></div>
                 </article>
@@ -364,7 +389,8 @@
                 <article id="somsai-import-page" class="panel stack somsai-subpage" hidden>
                     <div class="panel-header"><div><h3>Импорт маппула</h3><p class="muted">osu!Collector используется только для списка ID. Статы каждой карты загружаются с Bancho.</p></div><a href="https://osucollector.com/tournaments" target="_blank" rel="noopener noreferrer">osu!Collector ↗</a></div>
                     <label class="field"><span>Ссылка на osu!Collector</span><input id="somsai-warehouse-import-url" type="url" placeholder="https://osucollector.com/tournaments/1641"></label>
-                    <div class="form-grid"><label class="field"><span>Раунд</span><select id="somsai-warehouse-import-round"><option value="__all__">Все раунды</option></select></label><div class="button-row"><button id="somsai-warehouse-read" class="button button-secondary" type="button">Считать</button><button id="somsai-warehouse-import" class="button button-primary" type="button" disabled>Импортировать</button></div></div>
+                    <div class="field"><span>Стадии турнира</span><div id="somsai-warehouse-import-rounds" class="somsai-round-picker"><span class="muted">Сначала считайте источник</span></div></div>
+                    <div class="button-row"><button id="somsai-warehouse-read" class="button button-secondary" type="button">Считать</button><button id="somsai-warehouse-import" class="button button-primary" type="button" disabled>Импортировать выбранные</button></div>
                     <div id="somsai-warehouse-import-result" class="stack" aria-live="polite"></div>
                 </article>
                 <p id="somsai-refresh-status" class="muted" aria-live="polite"></p>
@@ -418,6 +444,19 @@
                     <label class="field"><span>Причина изменения (необязательно)</span><textarea id="detail-reason" maxlength="500" rows="2" placeholder="Пустое поле будет записано как no reason"></textarea></label>
                     <button id="user-save" class="button button-primary" type="submit">Сохранить изменения</button>
                 </form>
+
+                <section id="somsai-ban-section" class="danger-zone">
+                    <div><strong>SOMSAI matchmaking ban</strong><p id="somsai-ban-status">No active ban.</p></div>
+                    <div class="stack">
+                        <div class="button-row">
+                            <label class="field"><span>Penalty level</span><input id="somsai-ban-level" type="number" min="1" max="13" value="1"></label>
+                            <button id="somsai-ban-apply" class="button button-danger-quiet" type="button">Apply ban</button>
+                            <button id="somsai-ban-cancel" class="button button-secondary" type="button">Cancel current ban</button>
+                            <button id="somsai-ban-reset" class="button button-secondary" type="button">Reset escalation</button>
+                        </div>
+                        <label class="field"><span>Reason</span><input id="somsai-ban-reason" type="text" maxlength="500"></label>
+                    </div>
+                </section>
 
                 <section id="password-section" class="danger-zone" hidden>
                     <div><strong>Сменить пароль</strong><p>Все активные сессии пользователя будут завершены.</p></div>
@@ -481,6 +520,6 @@
     </dialog>
 
     <div id="toast-region" class="toast-region" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="./app.js?v=negative-pp-1" defer></script>
+    <script src="./app.js?v=admin-console-8" defer></script>
 </body>
 </html>

@@ -18,7 +18,7 @@ namespace osu.Game.Rulesets.EnhancedAuth.UI;
 // Native carousel/search/collections, with selection committed to the compilation on return.
 public sealed partial class SomsMarathonSongSelect : SongSelect
 {
-    public override string Title => "Марафон · Выбор песен";
+    public override string Title => "Marathon · Song Selection";
     private readonly int mode, capacity;
     private readonly Action<IReadOnlyList<BeatmapInfo>> completed;
     private readonly List<BeatmapInfo> chosen = new();
@@ -65,8 +65,8 @@ public sealed partial class SomsMarathonSongSelect : SongSelect
     {
         bool correctMode = Beatmap.Value.BeatmapInfo.Ruleset.OnlineID == mode && Ruleset.Value.OnlineID == mode;
         add.Enabled.Value = !committed && chosen.Count < capacity && correctMode;
-        add.TooltipText = chosen.Count >= capacity ? "В марафоне может быть до 20 песен"
-            : !correctMode ? "Выберите карту исходного режима марафона" : "Добавить выбранную сложность в марафон";
+        add.TooltipText = chosen.Count >= capacity ? "A marathon can contain up to 20 songs"
+            : !correctMode ? "Select a beatmap from the marathon ruleset" : "Add the selected difficulty to the marathon";
     }
 
     protected override void OnStart()
@@ -81,7 +81,7 @@ public sealed partial class SomsMarathonSongSelect : SongSelect
 
     public override IReadOnlyList<ScreenFooterButton> CreateFooterButtons() => base.CreateFooterButtons()
         .Where(button => button is not FooterButtonMods)
-        .Append(new ScreenFooterButton { Text = "Готово", Icon = osu.Framework.Graphics.Sprites.FontAwesome.Solid.Check, Action = () => this.Exit() }).ToArray();
+        .Append(new ScreenFooterButton { Text = "Done", Icon = osu.Framework.Graphics.Sprites.FontAwesome.Solid.Check, Action = () => this.Exit() }).ToArray();
 
     public override void OnEntering(ScreenTransitionEvent e) { base.OnEntering(e); add.Appear(); }
     public override void OnSuspending(ScreenTransitionEvent e) { base.OnSuspending(e); add.Disappear(); }
@@ -101,7 +101,7 @@ public sealed partial class SomsMarathonSongSelect : SongSelect
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            Text = "Добавить в марафон";
+            Text = "Add to marathon";
             foreach (var caption in ButtonContent.Children.OfType<OsuSpriteText>().Where(text => text.Text.ToString() != "+"))
                 caption.Text = Text;
         }

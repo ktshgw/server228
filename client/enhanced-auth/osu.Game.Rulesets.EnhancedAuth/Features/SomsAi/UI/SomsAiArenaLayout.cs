@@ -12,6 +12,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Online.Rooms;
+using osu.Game.Online.Multiplayer;
 using osu.Game.Online.Chat;
 using osu.Game.Overlays.Chat;
 using osu.Game.Rulesets.EnhancedAuth.Online;
@@ -48,6 +49,8 @@ public partial class SomsAiScreen
     private Container[] arenaPages = Array.Empty<Container>();
     private ArenaButton[] arenaTabs = Array.Empty<ArenaButton>();
     private double nextArenaClockUpdate;
+    private MatchStartCountdown? arenaStartCountdown;
+    private double arenaStartCountdownReceivedAt;
 
     private void buildArenaLayout()
     {
@@ -65,7 +68,7 @@ public partial class SomsAiScreen
             new Container { RelativeSizeAxes = Axes.Both, Child = historyScroll, Alpha = 0 },
         };
         var tabRow = new Container { RelativeSizeAxes = Axes.X, Height = 30, Y = 132 };
-        arenaTabs = new[] { "Игроки", "Чат", "Раунды" }.Select((caption, index) =>
+        arenaTabs = new[] { "Players", "Chat", "Rounds" }.Select((caption, index) =>
         {
             var button = new ArenaButton { Text = caption, Height = 30, RelativeSizeAxes = Axes.X, Width = 1f / 3,
                 RelativePositionAxes = Axes.X, X = index / 3f, Action = () => selectArenaTab(index) };
@@ -89,10 +92,10 @@ public partial class SomsAiScreen
                             RelativeSizeAxes = Axes.X, Height = 120, Padding = new MarginPadding(10),
                             Children = new Drawable[]
                             {
-                                arenaLabel("ВЫБРАННАЯ КАРТА", 11, arenaMuted),
+                                arenaLabel("SELECTED BEATMAP", 11, arenaMuted),
                                 new OsuClickableContainer { RelativeSizeAxes = Axes.X, Height = 24, Y = 21,
                                     Action = () => { var slot = state.Match?.Slots.FirstOrDefault(s => s.Id == inspectedSlotId) ?? state.Match?.Slots.FirstOrDefault(s => s.Id == SelectedSlotId(state.Match)); if (slot != null) openMap(slot); },
-                                    Child = arenaMapName = arenaLine("Выберите карту из пула", 17, 0) },
+                                    Child = arenaMapName = arenaLine("Select a beatmap from the pool", 17, 0) },
                                 arenaMapDifficulty = arenaLine("", 12, 44),
                                 arenaMapStats = new OsuTextFlowContainer(t => t.Font = OsuFont.GetFont(size: 13))
                                 { RelativeSizeAxes = Axes.X, AutoSizeAxes = Axes.Y, Y = 64, Colour = Color4.White },
@@ -130,8 +133,8 @@ public partial class SomsAiScreen
                 new Container { RelativeSizeAxes = Axes.Both, Padding = new MarginPadding(12), Child = oceanScroll },
             },
         };
-        arenaPrimary = new ArenaButton(true) { Text = "Ожидание", Enabled = { Value = false } };
-        var leave = new ArenaButton { Text = "Покинуть матч", Action = leaveArenaMatch };
+        arenaPrimary = new ArenaButton(true) { Text = "Waiting", Enabled = { Value = false } };
+        var leave = new ArenaButton { Text = "Leave match", Action = leaveArenaMatch };
         StatusText.Font = OsuFont.GetFont(size: 13);
         StatusText.Colour = arenaMuted;
         arenaHint = arenaLine("", 18, 0);
@@ -157,7 +160,7 @@ public partial class SomsAiScreen
                             RelativeSizeAxes = Axes.X, Height = 42, Y = 108,
                             Children = new Drawable[]
                             {
-                                arenaStage = arenaLabel("МАППУЛ", 18, Color4.White),
+                                arenaStage = arenaLabel("MAP POOL", 18, Color4.White),
                                 arenaPool = arenaLine("", 12, 23),
                                 arenaClock = new OsuSpriteText { Anchor = Anchor.TopRight, Origin = Anchor.TopRight, Font = OsuFont.GetFont(size: 24, weight: FontWeight.Bold), Colour = SomsAiOceanTheme.Gold },
                                 categoryTabs,
@@ -189,7 +192,7 @@ public partial class SomsAiScreen
     {
         if (state.Match is not { } match) return;
         if (match.IsFinished || match.Stage == "waiting") action("leave_match");
-        else dialogs.Push(new SomsAiOceanConfirmDialog("Сдаться? Вашей команде будет засчитано поражение.", () => action("leave_match")));
+        else dialogs.Push(new SomsAiOceanConfirmDialog("Forfeit? Your team will receive a loss.", () => action("leave_match")));
     }
 
     private void setArenaPrimary(string caption, Action? action = null)
@@ -211,7 +214,7 @@ public partial class SomsAiScreen
         arenaScore.Text = $"{match.Wins.ElementAtOrDefault(0)} : {match.Wins.ElementAtOrDefault(1)}";
         arenaFormat.Text = $"SOMSAI  /  {match.Format}  /  BO{match.BestOf}";
         arenaStage.Text = stageLabel(match.Stage).ToUpperInvariant();
-        arenaPool.Text = (match.Ranked ? "RANKED" : "CUSTOM") + "  /  " + (match.PoolSelected ? match.PoolName : "Выбор турнирного пула");
+        arenaPool.Text = (match.Ranked ? "RANKED" : "CUSTOM") + "  /  " + (match.PoolSelected ? match.PoolName : "Tournament pool selection");
         arenaPool.Width = .8f;
         var player = match.Teams.SelectMany(t => t.Members).FirstOrDefault(p => p.Id == match.TurnUserId);
         bool myTurn = match.TurnUserId == localId;
@@ -219,11 +222,11 @@ public partial class SomsAiScreen
         int total = match.Teams.Sum(t => t.Members.Count);
         arenaHint.Text = match.Stage switch
         {
-            "banning" or "picking" => myTurn ? "Ваш ход — выберите карту" : $"Ход: {player?.OfficialUsername ?? player?.Username ?? "соперник"}",
-            "ready" => $"Готовы {ready}/{total}" + (pendingReady ? " · ждём загрузку карты…" : ""),
-            "playing" => "Матч идёт · удачи!",
-            "ended" => "Матч завершён",
-            "pool_select" => "Выбор пула · голосуют капитаны",
+            "banning" or "picking" => myTurn ? "Your turn — select a beatmap" : $"Turn: {player?.OfficialUsername ?? player?.Username ?? "opponent"}",
+            "ready" => $"Ready {ready}/{total}" + (pendingReady ? " · waiting for the beatmap to load…" : ""),
+            "playing" => "Match in progress · good luck!",
+            "ended" => "Match finished",
+            "pool_select" => "Pool selection · captains are voting",
             _ => stageLabel(match.Stage),
         };
         arenaHint.Colour = myTurn && match.Stage is "banning" or "picking" ? SomsAiOceanTheme.Gold : Color4.White;
@@ -235,12 +238,12 @@ public partial class SomsAiScreen
             arenaMapDifficulty.Text = $"{selected.Artist} · {selected.Version}";
             arenaMapStats.Text = selected.DisplayStats is { } stats
                 ? $"{stats.Stars:0.00}★   {stats.Bpm:0.#} BPM   {TimeSpan.FromSeconds(stats.Length):m\\:ss}\nCS {stats.Cs:0.#}  AR {stats.Ar:0.#}  OD {stats.Od:0.#}  HP {stats.Hp:0.#}"
-                : $"{selected.Stars:0.00}★ · расчёт характеристик…";
+                : $"{selected.Stars:0.00}★ · calculating attributes…";
         }
         else
         {
-            arenaMapName.Text = "Выберите карту из пула";
-            arenaMapDifficulty.Text = "Прослушивание — кнопка ▶ на карточке";
+            arenaMapName.Text = "Select a beatmap from the pool";
+            arenaMapDifficulty.Text = "Preview — use the ▶ button on the card";
             arenaMapStats.Text = "";
         }
         string? coverKey = selected?.BeatmapSetId.ToString();
@@ -255,7 +258,7 @@ public partial class SomsAiScreen
         if (match.Stage is "banning" or "picking")
         {
             bool canChoose = myTurn && selected?.Status == "available";
-            setArenaPrimary(canChoose ? (match.Stage == "banning" ? "Забанить " : "Пикнуть ") + selected!.Id : myTurn ? "Выберите карту" : "Ход соперника",
+            setArenaPrimary(canChoose ? (match.Stage == "banning" ? "Ban " : "Pick ") + selected!.Id : myTurn ? "Select a beatmap" : "Opponent's turn",
                 canChoose ? () => action(match.Stage == "banning" ? "ban" : "pick", new Newtonsoft.Json.Linq.JObject { ["slot_id"] = selected!.Id }, match.Revision) : null);
         }
         updateArenaRoom();
@@ -271,13 +274,57 @@ public partial class SomsAiScreen
         }
     }
 
+    private void initialiseArenaCountdown()
+    {
+        if (!matchOnly) return;
+        Client.CountdownStarted += onArenaCountdownStarted;
+        Client.CountdownStopped += onArenaCountdownStopped;
+        if (Client.Room?.ActiveCountdowns.OfType<MatchStartCountdown>().FirstOrDefault() is { } countdown)
+            onArenaCountdownStarted(countdown);
+    }
+
+    private void disposeArenaCountdown()
+    {
+        if (Client == null) return;
+        Client.CountdownStarted -= onArenaCountdownStarted;
+        Client.CountdownStopped -= onArenaCountdownStopped;
+    }
+
+    private void onArenaCountdownStarted(MultiplayerCountdown countdown)
+    {
+        if (countdown is not MatchStartCountdown start) return;
+        OnUpdateThread(() =>
+        {
+            arenaStartCountdown = start;
+            arenaStartCountdownReceivedAt = Time.Current;
+            nextArenaClockUpdate = 0;
+        });
+    }
+
+    private void onArenaCountdownStopped(MultiplayerCountdown countdown)
+    {
+        if (countdown is not MatchStartCountdown) return;
+        OnUpdateThread(() =>
+        {
+            if (arenaStartCountdown?.ID == countdown.ID)
+                arenaStartCountdown = null;
+        });
+    }
+
     protected override void Update()
     {
         base.Update();
         if (!matchOnly || arenaClock == null || Time.Current < nextArenaClockUpdate) return;
-        nextArenaClockUpdate = Time.Current + 200;
+        nextArenaClockUpdate = Time.Current + 100;
         arenaClock.Text = state.Match?.Deadline is { } deadline
             ? TimeSpan.FromSeconds(Math.Max(0, Math.Ceiling((deadline - DateTimeOffset.UtcNow).TotalSeconds))).ToString(@"mm\:ss") : "";
+        if (arenaStartCountdown != null)
+        {
+            double elapsed = Time.Current - arenaStartCountdownReceivedAt;
+            int seconds = Math.Max(0, (int)Math.Ceiling((arenaStartCountdown.TimeRemaining.TotalMilliseconds - elapsed) / 1000));
+            arenaHint.Text = $"All players ready · match starts in {seconds}";
+            arenaHint.Colour = SomsAiOceanTheme.Gold;
+        }
         if (arenaPrimary.Action != null) arenaPrimary.Enabled.Value = actionRequest == null && !preparingAction;
     }
 
@@ -408,8 +455,8 @@ public partial class SomsAiScreen
                 RelativeSizeAxes = Axes.X, Height = 32,
                 Children = new Drawable[]
                 {
-                    new ArenaButton { Text = "Маппул", Width = .5f, Height = 30, Action = () => showRoom = false },
-                    new ArenaButton { Text = "Комната", Width = .5f, Height = 30, RelativePositionAxes = Axes.X, X = .5f, Action = () => showRoom = true },
+                    new ArenaButton { Text = "Map pool", Width = .5f, Height = 30, Action = () => showRoom = false },
+                    new ArenaButton { Text = "Room", Width = .5f, Height = 30, RelativePositionAxes = Axes.X, X = .5f, Action = () => showRoom = true },
                 },
             } };
         }

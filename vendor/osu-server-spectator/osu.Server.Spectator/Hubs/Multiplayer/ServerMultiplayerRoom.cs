@@ -381,7 +381,7 @@ namespace osu.Server.Spectator.Hubs.Multiplayer
                     return ChangeMatchType(new RankedPlayMatchController(this, dbFactory, eventDispatcher));
 
                 case MatchType.TeamVersus:
-                    if (Settings.Name.StartsWith(SomsaiMatchController.ROOM_PREFIX, StringComparison.Ordinal))
+                    if (SomsaiMatchController.IsManagedRoomName(Settings.Name))
                         return ChangeMatchType(new SomsaiMatchController(this, dbFactory, eventDispatcher, roomController, loggerFactory));
                     return ChangeMatchType(new TeamVersusMatchController(this, dbFactory, eventDispatcher));
 

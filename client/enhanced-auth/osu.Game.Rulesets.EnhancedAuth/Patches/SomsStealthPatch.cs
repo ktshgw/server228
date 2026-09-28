@@ -45,15 +45,6 @@ public static class SomsStealthAttachPatch
     }
 }
 
-[HarmonyPatch(typeof(DebugSection), MethodType.Constructor)]
-public static class SomsStealthSettingsPatch
-{
-    static void Postfix(DebugSection __instance)
-    {
-        if (SomsClientPreferences.Enabled) __instance.Add(new SomsStealthSettings());
-    }
-}
-
 // All substitutions below are on drawables or detached display statistics, never the
 // account model, request payload, Realm, authentication configuration or server state.
 public static class SomsStealthPresentation
@@ -221,7 +212,7 @@ public static class SomsStealthProfileRankPatch
         display.UserStatistics.Value = SomsStealthPresentation.Statistics(__instance.User.Value!.User.Statistics);
         var country = (ProfileValueDisplay)AccessTools.Field(typeof(MainDetails), "detailCountryRank").GetValue(__instance)!;
         country.Content.Text = SomsStealthSession.Current?.DisplayCountryRank is { } rank ? $"#{rank:N0}" : "—";
-        country.Content.TooltipText = SomsStealthSession.Current?.CountryRankEstimated == true ? "Приблизительное место в рейтинге страны" : "";
+        country.Content.TooltipText = SomsStealthSession.Current?.CountryRankEstimated == true ? "Estimated country ranking" : "";
     }
 }
 

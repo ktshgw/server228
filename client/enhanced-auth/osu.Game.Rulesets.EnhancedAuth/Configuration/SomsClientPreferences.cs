@@ -14,9 +14,21 @@ namespace osu.Game.Rulesets.EnhancedAuth.Configuration;
 
 public enum SomsSliderMissDisplay
 {
-    [Description("Нет")] None,
-    [Description("50 и 100")] Judgements,
-    [Description("По умолчанию")] Default,
+    [Description("No")] None,
+    [Description("50/100")] Judgements,
+    [Description("Default")] Default,
+}
+
+public enum SomsBeatmapMirror
+{
+    Default = 0,
+    // Value 1 used to be Auto. Keep the remaining numeric values stable so
+    // existing preference files do not silently select another mirror.
+    Beatconnect = 2,
+    Mino = 3,
+    Nerinyan = 4,
+    Hinamizawa = 5,
+    OsuDirect = 6,
 }
 
 // Values used by the previous dropdown, retained only for migration of local JSON.
@@ -30,8 +42,8 @@ internal enum SomsLeaderboardCollapse
 /// <summary>Local preferences separate from authentication and from editable skin files.</summary>
 public sealed class SomsClientPreferences
 {
-    public const int SkinSlotCount = 5;
-    public const string FileName = "soms_client_preferences.json";
+    public const int SKIN_SLOT_COUNT = 5;
+    public const string FILE_NAME = "soms_client_preferences.json";
 
     private static readonly Lazy<SomsClientPreferences> instance = new(create);
     public static SomsClientPreferences Instance => instance.Value;
@@ -44,6 +56,7 @@ public sealed class SomsClientPreferences
     public readonly Bindable<bool> ForceSmoothCursorTrail = new(false);
     public readonly Bindable<bool> SuddenDeathRestart = new(false);
     public readonly Bindable<bool> ShowMapPP = new(false);
+    public readonly Bindable<bool> IgnoreRecommendedDifficulty = new(false);
     public readonly Bindable<bool> EnhancedVolume = new(false);
     public readonly Bindable<bool> StealthMode = new(false);
     public readonly Bindable<bool> ShowSliderFollowCircle = new(true);
@@ -51,9 +64,11 @@ public sealed class SomsClientPreferences
     public readonly Bindable<bool> SeparateInterfaceScales = new(false);
     public readonly BindableFloat MenuInterfaceScale = new(1) { MinValue = 0.1f, MaxValue = 2 };
     public readonly BindableFloat GameplayInterfaceScale = new(1) { MinValue = 0.1f, MaxValue = 2 };
-    public readonly Bindable<Guid>[] SkinSlots = Enumerable.Range(0, SkinSlotCount).Select(_ => new Bindable<Guid>(Guid.Empty)).ToArray();
+    public readonly Bindable<Guid>[] SkinSlots = Enumerable.Range(0, SKIN_SLOT_COUNT).Select(_ => new Bindable<Guid>(Guid.Empty)).ToArray();
     public readonly Bindable<bool> ModSkinsEnabled = new(false);
+    public readonly Bindable<bool> AlwaysRandomSkinEnabled = new(false);
     public readonly Bindable<bool> TeamVsInLeaderboards = new(false);
+    public readonly Bindable<SomsBeatmapMirror> BeatmapMirror = new(SomsBeatmapMirror.Default);
     public readonly Bindable<Guid>[] ModSkins = Enumerable.Range(0, 5).Select(_ => new Bindable<Guid>(Guid.Empty)).ToArray();
 
     private readonly string filePath;
@@ -64,7 +79,7 @@ public sealed class SomsClientPreferences
     {
         var config = Traverse.Create(GlobalConfigManager.GameBase).Property("LocalConfig").GetValue<OsuConfigManager>();
         var storage = Traverse.Create(config).Field("storage").GetValue<Storage>();
-        return new SomsClientPreferences(storage.GetFullPath(FileName));
+        return new SomsClientPreferences(storage.GetFullPath(FILE_NAME));
     }
 
     public SomsClientPreferences(string filePath)
@@ -86,6 +101,7 @@ public sealed class SomsClientPreferences
                     ForceSmoothCursorTrail.Value = data.ForceSmoothCursorTrail;
                     SuddenDeathRestart.Value = data.SuddenDeathRestart;
                     ShowMapPP.Value = data.ShowMapPP;
+                    IgnoreRecommendedDifficulty.Value = data.IgnoreRecommendedDifficulty;
                     EnhancedVolume.Value = data.EnhancedVolume;
                     StealthMode.Value = data.StealthMode;
                     ShowSliderFollowCircle.Value = data.ShowSliderFollowCircle;
@@ -94,10 +110,12 @@ public sealed class SomsClientPreferences
                     MenuInterfaceScale.Value = finiteScale(data.MenuInterfaceScale);
                     GameplayInterfaceScale.Value = finiteScale(data.GameplayInterfaceScale);
                     ModSkinsEnabled.Value = data.ModSkinsEnabled;
+                    AlwaysRandomSkinEnabled.Value = data.AlwaysRandomSkinEnabled;
                     TeamVsInLeaderboards.Value = data.TeamVsInLeaderboards;
+                    BeatmapMirror.Value = Enum.IsDefined(data.BeatmapMirror) ? data.BeatmapMirror : SomsBeatmapMirror.Default;
                     for (int i = 0; i < Math.Min(data.ModSkins?.Length ?? 0, ModSkins.Length); i++)
                         ModSkins[i].Value = data.ModSkins![i];
-                    for (int i = 0; i < Math.Min(data.SkinSlots?.Length ?? 0, SkinSlotCount); i++)
+                    for (int i = 0; i < Math.Min(data.SkinSlots?.Length ?? 0, SKIN_SLOT_COUNT); i++)
                         SkinSlots[i].Value = data.SkinSlots![i];
                 }
             }
@@ -120,6 +138,7 @@ public sealed class SomsClientPreferences
         ForceSmoothCursorTrail.BindValueChanged(_ => save());
         SuddenDeathRestart.BindValueChanged(_ => save());
         ShowMapPP.BindValueChanged(_ => save());
+        IgnoreRecommendedDifficulty.BindValueChanged(_ => save());
         EnhancedVolume.BindValueChanged(_ => save());
         StealthMode.BindValueChanged(_ => save());
         ShowSliderFollowCircle.BindValueChanged(_ => save());
@@ -130,7 +149,9 @@ public sealed class SomsClientPreferences
         foreach (var slot in SkinSlots)
             slot.BindValueChanged(_ => save());
         ModSkinsEnabled.BindValueChanged(_ => save());
+        AlwaysRandomSkinEnabled.BindValueChanged(_ => save());
         TeamVsInLeaderboards.BindValueChanged(_ => save());
+        BeatmapMirror.BindValueChanged(_ => save());
         foreach (var slot in ModSkins)
             slot.BindValueChanged(_ => save());
     }
@@ -153,6 +174,7 @@ public sealed class SomsClientPreferences
                     ForceSmoothCursorTrail = ForceSmoothCursorTrail.Value,
                     SuddenDeathRestart = SuddenDeathRestart.Value,
                     ShowMapPP = ShowMapPP.Value,
+                    IgnoreRecommendedDifficulty = IgnoreRecommendedDifficulty.Value,
                     EnhancedVolume = EnhancedVolume.Value,
                     StealthMode = StealthMode.Value,
                     ShowSliderFollowCircle = ShowSliderFollowCircle.Value,
@@ -162,7 +184,9 @@ public sealed class SomsClientPreferences
                     GameplayInterfaceScale = GameplayInterfaceScale.Value,
                     SkinSlots = SkinSlots.Select(slot => slot.Value).ToArray(),
                     ModSkinsEnabled = ModSkinsEnabled.Value,
+                    AlwaysRandomSkinEnabled = AlwaysRandomSkinEnabled.Value,
                     TeamVsInLeaderboards = TeamVsInLeaderboards.Value,
+                    BeatmapMirror = BeatmapMirror.Value,
                     ModSkins = ModSkins.Select(slot => slot.Value).ToArray(),
                 }, Formatting.Indented));
                 File.Move(temporary, filePath, overwrite: true);
@@ -183,6 +207,7 @@ public sealed class SomsClientPreferences
         public bool ForceSmoothCursorTrail { get; set; }
         public bool SuddenDeathRestart { get; set; }
         public bool ShowMapPP { get; set; }
+        public bool IgnoreRecommendedDifficulty { get; set; }
         public bool EnhancedVolume { get; set; }
         public bool StealthMode { get; set; }
         public bool ShowSliderFollowCircle { get; set; } = true;
@@ -194,7 +219,9 @@ public sealed class SomsClientPreferences
         public SomsLeaderboardCollapse? LeaderboardCollapse { get; set; }
         public Guid[]? SkinSlots { get; set; }
         public bool ModSkinsEnabled { get; set; }
+        public bool AlwaysRandomSkinEnabled { get; set; }
         public bool TeamVsInLeaderboards { get; set; }
+        public SomsBeatmapMirror BeatmapMirror { get; set; } = SomsBeatmapMirror.Default;
         public Guid[]? ModSkins { get; set; }
     }
 }

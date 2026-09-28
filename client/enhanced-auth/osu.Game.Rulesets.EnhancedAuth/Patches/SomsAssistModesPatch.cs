@@ -161,7 +161,7 @@ public static class SomsAssistIconPatch
         if (!SomsClientPreferences.Enabled || !SomsAssistModes.IsAssist(value)) return;
         var button = Traverse.Create(__instance).Field("ruleset").GetValue<ToolbarButton>();
         button.TooltipMain = value.ShortName == "osurx" ? "osu! Relax" : "osu! Autopilot";
-        button.TooltipSub = "Отдельный рейтинг SOMS!";
+        button.TooltipSub = "Separate SOMS! ranking";
         button.SetIcon(CreateIcon(value));
     }
 

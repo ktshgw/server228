@@ -67,11 +67,11 @@ public sealed partial class SomsMarathonPlayer : Player
 
 public sealed partial class SomsMarathonResultsScreen : ResultsScreen
 {
-    public override string Title => "Марафон · Результат";
+    public override string Title => "Marathon · Results";
     private readonly Func<Task<string>> submit;
     private readonly OsuSpriteText status = new()
     {
-        Text = "Сохраняем результат в таблице марафона…", Font = OsuFont.GetFont(size: 18), Shadow = true,
+        Text = "Saving the result to the marathon leaderboard…", Font = OsuFont.GetFont(size: 18), Shadow = true,
         Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre, Y = 18,
     };
     private bool submitting;
@@ -87,7 +87,7 @@ public sealed partial class SomsMarathonResultsScreen : ResultsScreen
         base.LoadComplete(); AddInternal(status);
         AddInternal(retry = new osu.Game.Graphics.UserInterface.ShearedButton
         {
-            Text = "Повторить сохранение", Width = 230, Height = 36,
+            Text = "Retry saving", Width = 230, Height = 36,
             Anchor = Anchor.TopRight, Origin = Anchor.TopRight, Position = new osuTK.Vector2(-15, 48),
             Action = save, Alpha = 0,
         });
@@ -98,7 +98,7 @@ public sealed partial class SomsMarathonResultsScreen : ResultsScreen
         if (submitting) return;
         submitting = true;
         try { string text = await submit(); Schedule(() => { status.Text = text; retry.Hide(); }); }
-        catch (Exception e) { Schedule(() => { status.Text = "Не удалось сохранить: " + e.GetBaseException().Message; retry.Show(); }); }
+        catch (Exception e) { Schedule(() => { status.Text = "Could not save: " + e.GetBaseException().Message; retry.Show(); }); }
         finally { submitting = false; }
     }
 }

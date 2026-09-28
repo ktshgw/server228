@@ -20,7 +20,7 @@ internal sealed partial class SomsAiPartyChat : Container
     private SomsAiDataRequest? request;
     private int? partyId;
     private long lastId;
-    private Channel channel = new() { Name = "Пати", MessagesLoaded = true };
+    private Channel channel = new() { Name = "Party", MessagesLoaded = true };
 
     public SomsAiPartyChat()
     {
@@ -30,7 +30,7 @@ internal sealed partial class SomsAiPartyChat : Container
                 Child = display = new StandAloneChatDisplay { RelativeSizeAxes = Axes.Both } },
             input = new StandAloneChatDisplay.ChatTextBox { RelativeSizeAxes = Axes.X, Height = 30,
                 Anchor = Anchor.BottomLeft, Origin = Anchor.BottomLeft, HoldFocus = false, LengthLimit = 500,
-                PlaceholderText = "Чат пати · пригласите друга" },
+                PlaceholderText = "Party chat · invite a friend" },
         };
         display.Channel.Value = channel;
         input.OnCommit += (_, _) => { if (partyId.HasValue && !string.IsNullOrWhiteSpace(input.Text)) fetch(input.Text); };
@@ -47,8 +47,8 @@ internal sealed partial class SomsAiPartyChat : Container
         partyId = id;
         lastId = 0;
         input.Text = "";
-        input.PlaceholderText = id.HasValue ? "Введите сообщение…" : "Чат пати · пригласите друга";
-        display.Channel.Value = channel = new Channel { Name = "Пати", MessagesLoaded = true };
+        input.PlaceholderText = id.HasValue ? "Enter a message…" : "Party chat · invite a friend";
+        display.Channel.Value = channel = new Channel { Name = "Party", MessagesLoaded = true };
     }
     private void fetch(string? message = null)
     {
@@ -70,9 +70,9 @@ internal sealed partial class SomsAiPartyChat : Container
                 lastId = fresh.Max(m => m.Id ?? 0);
             }
             if (message != null && input.Text == message) input.Text = "";
-            input.PlaceholderText = "Введите сообщение…";
+            input.PlaceholderText = "Enter a message…";
         });
-        current.Failure += _ => Schedule(() => { if (request == current) { request = null; input.PlaceholderText = "Ошибка связи · попробуйте ещё раз"; } });
+        current.Failure += _ => Schedule(() => { if (request == current) { request = null; input.PlaceholderText = "Connection error · try again"; } });
         api.Queue(current);
     }
     protected override void Dispose(bool isDisposing) { request?.Cancel(); base.Dispose(isDisposing); }

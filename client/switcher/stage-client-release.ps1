@@ -2,6 +2,7 @@
 param(
     [string]$OsuVersion = "2026.921.0",
     [string]$EnhancedAuthPath = "",
+    [string]$StartupHookPath = "",
     [string]$HarmonyPath = ""
 )
 
@@ -36,7 +37,11 @@ if (-not [string]::IsNullOrWhiteSpace($HarmonyPath)) {
     $harmony = Join-Path $enhancedAuthDirectory "0Harmony.dll"
 }
 
-$startupHook = Join-Path $workspace "client\startup-hook\bin\Release\net8.0\PrivateOsu.StartupHook.dll"
+if (-not [string]::IsNullOrWhiteSpace($StartupHookPath)) {
+    $startupHook = (Resolve-Path -LiteralPath $StartupHookPath).Path
+} else {
+    $startupHook = Join-Path $workspace "client\startup-hook\bin\Release\net8.0\PrivateOsu.StartupHook.dll"
+}
 $switcher = Join-Path $PSScriptRoot "dist\SOMS-switcher.exe"
 
 foreach ($path in @($enhancedAuth, $startupHook, $harmony, $switcher)) {
@@ -47,12 +52,6 @@ foreach ($path in @($enhancedAuth, $startupHook, $harmony, $switcher)) {
 
 $enhancedAuthHash = (Get-FileHash -LiteralPath $enhancedAuth -Algorithm SHA256).Hash.ToLowerInvariant()
 $startupHookHash = (Get-FileHash -LiteralPath $startupHook -Algorithm SHA256).Hash.ToLowerInvariant()
-$harmony = Join-Path (Split-Path -Parent $enhancedAuth) "0Harmony.dll"
-
-if (-not (Test-Path -LiteralPath $harmony -PathType Leaf)) {
-    throw "Required Harmony module is missing: $harmony"
-}
-
 $harmonyHash = (Get-FileHash -LiteralPath $harmony -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Host "0Harmony.dll: $harmonyHash"
 
@@ -63,7 +62,7 @@ $switcherType = $switcherAssembly.GetType('SomsSwitcher.MainForm', $true)
 $moduleLimitField = $switcherType.GetField('MaxModuleBytes', [Reflection.BindingFlags]'NonPublic,Static')
 if ($null -eq $moduleLimitField) { throw 'Cannot verify the published switcher module size limit.' }
 $moduleLimit = [long]$moduleLimitField.GetRawConstantValue()
-foreach ($modulePath in @($enhancedAuth, $startupHook)) {
+foreach ($modulePath in @($enhancedAuth, $startupHook, $harmony)) {
     $moduleSize = (Get-Item -LiteralPath $modulePath).Length
     if ($moduleSize -le 0 -or $moduleSize -gt $moduleLimit) {
         throw "Module size $moduleSize exceeds the shipped switcher limit $moduleLimit. Rebuild the switcher before publishing: $modulePath"

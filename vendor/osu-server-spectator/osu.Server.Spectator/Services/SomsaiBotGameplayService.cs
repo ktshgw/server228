@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.IO;
+using osu.Game.Online.API;
 using osu.Game.Online.Rooms;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Spectator;
@@ -71,7 +72,7 @@ public sealed class SomsaiBotGameplayService
         var attributes = ruleset.CreateDifficultyCalculator(working).Calculate(mods);
         double aim = (attributes as OsuDifficultyAttributes)?.AimDifficulty ?? 0;
         double speed = (attributes as OsuDifficultyAttributes)?.SpeedDifficulty ?? 0;
-        var playback = new SomsaiBotPlayback(roomId, item, config, states, hub, humanClocks, logger, playable, mods, attributes.StarRating, ruleset, ResultWriter,
+        var playback = new SomsaiBotPlayback(roomId, item, config, states, hub, humanClocks, logger, playable, working, mods, attributes.StarRating, ruleset, ResultWriter,
             aim + speed > 0 ? aim / (aim + speed) : null,
             item.RulesetID == 0 ? BotTechnicalFeatures.TryParse(file.Raw) : null,
             attributes is OsuDifficultyAttributes osuAttributes ? 1 - osuAttributes.SliderFactor : null);
@@ -107,7 +108,7 @@ public sealed class SomsaiBotPlayback : IDisposable
     internal SomsaiBotPlayback(long roomId, MultiplayerPlaylistItem item, SomsaiRoomState config,
                                EntityStore<SpectatorClientState> states, IHubContext<SpectatorHub, ISpectatorClient> hub,
                                ConcurrentDictionary<int, SomsaiBotPlayback> clocks, ILogger logger,
-                               IBeatmap beatmap, Mod[] mods, double stars, osu.Game.Rulesets.Ruleset ruleset,
+                               IBeatmap beatmap, WorkingBeatmap working, Mod[] mods, double stars, osu.Game.Rulesets.Ruleset ruleset,
                                Func<long, long, IEnumerable<SomsaiBotScore>, Task<SomsaiRoomState>> resultWriter, double? aimRatio = null,
                                BotTechnicalFeatures? technical = null, double? sliderControl = null)
     {
@@ -128,13 +129,31 @@ public sealed class SomsaiBotPlayback : IDisposable
             string tier = bot.Level.Equals("top1000", StringComparison.OrdinalIgnoreCase) ? "Expert" : bot.Level;
             if (!Enum.TryParse<SomsAiBotLevel>(tier, true, out var level))
                 throw new InvalidDataException("Invalid bot level.");
-            var profile = bot.SkillProfile ?? new BotSkillProfile { Rank = bot.GlobalRank };
-            var simulation = new SomsAiBotSimulation(ruleset, beatmap, mods, level, stars, bot.Seed ^ checked((int)item.ID), profile, aimRatio, technical, sliderControl);
-            var score = new ScoreInfo { User = new APIUser { Id = bot.UserId }, BeatmapInfo = beatmap.BeatmapInfo, Ruleset = ruleset.RulesetInfo, Mods = mods };
+            var profile = bot.AiProfile ?? BotSkillModel.Fallback(level.ToString());
+            var botMods = mods.ToList();
+            string preference = config.MapSlot?.Equals("TB", StringComparison.OrdinalIgnoreCase) == true
+                ? profile.TiebreakerPreference ?? ""
+                : config.MapSlot?.StartsWith("FM", StringComparison.OrdinalIgnoreCase) == true
+                    ? profile.FreemodPreference ?? ""
+                    : "";
+            if (item.AllowedMods.Any() && !string.IsNullOrEmpty(preference))
+            {
+                foreach (string acronym in Enumerable.Range(0, preference.Length / 2)
+                             .Select(i => preference.Substring(i * 2, 2)))
+                {
+                    var selected = ruleset.CreateAllMods().FirstOrDefault(mod => mod.Acronym == acronym);
+                    if (selected != null && botMods.All(mod => mod.Acronym != acronym)) botMods.Add(selected);
+                }
+            }
+            var personalMods = botMods.ToArray();
+            var personalBeatmap = working.GetPlayableBeatmap(ruleset.RulesetInfo, personalMods);
+            var simulation = new SomsAiBotSimulation(ruleset, personalBeatmap, personalMods, level, stars, bot.Seed ^ checked((int)item.ID), profile, aimRatio, technical, sliderControl, config.MapSlot);
+            var score = new ScoreInfo { User = new APIUser { Id = bot.UserId }, BeatmapInfo = personalBeatmap.BeatmapInfo, Ruleset = ruleset.RulesetInfo, Mods = personalMods };
             simulation.Processor.PopulateScore(score);
             players.Add(bot.UserId, (simulation, score, new SpectatorState
             {
-                BeatmapID = item.BeatmapID, RulesetID = item.RulesetID, Mods = item.RequiredMods,
+                BeatmapID = item.BeatmapID, RulesetID = item.RulesetID,
+                Mods = personalMods.Select(mod => new APIMod { Acronym = mod.Acronym }).ToArray(),
                 MaximumStatistics = new(score.MaximumStatistics), State = SpectatedUserState.Playing,
             }));
         }

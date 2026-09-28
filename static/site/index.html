@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700;6..12,800;6..12,900&amp;display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css?v=40">
+    <link rel="stylesheet" href="./styles.css?v=map-moderation-dialog-1">
     <link rel="stylesheet" href="./notifications.css?v=1">
 </head>
 <body data-route="home">
@@ -79,6 +79,7 @@
                     </div>
                     <nav class="user-menu-nav" aria-label="Меню пользователя">
                         <button id="user-menu-profile" type="button"><span aria-hidden="true">●</span>Мой профиль</button>
+                        <button id="user-menu-friends" type="button"><span aria-hidden="true">♥</span>Друзья</button>
                         <button id="user-menu-settings" type="button"><span aria-hidden="true">⚙</span>Настройки</button>
                         <button id="user-menu-admin" type="button" hidden><span aria-hidden="true">◆</span>Админ-панель</button>
                         <button id="user-menu-logout" class="is-danger" type="button"><span aria-hidden="true">↪</span>Выйти</button>
@@ -254,9 +255,8 @@
                                 <a id="beatmap-detail-official" class="button button-quiet" href="#" target="_blank" rel="noopener noreferrer">На osu! ↗</a>
                             </div>
                             <div id="beatmap-moderation-actions" class="map-moderation-actions" hidden>
-                                <button id="beatmap-rank" class="button map-rank-action" type="button">Ранкнуть</button>
-                                <button id="beatmap-unrank" class="button map-unrank-action" type="button">Деранкнуть</button>
-                                <button id="beatmap-love" class="button map-love-action" type="button">Ловнуть</button>
+                                <button id="beatmap-scope-difficulty" class="button map-scope-difficulty" type="button">Эта сложность</button>
+                                <button id="beatmap-scope-set" class="button map-scope-set" type="button">Весь мапсет</button>
                             </div>
                         </div>
                     </div>
@@ -339,6 +339,48 @@
             </section>
         </section>
 
+        <section id="page-friends" class="route-page friends-page" data-page="friends" hidden>
+            <div id="friends-guest" class="guest-gate" hidden>
+                <span class="guest-disc" aria-hidden="true">♥</span>
+                <h1>Войдите, чтобы открыть друзей</h1>
+                <p>Список друзей с их статусом и игровой статистикой доступен после входа.</p>
+                <button class="button button-primary" type="button" data-open-auth="login">войти</button>
+            </div>
+            <div id="friends-content" hidden>
+                <header class="page-titlebar">
+                    <span class="title-icon friends-icon" aria-hidden="true">♥</span>
+                    <h1>дашборд</h1>
+                    <div class="mode-tabs mode-tabs-icons friends-mode-tabs" data-mode-tabs role="group" aria-label="Режим статистики друзей"></div>
+                </header>
+                <nav class="page-tabs friends-page-tabs" aria-label="Раздел дашборда">
+                    <button type="button" data-go="home">главная</button>
+                    <button class="is-active" type="button" aria-current="page">друзья</button>
+                    <button type="button" data-go="settings">настройки</button>
+                </nav>
+                <section class="friends-summary" aria-label="Фильтр друзей">
+                    <button class="is-active" type="button" data-friends-filter="all" aria-pressed="true"><span>Все</span><strong id="friends-count-all">0</strong></button>
+                    <button type="button" data-friends-filter="online" aria-pressed="false"><span>В сети</span><strong id="friends-count-online">0</strong></button>
+                    <button type="button" data-friends-filter="offline" aria-pressed="false"><span>Не в сети</span><strong id="friends-count-offline">0</strong></button>
+                </section>
+                <section class="friends-surface">
+                    <div class="friends-toolbar">
+                        <span>Сортировать по</span>
+                        <div class="friends-sort" role="group" aria-label="Сортировка друзей">
+                            <button class="is-active" type="button" data-friends-sort="activity" aria-pressed="true">Последней активности</button>
+                            <button type="button" data-friends-sort="rating" aria-pressed="false">Рейтингу</button>
+                            <button type="button" data-friends-sort="name" aria-pressed="false">Никнейму</button>
+                        </div>
+                        <div class="friends-view" role="group" aria-label="Вид списка">
+                            <button id="friends-view-list" class="is-active" type="button" aria-label="Список" aria-pressed="true">☰</button>
+                            <button id="friends-view-grid" type="button" aria-label="Плитка" aria-pressed="false">▦</button>
+                        </div>
+                    </div>
+                    <div id="friends-list" class="friends-list" aria-live="polite"></div>
+                    <div id="friends-empty" class="empty-state tall" hidden><strong>Здесь пока никого нет</strong><p>Добавляйте игроков в друзья на страницах их профилей.</p></div>
+                </section>
+            </div>
+        </section>
+
         <section id="page-profile" class="route-page osu-page theme-purple" data-page="profile" hidden>
             <div id="profile-guest" class="guest-gate" hidden><span class="guest-disc">p!</span><h1>Войдите, чтобы открыть профиль</h1><p>Здесь находятся статистика, лучшие результаты и история игр.</p><button class="button button-primary" type="button" data-open-auth="login">войти</button></div>
             <div id="profile-content" hidden>
@@ -386,12 +428,12 @@
                 <section class="profile-level-row"><div id="profile-friend-slot" class="profile-follow" hidden><button id="profile-friend-button" class="profile-friend-button" type="button" data-state="none"><span id="profile-friend-icon" class="profile-friend-icon" aria-hidden="true"></span><span id="profile-follower-count">0</span></button></div><span class="level-caption">прогресс уровня</span><div class="level-progress"><div><span id="profile-level-bar"></span></div><strong id="profile-level">1</strong></div></section>
                 <div id="profile-meta" class="profile-meta"></div>
                 <nav class="profile-anchor-nav" aria-label="Разделы профиля">
-                    <button type="button" data-scroll-to="profile-records">Рекорды</button><button type="button" data-scroll-to="profile-about-section">Обо мне!</button><button type="button" data-scroll-to="profile-achievements">Медали</button><button type="button" data-scroll-to="profile-activity-section">История игр</button>
+                    <button type="button" data-scroll-to="profile-records">Рекорды</button><button type="button" data-scroll-to="profile-about-section">Обо мне!</button><button type="button" data-scroll-to="profile-achievements">Медали</button><button type="button" data-scroll-to="profile-activity-section">Хронология</button>
                 </nav>
 
                 <div id="profile-blocks" class="profile-blocks" aria-label="Перемещаемые разделы профиля">
                     <section id="profile-records" class="profile-section records-section movable-profile-block" data-profile-block="scores" draggable="true">
-                        <div class="profile-section-title"><button class="block-drag-handle" type="button" title="Перетащите раздел" aria-label="Перетащить раздел Рекорды">⠿</button><h2>Рекорды</h2><div id="score-type-tabs" class="score-type-tabs"><button class="filter-chip is-active" type="button" data-score-type="best">Лучшие</button><button class="filter-chip" type="button" data-score-type="recent">Недавние</button></div><div class="block-move-actions"><button type="button" data-block-move="up" aria-label="Поднять раздел">↑</button><button type="button" data-block-move="down" aria-label="Опустить раздел">↓</button></div></div>
+                        <div class="profile-section-title"><button class="block-drag-handle" type="button" title="Перетащите раздел" aria-label="Перетащить раздел Рекорды">⠿</button><h2>Рекорды</h2><span class="profile-section-caption">лучшие результаты</span><div class="block-move-actions"><button type="button" data-block-move="up" aria-label="Поднять раздел">↑</button><button type="button" data-block-move="down" aria-label="Опустить раздел">↓</button></div></div>
                         <section id="profile-pinned-group" class="score-group pinned-score-group" hidden>
                             <div class="score-group-heading"><h3>Закреплённые</h3><span id="profile-pinned-count">0</span></div>
                             <div id="profile-pinned-scores" class="score-list pinned-score-list"></div>
@@ -427,7 +469,7 @@
                     </section>
 
                     <section id="profile-activity-section" class="profile-section profile-activity-section movable-profile-block" data-profile-block="historical" draggable="true">
-                        <div class="profile-section-title"><button class="block-drag-handle" type="button" title="Перетащите раздел" aria-label="Перетащить раздел История игр">⠿</button><h2>История игр</h2><span>игры по месяцам</span><div class="block-move-actions"><button type="button" data-block-move="up" aria-label="Поднять раздел">↑</button><button type="button" data-block-move="down" aria-label="Опустить раздел">↓</button></div></div>
+                        <div class="profile-section-title"><button class="block-drag-handle" type="button" title="Перетащите раздел" aria-label="Перетащить раздел Хронология">⠿</button><h2>Хронология</h2><div class="block-move-actions"><button type="button" data-block-move="up" aria-label="Поднять раздел">↑</button><button type="button" data-block-move="down" aria-label="Опустить раздел">↓</button></div></div>
                         <div class="profile-activity-grid">
                             <div class="play-history-wrap">
                                 <div id="profile-play-history" class="play-history-chart" tabindex="0" role="img" aria-label="Количество игр по месяцам">
@@ -443,7 +485,18 @@
                                     <span id="profile-play-history-empty" class="play-history-empty">История игр пока пуста.</span>
                                 </div>
                             </div>
-                            <div class="most-played-wrap"><h3>Чаще всего сыграны</h3><div id="profile-most-played" class="most-played-list"></div><p id="profile-most-played-empty" class="muted-copy" hidden>История пока пуста.</p></div>
+                            <div class="most-played-wrap">
+                                <div class="chronology-subheading"><h3>Больше всего сыграно</h3><span id="profile-most-played-count">0</span></div>
+                                <div id="profile-most-played" class="most-played-list"></div>
+                                <p id="profile-most-played-empty" class="muted-copy" hidden>История пока пуста.</p>
+                                <button id="most-played-more" class="chronology-more" type="button" hidden>⌄&nbsp;&nbsp; ПОКАЗАТЬ ЕЩЁ &nbsp;&nbsp;⌄</button>
+                            </div>
+                            <div class="recent-history-wrap">
+                                <div class="chronology-subheading"><h3>Недавние результаты</h3><span id="profile-recent-count">0</span><small>последние 24 часа</small></div>
+                                <div id="profile-recent-scores" class="score-list chronology-score-list"></div>
+                                <div id="profile-recent-empty" class="empty-state" hidden><strong>За последние 24 часа результатов нет</strong></div>
+                                <button id="recent-scores-more" class="chronology-more" type="button" hidden>⌄&nbsp;&nbsp; ПОКАЗАТЬ ЕЩЁ &nbsp;&nbsp;⌄</button>
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -476,14 +529,17 @@
                                 <p id="avatar-status" class="avatar-status" role="status" aria-live="polite"></p>
                             </form>
                         </section>
+                        <form id="download-mirror-form" class="form-stack account-download-settings">
+                            <div><h3>Дополнительное зеркало карт</h3><p>Эта кнопка показывается рядом с обычным скачиванием на странице карты.</p></div>
+                            <label class="field"><span>Зеркало</span><select id="settings-download-mirror"><option value="beatconnect">Beatconnect</option><option value="mino">Mino</option><option value="nerinyan">Nerinyan</option><option value="hinamizawa">Hinamizawa</option></select></label>
+                            <button class="button button-primary" type="submit">Сохранить зеркало</button>
+                        </form>
                         <form id="profile-settings-form" class="form-stack"><div class="form-grid"><label class="field"><span>Страна</span><select id="settings-country" name="country_code"></select></label></div><label class="field"><span>Коротко о себе</span><textarea id="settings-interests" name="interests" maxlength="255" rows="3" placeholder="Музыка, любимые карты, что угодно"></textarea></label><div class="form-grid"><label class="field"><span>Сайт</span><input id="settings-website" name="website" type="url" maxlength="200" placeholder="https://..."></label><label class="field"><span>Discord</span><input id="settings-discord" name="discord" type="text" maxlength="100" placeholder="username"></label></div><label class="field"><span>Чем занимаетесь</span><input id="settings-occupation" name="occupation" type="text" maxlength="255" placeholder="Учёба, работа или увлечение"></label><label class="field"><span>Страница игрока</span><textarea id="settings-userpage" maxlength="60000" rows="8" placeholder="BBCode: [b]жирный[/b], [url=https://...]ссылка[/url], [img]https://...[/img]"></textarea></label><div id="settings-userpage-preview" class="safe-userpage editor-preview"></div><div class="settings-actions"><span>BBCode очищается сервером; предпросмотр дополнительно блокирует опасные ссылки и HTML.</span><button id="profile-save" class="button button-primary" type="submit">сохранить профиль</button></div></form></section>
 
                     <section class="settings-panel" data-settings-panel="notifications" hidden>
-                        <h2>Уведомления</h2><p>Уведомления о друзьях и первых местах доступны с supporter.</p>
+                        <h2>Уведомления</h2><p>Уведомления о потерянных первых местах доступны с supporter.</p>
                         <form id="notification-settings-form" class="form-stack">
                             <label><input id="notify-rank-lost" type="checkbox" checked> Кто-то забрал моё первое место</label>
-                            <label><input id="notify-friend-added" type="checkbox" checked> Меня добавили в друзья</label>
-                            <label><input id="notify-friend-removed" type="checkbox" checked> Меня удалили из друзей</label>
                             <button class="button button-primary" type="submit">Сохранить</button>
                         </form>
                     </section>
@@ -527,6 +583,16 @@
 
     <div id="score-action-menu" class="score-action-menu" role="menu" hidden></div>
 
+    <dialog id="beatmap-moderation-dialog" class="dialog beatmap-moderation-dialog">
+        <form method="dialog"><button class="dialog-close" value="cancel" aria-label="Закрыть">×</button></form>
+        <div class="dialog-copy"><h2>Изменить статус карты</h2><p id="beatmap-moderation-target"></p></div>
+        <div class="beatmap-moderation-dialog-actions">
+            <button class="button map-rank-action" type="button" data-beatmap-moderation-action="rank">Ранкнуть</button>
+            <button class="button map-unrank-action" type="button" data-beatmap-moderation-action="unrank">Деранкнуть</button>
+            <button class="button map-love-action" type="button" data-beatmap-moderation-action="love">Ловнуть</button>
+        </div>
+    </dialog>
+
     <dialog id="score-detail-dialog" class="dialog score-detail-dialog">
         <form method="dialog"><button class="dialog-close" value="cancel" aria-label="Закрыть">×</button></form>
         <div class="score-detail-heading"><span id="score-detail-grade" class="score-grade">—</span><div><h2 id="score-detail-title">Результат</h2><p id="score-detail-difficulty">—</p></div></div>
@@ -546,6 +612,6 @@
     </dialog>
 
     <div id="toast-region" class="toast-region" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="./app.js?v=46" defer></script>
+    <script src="./app.js?v=map-moderation-dialog-1" defer></script>
 </body>
 </html>

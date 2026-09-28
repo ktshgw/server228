@@ -15,6 +15,9 @@ class SomsaiAction(BaseModel):
         "party_accept",
         "party_decline",
         "party_leave",
+        "direct_invite",
+        "direct_accept",
+        "direct_decline",
         "custom_create",
         "custom_join",
         "custom_start",
@@ -23,6 +26,7 @@ class SomsaiAction(BaseModel):
         "pick",
         "ready",
         "unready",
+        "decline",
         "leave_match",
     ]
     format: Literal["1v1", "2v2", "3v3", "4v4"] = "1v1"
@@ -31,6 +35,7 @@ class SomsaiAction(BaseModel):
     target_user_id: StrictInt | None = Field(default=None, gt=0)
     target_username: str | None = Field(default=None, min_length=1, max_length=32)
     invitation_id: StrictInt | None = Field(default=None, gt=0)
+    invite_kind: Literal["duel", "custom"] | None = None
     match_id: StrictInt | None = Field(default=None, gt=0)
     slot_id: str | None = Field(default=None, max_length=12)
     expected_revision: StrictInt | None = Field(default=None, ge=1)
@@ -43,6 +48,8 @@ class SomsaiAction(BaseModel):
     )
     name: str = Field(default="", max_length=100)
     with_bots: bool = False
+    private: bool = False
+    arbitrary: bool = False
     bot_level: Literal["easy", "medium", "hard", "top1000", "mrekk"] = "medium"
 
     @field_validator("bot_level", mode="before")

@@ -50,19 +50,19 @@ public sealed partial class SomsBeatmapDownloadProgress : Container
         {
             progress.Current.Value = value.NewValue;
             if (tracker.State.Value == DownloadState.Downloading)
-                caption.Text = $"Скачивание · {value.NewValue:P0}";
+                caption.Text = $"Downloading · {value.NewValue:P0}";
         }, true);
         tracker.State.BindValueChanged(value =>
         {
             if (value.NewValue == DownloadState.Downloading)
             {
-                caption.Text = $"Скачивание · {tracker.Progress.Value:P0}";
+                caption.Text = $"Downloading · {tracker.Progress.Value:P0}";
                 display.FadeIn(100);
             }
             else if (value.NewValue == DownloadState.Importing)
             {
                 progress.Current.Value = 1;
-                caption.Text = "Импорт карты…";
+                caption.Text = "Importing beatmap…";
                 display.FadeIn(100);
             }
             else

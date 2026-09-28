@@ -27,10 +27,10 @@ async def somsai_leaderboard(
 
 @router.get("/somsai/social", include_in_schema=False)
 async def somsai_social(current_user: ClientUser):
-    from app.features.somsai.services.somsai_party_service import party_snapshot
+    from app.features.somsai.services.somsai_service import global_presence
 
     async with somsai_transaction() as session:
-        return await party_snapshot(session, current_user.id, public=True)
+        return await global_presence(session, current_user.id)
 
 
 class PartyChatMessage(BaseModel):
@@ -77,7 +77,15 @@ async def somsai_action(
     payload: SomsaiAction, current_user: ClientUser, fetcher: Fetcher, redis: Redis, background_tasks: BackgroundTasks
 ):
     personas = (
-        await bot_personas(fetcher, redis, payload.ruleset_id, payload.bot_level, int(payload.format[0]))
+        await bot_personas(
+            fetcher,
+            redis,
+            payload.ruleset_id,
+            payload.bot_level,
+            int(payload.format[0]),
+            target_mmr=payload.target_mmr,
+            target_rank=payload.target_rank,
+        )
         if payload.action == "custom_create" and payload.with_bots
         else None
     )
@@ -97,5 +105,5 @@ async def somsai_match(match_id: int, current_user: ClientUser):
     async with somsai_transaction() as session:
         match = await session.get(SomsaiMatch, match_id)
         if match is None or current_user.id not in members_of(match):
-            reject("Матч недоступен.", 404)
+            reject("Match unavailable.", 404)
         return await match_payload(session, match)

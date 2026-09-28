@@ -29,7 +29,7 @@ public static class SomsReplayDuelPatch
     {
         if (!Enabled || __instance.FindClosestParent<SoloSongSelect>() is not { } select || !select.IsCurrentScreen()) return;
         var score = __instance.Score.DeepClone();
-        __result = __result.Append(new OsuMenuItem("Сыграть 1 на 1 с реплеем", MenuItemType.Highlighted, () =>
+        __result = __result.Append(new OsuMenuItem("Play 1v1 with replay", MenuItemType.Highlighted, () =>
         {
             // Menu actions may outlive their screen or the interface setting.
             if (Enabled && select.IsCurrentScreen()) select.Push(new SomsReplayDuelScreen(score));

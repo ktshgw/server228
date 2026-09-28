@@ -87,8 +87,8 @@ public static class SomsBeatmapLoadingPatch
                 {
                     retry = new FormButton
                     {
-                        Name = "soms-beatmap-retry", Caption = "Не удалось загрузить карту",
-                        ButtonText = "Повторить", RelativeSizeAxes = Axes.X,
+                        Name = "soms-beatmap-retry", Caption = "Could not load beatmap",
+                        ButtonText = "Retry", RelativeSizeAxes = Axes.X,
                         Anchor = Anchor.TopCentre, Origin = Anchor.TopCentre, Y = 10,
                         Depth = float.MinValue,
                     };
